@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, type PointerEvent as ReactPointerEvent } from 'react'
+import { useCallback, useMemo, useRef, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import {
   COURT,
   VIEW,
@@ -23,8 +23,8 @@ const VIEWBOX = `${VIEW.minX} ${VB_MIN_Y} ${VIEW.width} ${VB_HEIGHT}`
 /** Visual pivot for the 180° flip: the center of the drawn box (any pivot yields correct taps via the CTM inverse). */
 const PIVOT = { x: VIEW.minX + VIEW.width / 2, y: VB_MIN_Y + VB_HEIGHT / 2 }
 
-const TAP_MAX_DIST_PX = 8
-const TAP_MAX_MS = 400
+/** A mouse press that travels further than this before release is a drag, not a tap. */
+const DRAG_PX = 12
 
 export interface CourtProps {
   /** Rotate 180° so the parent taps what they see when she plays the far end. */
@@ -56,27 +56,22 @@ export function Court({ flipped = false, onTap, disabled = false, points, pendin
     return clampToView(p.x, p.y)
   }, [])
 
+  // Taps are driven by the browser's own `click`: every platform synthesises it for a real tap and
+  // withholds it for scrolls/drags/long-press menus, which is exactly the tap-vs-gesture rule we want.
+  // We only remember where the pointer went down to reject mouse drags (mouse fires click regardless).
   const onPointerDown = (e: ReactPointerEvent<SVGSVGElement>) => {
-    if (!interactive || disabled) return
-    if (e.button !== 0 && e.pointerType === 'mouse') return
     down.current = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() }
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId)
-    } catch {
-      /* ignore */
-    }
-  }
-  const onPointerUp = (e: ReactPointerEvent<SVGSVGElement>) => {
-    const d = down.current
-    down.current = null
-    if (!d || d.id !== e.pointerId || !interactive || disabled) return
-    const dist = Math.hypot(e.clientX - d.x, e.clientY - d.y)
-    if (dist > TAP_MAX_DIST_PX || performance.now() - d.t > TAP_MAX_MS) return
-    const c = toCourt(e.clientX, e.clientY)
-    if (c) onTap?.(c.x, c.y)
   }
   const onPointerCancel = () => {
     down.current = null
+  }
+  const onClick = (e: ReactMouseEvent<SVGSVGElement>) => {
+    if (!interactive || disabled) return
+    const d = down.current
+    down.current = null
+    if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) > DRAG_PX) return
+    const c = toCourt(e.clientX, e.clientY)
+    if (c) onTap?.(c.x, c.y)
   }
 
   const flipTransform = flipped ? `rotate(180 ${PIVOT.x} ${PIVOT.y})` : undefined
@@ -102,8 +97,8 @@ export function Court({ flipped = false, onTap, disabled = false, points, pendin
       role={interactive ? 'button' : 'img'}
       aria-label={interactive ? 'Half tennis court — tap where the point was lost' : 'Half tennis court'}
       onPointerDown={onPointerDown}
-      onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
+      onClick={onClick}
       onContextMenu={(e) => e.preventDefault()}
     >
       <g ref={gRef} transform={flipTransform}>
