@@ -20,6 +20,8 @@ export interface RepoState {
     lastPullAt: string | null
     /** opponents added by hand before they appear in any session (this device only) */
     roster: string[]
+    /** whose errors these are, for the court label — '' falls back to "Her" */
+    playerName: string
   }
 }
 
@@ -30,7 +32,7 @@ export function emptyState(): RepoState {
     sessions: {},
     points: {},
     dirty: { sessions: [], points: [] },
-    meta: { ownerId: null, lastPullAt: null, roster: [] },
+    meta: { ownerId: null, lastPullAt: null, roster: [], playerName: '' },
   }
 }
 
@@ -66,6 +68,7 @@ export function loadState(storage: StorageLike): RepoState {
         ownerId: typeof parsed.meta?.ownerId === 'string' ? parsed.meta.ownerId : null,
         lastPullAt: typeof parsed.meta?.lastPullAt === 'string' ? parsed.meta.lastPullAt : null,
         roster: Array.isArray(parsed.meta?.roster) ? uniq(parsed.meta!.roster) : [],
+        playerName: typeof parsed.meta?.playerName === 'string' ? parsed.meta.playerName : '',
       },
     }
   } catch {

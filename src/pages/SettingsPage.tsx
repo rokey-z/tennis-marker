@@ -137,6 +137,8 @@ export function SettingsPage() {
           )}
         </section>
 
+        <PlayerName />
+
         <AppVersion />
 
         <Opponents />
@@ -220,6 +222,34 @@ export function SettingsPage() {
 }
 
 
+
+function PlayerName() {
+  const state = useAppState()
+  const [name, setName] = useState(state.meta.playerName)
+
+  return (
+    <section className="card">
+      <div className="section-title">Player</div>
+      <label className="field" style={{ marginBottom: 0 }}>
+        <span>Whose errors these are</span>
+        <input
+          className="input"
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value)
+            store.setPlayerName(e.target.value)
+          }}
+          placeholder="e.g. Lily"
+          autoComplete="off"
+          autoCapitalize="words"
+        />
+      </label>
+      <p className="kbd-hint" style={{ marginTop: 8 }}>
+        Labels the court so her half and the opponent’s half are never mixed up. Kept on this device.
+      </p>
+    </section>
+  )
+}
 
 function AppVersion() {
   const [state, setState] = useState<'idle' | 'checking' | 'current' | 'updating' | 'unsupported'>('idle')

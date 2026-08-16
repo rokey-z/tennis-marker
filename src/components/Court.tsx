@@ -63,6 +63,8 @@ export interface CourtProps {
   emphasizeLast?: boolean
   /** 'own' = her half (errors); 'opposite' = the far half, mirrored, for ball placements. */
   half?: 'own' | 'opposite'
+  /** Dimmed watermark naming whose half is on screen, so the two modes are never confused. */
+  sideLabel?: string
   /** Placement mode: press where the ball landed and drag left for backhand, right for forehand. */
   onStrokeDrag?: (x: number, y: number, stroke: 'bh' | 'fh') => void
   pending?: { x: number; y: number } | null
@@ -73,7 +75,7 @@ export interface CourtProps {
   className?: string
 }
 
-export function Court({ flipped = false, onTap, disabled = false, points, emphasizeLast = false, half = 'own', onStrokeDrag, pending, showZones = false, heat, heatTotal = 0, className }: CourtProps) {
+export function Court({ flipped = false, onTap, disabled = false, points, emphasizeLast = false, half = 'own', sideLabel, onStrokeDrag, pending, showZones = false, heat, heatTotal = 0, className }: CourtProps) {
   const gRef = useRef<SVGGElement>(null)
   const down = useRef<{ id: number; x: number; y: number; t: number } | null>(null)
   // the ref is authoritative (pointer events can arrive faster than React re-renders); state drives the drawing
@@ -188,6 +190,25 @@ export function Court({ flipped = false, onTap, disabled = false, points, emphas
         {/* surround + court */}
         <rect x={DRAW_MIN_X} y={VB_MIN_Y} width={DRAW_WIDTH} height={VB_HEIGHT} fill="var(--surround)" />
         <rect x={-COURT.doublesHalfWidth} y={0} width={2 * COURT.doublesHalfWidth} height={COURT.halfLength} fill="var(--court)" />
+
+        {/* whose half this is — dimmed, behind every mark, and always upright */}
+        {sideLabel && (
+          <g transform={flipTransform ? `${flipTransform}` : undefined} pointerEvents="none">
+            <text
+              x={0}
+              y={VB_MIN_Y + 4.6}
+              fontSize={2.6}
+              fontWeight={800}
+              textAnchor="middle"
+              fill="#ffffff"
+              fillOpacity={0.34}
+              letterSpacing={0.35}
+              fontFamily="var(--font)"
+            >
+              {sideLabel.toUpperCase()}
+            </text>
+          </g>
+        )}
 
         {/* zone grid (subtle) */}
         {showZones && (

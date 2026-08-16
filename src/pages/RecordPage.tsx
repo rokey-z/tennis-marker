@@ -32,6 +32,8 @@ export function RecordPage() {
   const isDesktop = useIsDesktop()
   const session = state.sessions[id]
   const placementMode = session?.mode === 'placement'
+  const player = state.meta.playerName.trim()
+  const sideLabel = placementMode ? 'Opponent side' : `${player || 'Her'}${player ? '’s' : ''} side`
   const allPoints = useMemo(() => livePointsForSession(state, id), [state, id])
   // each mode shows its own marks: they live in different halves of the court
   const points = useMemo(
@@ -210,13 +212,14 @@ export function RecordPage() {
         {statsMode && <StatsFilters value={filters} onChange={setFilters} />}
         <div className="court-box" ref={courtRef}>
           {statsMode ? (
-            <Court flipped={flipped} points={shownPoints} heat={statsSummary.byZone} heatTotal={statsSummary.total} showZones />
+            <Court flipped={flipped} points={shownPoints} half={placementMode ? 'opposite' : 'own'} sideLabel={sideLabel} heat={statsSummary.byZone} heatTotal={statsSummary.total} showZones />
           ) : (
             <Court
               flipped={flipped}
               onTap={onTap}
               onStrokeDrag={placementMode ? onStrokeDrag : undefined}
               half={placementMode ? 'opposite' : 'own'}
+              sideLabel={sideLabel}
               disabled={!!pending}
               points={points}
               emphasizeLast

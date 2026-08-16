@@ -58,6 +58,8 @@ export interface Store {
   foreignCount(): number
   copyForeignToOwner(): number
   dropForeign(): void
+  /** Whose errors these are — used for the court label. Device-local. */
+  setPlayerName(name: string): void
   /** Wipe everything on this device. */
   clearAll(): void
 }
@@ -334,8 +336,13 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
     dropForeign() {
       set(dropRows(state, foreignRowIds(state, state.meta.ownerId)))
     },
+    setPlayerName(name) {
+      const clean = cleanOpponent(name)
+      if (clean === state.meta.playerName) return
+      set({ ...state, meta: { ...state.meta, playerName: clean } })
+    },
     clearAll() {
-      set({ ...emptyState(), meta: { ownerId: state.meta.ownerId, lastPullAt: null, roster: state.meta.roster } })
+      set({ ...emptyState(), meta: { ...state.meta, lastPullAt: null } })
     },
   }
   return store
