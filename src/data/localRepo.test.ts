@@ -62,6 +62,16 @@ describe('load/save', () => {
     expect(loadState(st)).toEqual(emptyState())
   })
 
+  it('defaults fields added after a row was written (no undefined reaches the UI)', () => {
+    const st = memoryStorage()
+    const legacy = { id: 's1', user_id: null, title: 'Practice 2026-08-01', date: '2026-08-01', kind: 'practice', notes: '', created_at: t1, updated_at: t1, deleted_at: null }
+    st.setItem(STORAGE_KEY, JSON.stringify({ sessions: { s1: legacy }, points: {}, dirty: { sessions: [], points: [] }, meta: {} }))
+    const loaded = loadState(st)
+    expect(loaded.sessions.s1.opponent).toBe('')
+    expect(loaded.sessions.s1.venue).toBe('')
+    expect(loaded.sessions.s1.title).toBe('Practice 2026-08-01')
+  })
+
   it('round-trips and dedupes dirty ids', () => {
     const st = memoryStorage()
     const s: RepoState = {

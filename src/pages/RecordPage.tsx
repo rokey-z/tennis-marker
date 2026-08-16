@@ -217,8 +217,8 @@ export function RecordPage() {
 
 function SessionDetails({ session, onClose, onDeleted }: { session: Session; onClose: () => void; onDeleted: () => void }) {
   const state = useAppState()
-  const [opponent, setOpponent] = useState(session.opponent)
-  const [venue, setVenue] = useState(session.venue)
+  const [opponent, setOpponent] = useState(session.opponent ?? '')
+  const [venue, setVenue] = useState(session.venue ?? '')
   const [date, setDate] = useState(session.date)
   const [kind, setKind] = useState(session.kind)
   const [notes, setNotes] = useState(session.notes)

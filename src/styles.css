@@ -1777,3 +1777,33 @@ span.seq-dot {
   padding: 8px 12px;
   margin: 0;
 }
+
+/* ---------- crash screen ---------- */
+.crash {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.crash .card {
+  max-width: 460px;
+  width: 100%;
+}
+.crash h2 {
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+.crash .row {
+  margin-top: 12px;
+}
+.crash-detail {
+  margin: 12px 0 0;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border-radius: 8px;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--muted);
+}

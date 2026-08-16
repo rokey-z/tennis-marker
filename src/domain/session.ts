@@ -8,12 +8,13 @@ export function isAutoTitle(title: string): boolean {
 }
 
 /** Opponent names are compared case- and space-insensitively so "emma " and "Emma" are one person. */
-export function opponentKey(name: string): string {
-  return name.trim().replace(/\s+/g, ' ').toLowerCase()
+export function opponentKey(name: string | null | undefined): string {
+  return cleanOpponent(name).toLowerCase()
 }
 
-export function cleanOpponent(name: string): string {
-  return name.trim().replace(/\s+/g, ' ').slice(0, 60)
+/** Tolerates missing values so a row written by an older version can never crash a screen. */
+export function cleanOpponent(name: string | null | undefined): string {
+  return typeof name === 'string' ? name.trim().replace(/\s+/g, ' ').slice(0, 60) : ''
 }
 
 /**

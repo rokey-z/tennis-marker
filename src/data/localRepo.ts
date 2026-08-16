@@ -54,7 +54,7 @@ export function loadState(storage: StorageLike): RepoState {
   try {
     const parsed = JSON.parse(raw) as Partial<RepoState>
     return {
-      sessions: isRecord(parsed.sessions) ? (parsed.sessions as Record<string, Session>) : {},
+      sessions: isRecord(parsed.sessions) ? upgradeSessions(parsed.sessions as Record<string, Session>) : {},
       points: isRecord(parsed.points) ? (parsed.points as Record<string, Point>) : {},
       dirty: {
         sessions: Array.isArray(parsed.dirty?.sessions) ? uniq(parsed.dirty!.sessions) : [],
@@ -72,6 +72,20 @@ export function loadState(storage: StorageLike): RepoState {
 
 export function saveState(storage: StorageLike, state: RepoState): void {
   storage.setItem(STORAGE_KEY, JSON.stringify(state))
+}
+
+/**
+ * Fields added in later versions are missing from rows written by older ones. Default them here,
+ * at the single point where stored data enters the app, so no screen has to guard for `undefined`.
+ */
+function upgradeSessions(sessions: Record<string, Session>): Record<string, Session> {
+  let out = sessions
+  for (const [id, s] of Object.entries(sessions)) {
+    if (typeof s?.opponent === 'string' && typeof s?.venue === 'string') continue
+    if (out === sessions) out = { ...sessions }
+    out[id] = { ...s, opponent: typeof s?.opponent === 'string' ? s.opponent : '', venue: typeof s?.venue === 'string' ? s.venue : '' }
+  }
+  return out
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {

@@ -53,6 +53,17 @@ describe('legacy title migration', () => {
 })
 
 describe('names', () => {
+  it('tolerates rows written before the field existed', () => {
+    expect(cleanOpponent(undefined)).toBe('')
+    expect(cleanOpponent(null)).toBe('')
+    expect(opponentKey(undefined)).toBe('')
+    // a legacy row with no opponent/venue keys at all must still render
+    const legacy = { kind: 'practice', title: 'Practice 2026-08-01' } as unknown as Session
+    expect(sessionLabel(legacy)).toBe('Practice')
+    expect(opponentRows([legacy])).toEqual([])
+    expect(venueRows([legacy])).toEqual([])
+  })
+
   it('normalises spacing and case for matching', () => {
     expect(cleanOpponent('  Emma   Stone ')).toBe('Emma Stone')
     expect(opponentKey(' emma  STONE ')).toBe('emma stone')
