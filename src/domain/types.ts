@@ -53,7 +53,11 @@ export interface Session {
 }
 
 /**
- * One lost point. Position is in court feet, in the player's own frame:
+ * One recorded mark. What x/y MEAN depends on the outcome — these are two different measurements
+ * that happen to share a column:
+ *   error / winner → where the PLAYER was standing, on her half
+ *   placement      → where the BALL LANDED, on the far half (y is depth from the net)
+ * Position is in court feet, in the player's own frame:
  * x: 0 = center line, positive = deuce side (her right when facing the net)
  * y: 0 = net, 39 = baseline, up to 51 (12 ft behind the baseline)
  */

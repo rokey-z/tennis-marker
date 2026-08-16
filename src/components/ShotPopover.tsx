@@ -80,34 +80,40 @@ export function ShotPopover({ anchor, containerRef, where, forced, onForcedChang
         className={`shot-pop ${pos?.placement ?? 'below'}`}
         role="dialog"
         aria-modal="true"
-        aria-label="Log the lost point"
+        aria-label={`Log the point at ${where}`}
         style={pos ? { left: pos.left, top: pos.top, visibility: 'visible' } : { left: 0, top: 0, visibility: 'hidden' }}
       >
-        <div className="pop-head">
-          <div className="where">{where}</div>
-          {!winner && !strokeOnly && (
-            <button type="button" className={`forced-toggle${forced ? ' on' : ''}`} aria-pressed={forced} onClick={() => onForcedChange(!forced)} title="Mark as a forced error">
+        <button type="button" className="pop-close" aria-label="Cancel" onClick={onCancel}>
+          <CloseIcon />
+        </button>
+        {!strokeOnly && (
+          <div className="pop-toggles">
+            <button
+              type="button"
+              className={`forced-toggle${forced ? ' on' : ''}`}
+              aria-pressed={forced}
+              onClick={() => {
+                onForcedChange(!forced)
+                if (!forced) onWinnerChange(false)
+              }}
+              title="She was forced into this error"
+            >
               Forced
             </button>
-          )}
-          {!strokeOnly && (
-          <button
-            type="button"
-            className={`winner-toggle${winner ? ' on' : ''}`}
-            aria-pressed={winner}
-            onClick={() => {
-              onWinnerChange(!winner)
-              if (!winner) onForcedChange(false)
-            }}
-            title="She hit a winner here"
-          >
-            ★ Winner
-          </button>
-          )}
-          <button type="button" className="pop-close" aria-label="Cancel" onClick={onCancel}>
-            <CloseIcon />
-          </button>
-        </div>
+            <button
+              type="button"
+              className={`winner-toggle${winner ? ' on' : ''}`}
+              aria-pressed={winner}
+              onClick={() => {
+                onWinnerChange(!winner)
+                if (!winner) onForcedChange(false)
+              }}
+              title="She hit a winner here"
+            >
+              ★ Winner
+            </button>
+          </div>
+        )}
         <ShotGrid forced={forced} winner={winner} strokeOnly={strokeOnly} onPick={onPick} onPickWinner={onPickWinner} />
       </div>
     </>

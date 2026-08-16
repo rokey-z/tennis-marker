@@ -1,4 +1,4 @@
-import { describeZone, zoneFor } from '../domain/court'
+import { describeMark } from '../domain/court'
 import type { ErrorType, Point, Stroke } from '../domain/types'
 import { formatTime } from '../lib/format'
 import { Modal } from './Bits'
@@ -33,7 +33,7 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
           <div className="grow">
             <div className="ps-now">{markLabel(point.stroke, point.error_type, point.forced, point.outcome)}</div>
             <div className="ps-meta">
-              {describeZone(zoneFor(point.x, point.y))} · {formatTime(point.created_at)}
+              {describeMark(point.x, point.y, point.outcome)} · {formatTime(point.created_at)}
             </div>
           </div>
           {!winner && (

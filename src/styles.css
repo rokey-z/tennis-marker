@@ -850,7 +850,7 @@ textarea.input {
 .shot-pop {
   position: absolute;
   z-index: 31;
-  width: 236px;
+  width: 244px;
   background: var(--surface);
   border-radius: 14px;
   padding: 6px 8px 8px;
@@ -867,24 +867,13 @@ textarea.input {
     opacity: 1;
   }
 }
-.pop-head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 30px;
-}
-.pop-head .where {
-  flex: 1;
-  min-width: 0;
-  font-weight: 800;
-  font-size: 13px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 .forced-toggle {
-  min-height: 30px;
-  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 34px;
+  padding: 0 8px;
   border-radius: 999px;
   border: 2px solid var(--mark-outline);
   font-size: 12px;
@@ -898,13 +887,24 @@ textarea.input {
   color: #fff;
 }
 .pop-close {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--muted);
+  background: var(--surface);
+  box-shadow: 0 0 0 1px var(--line), var(--shadow);
+  z-index: 2;
+}
+.pop-toggles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 .pop-close svg {
   width: 18px;
@@ -2001,6 +2001,12 @@ span
   justify-content: center;
   padding-bottom: 2px;
 }
+.sg-head .tag {
+  width: 100%;
+  min-height: 24px;
+  border-radius: 8px;
+  font-size: var(--fs-meta);
+}
 .sg-btn {
   min-height: 52px;
   border-radius: 999px;
@@ -2025,8 +2031,12 @@ span
 
 /* ---------- winners ---------- */
 .winner-toggle {
-  min-height: 30px;
-  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 34px;
+  padding: 0 8px;
   border-radius: 999px;
   border: 2px solid var(--win);
   font-size: 12px;

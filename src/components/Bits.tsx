@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { useSyncStatus } from '../data/app'
-import { describeZone, zoneFor } from '../domain/court'
+import { describeMark } from '../domain/court'
 import { ERROR_LABEL, ERROR_TYPES, STROKE_LABEL, STROKES, type Point } from '../domain/types'
 import type { Summary } from '../domain/stats'
 import { CloseIcon, TrashIcon } from './Icons'
@@ -127,7 +127,7 @@ export function PointList({ points, onOpen, onDelete }: { points: Point[]; onOpe
               <span className="desc">
                 <MarkChip stroke={p.stroke} error={p.error_type} forced={p.forced} outcome={p.outcome} />
                 <small>
-                  {describeZone(zoneFor(p.x, p.y))} · {formatTime(p.created_at)}
+                  {describeMark(p.x, p.y, p.outcome ?? 'error')} · {formatTime(p.created_at)}
                 </small>
               </span>
             </button>

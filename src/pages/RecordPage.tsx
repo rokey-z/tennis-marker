@@ -9,7 +9,7 @@ import { BackIcon, ChartIcon, FlipIcon, ListIcon, PencilIcon, UndoIcon } from '.
 import { ShotPopover } from '../components/ShotPopover'
 import { store, useAppState } from '../data/app'
 import { livePointsForSession } from '../data/store'
-import { describeZone, zoneFor } from '../domain/court'
+import { describeMark, describeZone, zoneFor } from '../domain/court'
 import { opponentRowsWithRoster, sessionLabel, venueRows } from '../domain/session'
 import { MarkLegend, markLabel } from '../components/marks'
 import { PointSheet } from '../components/PointSheet'
@@ -91,7 +91,7 @@ export function RecordPage() {
       id: Date.now(),
       text:
         outcome === 'placement'
-          ? `${STROKE_SHORT[stroke]} placement · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
+          ? `${STROKE_SHORT[stroke]} landed ${describeMark(p.x, p.y, 'placement').toLowerCase()}`
           : outcome === 'winner'
           ? `${STROKE_SHORT[stroke]} winner · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
           : `${STROKE_SHORT[stroke]} ${ERROR_LABEL[error as ErrorType].toLowerCase()} · ${forced ? 'forced' : 'unforced'} · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`,
@@ -116,7 +116,7 @@ export function RecordPage() {
       }
       setToast({
         id: Date.now(),
-        text: `${STROKE_SHORT[stroke]} placement · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`,
+        text: `${STROKE_SHORT[stroke]} landed ${describeMark(p.x, p.y, 'placement').toLowerCase()}`,
         actionLabel: 'Undo',
         onAction: () => store.deletePoint(p.id),
       })

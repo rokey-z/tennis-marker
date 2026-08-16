@@ -64,6 +64,22 @@ export function describeZone(z: Zone): string {
   return `${ZONE_ROW_LABEL[z.row]} · ${ZONE_COL_LABEL[z.col].toLowerCase()}`
 }
 
+/**
+ * A placement is where the BALL LANDED, not where the player stood, so it is described by depth
+ * from the net rather than by the court region a player occupies.
+ */
+export const DEPTH_LABEL: Record<ZoneRow, string> = { net: 'Short', mid: 'Mid', baseline: 'Deep' }
+
+export function describeLanding(x: number, y: number): string {
+  const z = zoneFor(x, y)
+  return `${DEPTH_LABEL[z.row]} · ${ZONE_COL_LABEL[z.col].toLowerCase()}`
+}
+
+/** One description helper for both kinds of mark, so callers never mix the two vocabularies. */
+export function describeMark(x: number, y: number, outcome: 'error' | 'winner' | 'placement'): string {
+  return outcome === 'placement' ? describeLanding(x, y) : describeZone(zoneFor(x, y))
+}
+
 /** Rectangle covering a zone in view coordinates (feet), for heat-map overlays. */
 export function zoneRect(z: Zone): { x: number; y: number; width: number; height: number } {
   const colBounds: Record<ZoneCol, [number, number]> = {

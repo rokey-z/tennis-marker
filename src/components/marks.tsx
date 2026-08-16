@@ -18,6 +18,7 @@ export const ERROR_LETTER: Record<ErrorType, string> = { long: 'L', net: 'N', wi
 
 /** Plain-language name of a mark, for tooltips and screen readers. */
 export function markLabel(stroke: Stroke, error: ErrorType | '', forced: boolean, outcome: Outcome = 'error'): string {
+  if (outcome === 'placement') return `${STROKE_LABEL[stroke]} — where the ball landed`
   if (outcome === 'winner') return `${STROKE_LABEL[stroke]} winner`
   const err = isErrorType(error) ? ERROR_LABEL[error].toLowerCase() : 'error'
   return `${STROKE_LABEL[stroke]} ${err}, ${forced ? 'forced' : 'unforced'}`

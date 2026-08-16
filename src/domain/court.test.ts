@@ -5,6 +5,8 @@ import {
   VIEW_MAX_X,
   VIEW_MAX_Y,
   clampToView,
+  describeLanding,
+  describeMark,
   describeZone,
   flipPoint,
   isInsideView,
@@ -77,6 +79,18 @@ describe('zoneFor', () => {
         expect(zoneFor(r.x + r.width / 2, r.y + r.height / 2)).toEqual({ row, col })
       }
     }
+  })
+})
+
+describe('landing vocabulary', () => {
+  it('describes a placement by depth from the net, not by a player position', () => {
+    expect(describeLanding(10, 5)).toBe('Short · deuce side')
+    expect(describeLanding(0, 27)).toBe('Mid · middle')
+    expect(describeLanding(-10, 38)).toBe('Deep · ad side')
+    // the same spot reads as a player position for an error
+    expect(describeMark(-10, 38, 'error')).toBe('Baseline · ad side')
+    expect(describeMark(-10, 38, 'winner')).toBe('Baseline · ad side')
+    expect(describeMark(-10, 38, 'placement')).toBe('Deep · ad side')
   })
 })
 
