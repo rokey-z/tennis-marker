@@ -10,9 +10,11 @@ as a home-screen app, records offline.
 ## How to use it courtside
 
 1. **Sessions → Practice / Match** creates a session and opens the court.
-2. **Tap the court** where she lost the point → a sheet slides up → tap **FH/BH × Long/Net/Wide**.
-   That's 2 taps per point. Toggle **Forced** on the sheet only when needed (it resets each point).
-3. **Undo** removes the last point; the **list** button lets you delete any point.
+2. **Tap the court** where she lost the point → a small menu pops up right at your finger → tap
+   **FH/BH × Long/Net/Wide**. That's 2 taps per point. Toggle **Forced** on the menu only when
+   needed (it resets each point). Tap anywhere else on the court to cancel.
+3. **Undo** removes the last point; the **Log** panel at the bottom lists every point (newest first)
+   and lets you delete any of them.
 4. **Near end / Far end** flips the court 180° so you can tap what you physically see when she's on
    the far side. Data is always stored from *her* point of view (net at top, deuce side right).
 5. **Dashboard** is the analysis view: KPI tiles with sparklines and a trend delta, auto-generated

@@ -5,13 +5,14 @@ import { useIsDesktop } from '../components/hooks'
 import { formatDate } from '../lib/format'
 import { Court } from '../components/Court'
 import { BackIcon, ChartIcon, FlipIcon, ListIcon, UndoIcon } from '../components/Icons'
-import { ShotSheet } from '../components/ShotSheet'
+import { ShotPopover } from '../components/ShotPopover'
 import { store, useAppState } from '../data/app'
 import { livePointsForSession } from '../data/store'
 import { describeZone, zoneFor } from '../domain/court'
 import { summarize } from '../domain/stats'
 import { ERROR_LABEL, KIND_LABEL, STROKE_SHORT, type ErrorType, type Session, type Stroke } from '../domain/types'
 
+const LOG_KEY = 'tennis-marker.logOpen'
 const FLIP_KEY = 'tennis-marker.flip'
 const AFTER_SAVE_IGNORE_MS = 300
 
@@ -25,21 +26,25 @@ export function RecordPage() {
   const summary = useMemo(() => summarize(points), [points])
 
   const [flipped, setFlipped] = useState(() => localStorage.getItem(FLIP_KEY) === '1')
-  const [pending, setPending] = useState<{ x: number; y: number } | null>(null)
+  const [pending, setPending] = useState<{ x: number; y: number; at: { clientX: number; clientY: number } } | null>(null)
+  const courtRef = useRef<HTMLDivElement>(null)
   const [forced, setForced] = useState(false)
   const [toast, setToast] = useState<ToastState | null>(null)
-  const [showList, setShowList] = useState(false)
+  const [logOpen, setLogOpen] = useState(() => localStorage.getItem(LOG_KEY) !== '0')
   const [showDetails, setShowDetails] = useState(false)
   const ignoreUntil = useRef(0)
 
   useEffect(() => {
     localStorage.setItem(FLIP_KEY, flipped ? '1' : '0')
   }, [flipped])
+  useEffect(() => {
+    localStorage.setItem(LOG_KEY, logOpen ? '1' : '0')
+  }, [logOpen])
 
-  const onTap = useCallback((x: number, y: number) => {
+  const onTap = useCallback((x: number, y: number, at: { clientX: number; clientY: number }) => {
     if (performance.now() < ignoreUntil.current) return
     setForced(false)
-    setPending({ x, y })
+    setPending({ x, y, at })
   }, [])
 
   const cancel = useCallback(() => setPending(null), [])
@@ -83,28 +88,12 @@ export function RecordPage() {
   }
 
   const where = pending ? describeZone(zoneFor(pending.x, pending.y)) : ''
-  const sheet = (
-    <ShotSheet
-      open={!!pending}
-      where={where}
-      forced={forced}
-      onForcedChange={setForced}
-      onPick={pick}
-      onCancel={cancel}
-      variant={isDesktop ? 'inline' : 'sheet'}
-    />
-  )
 
   const actions = (
     <div className="record-actions">
       <button type="button" className="btn" onClick={undo} disabled={points.length === 0}>
         <UndoIcon /> Undo
       </button>
-      {!isDesktop && (
-        <button type="button" className="btn" onClick={() => setShowList(true)}>
-          <ListIcon /> {points.length}
-        </button>
-      )}
       <button type="button" className="btn" onClick={() => nav(`/stats?session=${id}`)}>
         <ChartIcon /> Stats
       </button>
@@ -129,8 +118,11 @@ export function RecordPage() {
         <SyncBadge compact />
       </header>
 
-      <div className="record-court">
+      <div className="record-court" ref={courtRef}>
         <Court flipped={flipped} onTap={onTap} disabled={!!pending} points={points} pending={pending} showZones />
+        {pending && (
+          <ShotPopover anchor={pending.at} containerRef={courtRef} where={where} forced={forced} onForcedChange={setForced} onPick={pick} onCancel={cancel} />
+        )}
       </div>
 
       {isDesktop ? (
@@ -138,7 +130,7 @@ export function RecordPage() {
           <div className="card">
             <Tally s={summary} />
           </div>
-          {pending ? sheet : <div className="record-hint">Click the court where she lost the point.</div>}
+          <div className="record-hint">Click the court where she lost the point, then pick FH/BH × Long/Net/Wide right there.</div>
           {actions}
           <div className="card side-list">
             <div className="section-title">Points</div>
@@ -146,20 +138,28 @@ export function RecordPage() {
           </div>
         </aside>
       ) : (
-        <div className="record-bottom">
-          <Tally s={summary} />
-          {actions}
-          {sheet}
-        </div>
+        <>
+          <div className="record-bottom">
+            <Tally s={summary} />
+            {actions}
+          </div>
+          <section className={`record-log${logOpen ? ' open' : ''}`} aria-label="Logged points">
+            <button type="button" className="log-head" onClick={() => setLogOpen((v) => !v)} aria-expanded={logOpen}>
+              <ListIcon />
+              <span className="grow">Log · {points.length} {points.length === 1 ? 'point' : 'points'}</span>
+              <span className="chev" aria-hidden="true">{logOpen ? '▾' : '▴'}</span>
+            </button>
+            {logOpen && (
+              <div className="log-body">
+                <PointList points={points} onDelete={(pid) => store.deletePoint(pid)} />
+              </div>
+            )}
+          </section>
+        </>
       )}
 
       <Toast toast={toast} onDismiss={dismissToast} />
 
-      {showList && (
-        <Modal title={`Points (${points.length})`} onClose={() => setShowList(false)}>
-          <PointList points={points} onDelete={(pid) => store.deletePoint(pid)} />
-        </Modal>
-      )}
       {showDetails && (
         <SessionDetails
           session={session}

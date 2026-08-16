@@ -17,11 +17,23 @@ import type { Point } from '../domain/types'
 
 /** Extra headroom above the net line so the net band is visible (presentational only). */
 const NET_BAND = 1.5
+/**
+ * Drawn side margin beyond the doubles sideline. The data model keeps 6 ft (VIEW); drawing only 3 ft
+ * makes the court itself ~19% larger on a phone. Taps land inside the drawn area; older points further
+ * out are pinned to the drawn edge.
+ */
+const DRAW_SIDE_MARGIN = 3
+export const DRAW_MIN_X = -(COURT.doublesHalfWidth + DRAW_SIDE_MARGIN)
+export const DRAW_WIDTH = 2 * (COURT.doublesHalfWidth + DRAW_SIDE_MARGIN)
+const DRAW_MAX_X = DRAW_MIN_X + DRAW_WIDTH
 const VB_MIN_Y = VIEW.minY - NET_BAND
 const VB_HEIGHT = VIEW.height + NET_BAND
-const VIEWBOX = `${VIEW.minX} ${VB_MIN_Y} ${VIEW.width} ${VB_HEIGHT}`
+const VIEWBOX = `${DRAW_MIN_X} ${VB_MIN_Y} ${DRAW_WIDTH} ${VB_HEIGHT}`
+/** CSS aspect ratio of the drawn box (keep in sync with .court-svg). */
+export const COURT_ASPECT = `${DRAW_WIDTH} / ${VB_HEIGHT}`
 /** Visual pivot for the 180° flip: the center of the drawn box (any pivot yields correct taps via the CTM inverse). */
-const PIVOT = { x: VIEW.minX + VIEW.width / 2, y: VB_MIN_Y + VB_HEIGHT / 2 }
+const PIVOT = { x: DRAW_MIN_X + DRAW_WIDTH / 2, y: VB_MIN_Y + VB_HEIGHT / 2 }
+const drawX = (x: number) => Math.min(DRAW_MAX_X - 0.8, Math.max(DRAW_MIN_X + 0.8, x))
 
 /** A mouse press that travels further than this before release is a drag, not a tap. */
 const DRAG_PX = 12
@@ -29,8 +41,8 @@ const DRAG_PX = 12
 export interface CourtProps {
   /** Rotate 180° so the parent taps what they see when she plays the far end. */
   flipped?: boolean
-  /** Receives coordinates in feet, in the player's frame (already clamped to the court area). */
-  onTap?: (x: number, y: number) => void
+  /** Receives coordinates in feet, in the player's frame (already clamped to the court area), plus where on screen the tap landed. */
+  onTap?: (x: number, y: number, at: { clientX: number; clientY: number }) => void
   /** Ignore input (e.g. while the shot sheet is open). */
   disabled?: boolean
   points?: Point[]
@@ -71,7 +83,7 @@ export function Court({ flipped = false, onTap, disabled = false, points, pendin
     down.current = null
     if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) > DRAG_PX) return
     const c = toCourt(e.clientX, e.clientY)
-    if (c) onTap?.(c.x, c.y)
+    if (c) onTap?.(c.x, c.y, { clientX: e.clientX, clientY: e.clientY })
   }
 
   const flipTransform = flipped ? `rotate(180 ${PIVOT.x} ${PIVOT.y})` : undefined
@@ -103,7 +115,7 @@ export function Court({ flipped = false, onTap, disabled = false, points, pendin
     >
       <g ref={gRef} transform={flipTransform}>
         {/* surround + court */}
-        <rect x={VIEW.minX} y={VIEW.minY - NET_BAND} width={VIEW.width} height={VIEW.height + NET_BAND} fill="var(--surround)" />
+        <rect x={DRAW_MIN_X} y={VIEW.minY - NET_BAND} width={DRAW_WIDTH} height={VIEW.height + NET_BAND} fill="var(--surround)" />
         <rect x={-COURT.doublesHalfWidth} y={0} width={2 * COURT.doublesHalfWidth} height={COURT.halfLength} fill="var(--court)" />
 
         {/* zone grid (subtle) */}
@@ -234,7 +246,8 @@ function heatColor(t: number): string {
   return `rgb(${c[0]}, ${c[1]}, ${c[2]})`
 }
 
-function Marker({ p, flipped }: { p: Point; flipped: boolean }) {
+function Marker({ p: pt, flipped }: { p: Point; flipped: boolean }) {
+  const p = { ...pt, x: drawX(pt.x) }
   const color = p.stroke === 'fh' ? 'var(--fh)' : 'var(--bh)'
   const ink = p.stroke === 'fh' ? '#3a2a00' : '#ffffff'
   const r = 1.25

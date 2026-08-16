@@ -548,7 +548,7 @@ textarea.input {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2px 8px;
+  padding: 2px 2px;
   container-type: size;
 }
 .court-svg {
@@ -557,7 +557,7 @@ textarea.input {
   max-width: 100%;
   max-height: 100%;
   height: auto;
-  aspect-ratio: 48 / 52.5;
+  aspect-ratio: 42 / 52.5;
   border-radius: 10px;
   touch-action: manipulation;
   user-select: none;
@@ -566,7 +566,7 @@ textarea.input {
 }
 @supports (width: 1cqh) {
   .record-court .court-svg {
-    width: min(100%, calc(100cqh * 48 / 52.5));
+    width: min(100%, calc(100cqh * 42 / 52.5));
   }
 }
 .court-svg.interactive {
@@ -585,11 +585,18 @@ textarea.input {
 .tally {
   display: flex;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   font-size: 13px;
   font-weight: 700;
   color: var(--muted);
+  white-space: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px 0;
+}
+.tally::-webkit-scrollbar {
+  display: none;
 }
 .tally .total {
   font-size: 15px;
@@ -608,11 +615,53 @@ textarea.input {
 }
 .record-actions {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr;
+  grid-template-columns: 1.4fr 1fr;
   gap: 8px;
 }
 .record-actions .btn {
   min-height: 50px;
+}
+
+/* bottom log (mobile) */
+.record-log {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.record-log.open {
+  height: clamp(96px, 24dvh, 220px);
+}
+.log-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: left;
+}
+.log-head svg {
+  width: 18px;
+  height: 18px;
+}
+.log-head .chev {
+  font-size: 12px;
+}
+.log-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 8px 6px;
+}
+.log-body .point-list li {
+  padding: 4px 0;
 }
 .record-hint {
   font-size: 14px;
@@ -621,78 +670,112 @@ textarea.input {
   padding: 6px 0 2px;
 }
 
-/* ---------- shot sheet ---------- */
-.sheet-backdrop {
-  position: fixed;
+/* ---------- shot popover (anchored at the tap) ---------- */
+.record-court {
+  position: relative;
+}
+.pop-backdrop {
+  position: absolute;
   inset: 0;
-  background: rgba(10, 14, 20, 0.35);
-  z-index: 40;
+  z-index: 30;
+  background: transparent;
 }
-.sheet {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 41;
+.shot-pop {
+  position: absolute;
+  z-index: 31;
+  width: 268px;
   background: var(--surface);
-  border-radius: 18px 18px 0 0;
-  padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
-  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.25);
-  animation: slide-up 0.18s ease-out;
-  max-width: 560px;
-  margin: 0 auto;
+  border-radius: 14px;
+  padding: 6px 8px 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28), 0 0 0 1px var(--line);
+  animation: pop-in 0.12s ease-out;
 }
-@keyframes slide-up {
+@keyframes pop-in {
   from {
-    transform: translateY(24px);
-    opacity: 0.6;
+    transform: scale(0.94);
+    opacity: 0.5;
   }
   to {
     transform: none;
     opacity: 1;
   }
 }
-.sheet-inline {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 12px;
-}
-.sheet-head {
+.pop-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 36px;
+  gap: 6px;
+  min-height: 30px;
 }
-.sheet-head .where {
+.pop-head .where {
   flex: 1;
   min-width: 0;
   font-weight: 800;
-  font-size: 17px;
+  font-size: 13px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.sheet-sub {
-  display: flex;
+.forced-toggle {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--surface);
+}
+.forced-toggle.on {
+  background: var(--text);
+  border-color: var(--text);
+  color: #fff;
+}
+.pop-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  margin-top: 2px;
+  justify-content: center;
+  color: var(--muted);
 }
-.sheet-sub .segmented button {
-  min-height: 34px;
-  padding: 0 12px;
-  font-size: 14px;
+.pop-close svg {
+  width: 18px;
+  height: 18px;
 }
-.shot-grid {
+.pop-grid {
   display: grid;
-  grid-template-columns: 52px repeat(3, 1fr);
-  gap: 8px;
-  margin-top: 8px;
+  grid-template-columns: 42px repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 4px;
 }
+.pop-btn {
+  min-height: 54px;
+  border-radius: 10px;
+  border: 2px solid var(--line);
+  background: var(--surface);
+  font-size: 16px;
+  font-weight: 700;
+}
+.pop-btn.fh:active {
+  background: var(--fh-soft);
+  border-color: var(--fh);
+}
+.pop-btn.bh:active {
+  background: var(--bh-soft);
+  border-color: var(--bh);
+}
+@media (hover: hover) {
+  .pop-btn.fh:hover {
+    background: var(--fh-soft);
+    border-color: var(--fh);
+  }
+  .pop-btn.bh:hover {
+    background: var(--bh-soft);
+    border-color: var(--bh);
+  }
+}
+
 .shot-row-label {
   display: flex;
   align-items: center;
@@ -709,38 +792,6 @@ textarea.input {
 .shot-row-label.bh {
   background: var(--bh);
   color: var(--bh-ink);
-}
-.shot-btn {
-  min-height: 62px;
-  border-radius: 12px;
-  border: 2px solid var(--line);
-  background: var(--surface);
-  font-size: 18px;
-  font-weight: 700;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-}
-.shot-btn small {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted);
-}
-.shot-btn.fh {
-  background: var(--fh-soft);
-  border-color: var(--fh);
-}
-.shot-btn.bh {
-  background: var(--bh-soft);
-  border-color: #6b7280;
-}
-.shot-btn:active {
-  transform: scale(0.97);
-}
-.shot-cancel {
-  margin-top: 10px;
 }
 
 /* ---------- toast ---------- */
@@ -1070,6 +1121,9 @@ textarea.input {
   }
   .record-bottom {
     padding: 0;
+  }
+  .record-log {
+    display: none;
   }
   .record-actions {
     grid-template-columns: 1fr 1fr;
