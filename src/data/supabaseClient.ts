@@ -23,6 +23,23 @@ export function createSupabase(): SupabaseClient | null {
 
 const PAGE = 1000
 
+/** Columns added after 0001; dropped from the payload if the project hasn't applied 0002 yet. */
+const OPTIONAL_SESSION_COLUMNS = ['opponent', 'venue'] as const
+const missingColumns = new Set<string>()
+
+function stripMissing(s: Session): Record<string, unknown> {
+  if (!missingColumns.size) return s as unknown as Record<string, unknown>
+  const out: Record<string, unknown> = { ...s }
+  for (const c of missingColumns) delete out[c]
+  return out
+}
+
+/** PostgREST reports an unknown column as PGRST204 (schema cache) or Postgres 42703. */
+function missingColumnFrom(e: { message: string; code?: string }): string | null {
+  if (e.code !== 'PGRST204' && e.code !== '42703' && !/column|schema cache/i.test(e.message)) return null
+  return OPTIONAL_SESSION_COLUMNS.find((c) => new RegExp(`\\b${c}\\b`, 'i').test(e.message)) ?? null
+}
+
 /** Canonical ISO (…Z, ms precision) so string comparison of timestamps is meaningful. */
 export function toIso(v: unknown): string {
   return new Date(String(v)).toISOString()
@@ -33,6 +50,8 @@ function normalizeSession(r: Record<string, unknown>): Session {
     id: String(r.id),
     user_id: r.user_id === null || r.user_id === undefined ? null : String(r.user_id),
     title: String(r.title ?? ''),
+    opponent: String(r.opponent ?? ''),
+    venue: String(r.venue ?? ''),
     date: String(r.date ?? '').slice(0, 10),
     kind: r.kind === 'match' ? 'match' : 'practice',
     notes: String(r.notes ?? ''),
@@ -82,8 +101,16 @@ export function createSupabaseRemote(client: SupabaseClient): Remote {
 
   return {
     async upsertSessions(rows) {
-      const { error, status } = await client.from('sessions').upsert(rows, { onConflict: 'id' })
-      return { error: asRemoteError(error, status) }
+      // retry once per newly-discovered missing column so an un-migrated project still syncs everything else
+      for (let attempt = 0; attempt <= OPTIONAL_SESSION_COLUMNS.length; attempt++) {
+        const { error, status } = await client.from('sessions').upsert(rows.map(stripMissing), { onConflict: 'id' })
+        if (!error) return { error: null }
+        const missing = missingColumnFrom(error)
+        if (!missing || missingColumns.has(missing)) return { error: asRemoteError(error, status) }
+        missingColumns.add(missing)
+        console.warn(`Supabase: sessions.${missing} column missing — run supabase/migrations/0002_session_fields.sql`)
+      }
+      return { error: null }
     },
     async upsertPoints(rows) {
       const { error, status } = await client.from('points').upsert(rows, { onConflict: 'id' })

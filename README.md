@@ -27,7 +27,12 @@ as a home-screen app, records offline.
    point drawn (Ad side | Middle | Deuce side × Net | Mid-court | Baseline), with stroke / error /
    forced filters, and shows the tiles, "where the ball went" bars, the FH/BH × long/net/wide matrix
    and CSV / JSON export below — no page change. Tap **Court** to go back to recording.
-7. Tap the session title to rename it, set the date/type, add notes, or delete it.
+7. Tap the session name in the header to edit it: **opponent** (one-tap chips for people she has
+   played before), **court / venue** (type it, pick a previous one, or tap **Nearby** to list tennis
+   courts around you from OpenStreetMap), date, type and notes. There is no title to invent — the
+   name is derived (`vs Emma` / `Practice with Coach Dan` / `Match` / `Practice`).
+8. **Settings → Opponents** manages the list: rename (updates every session, renaming onto an
+   existing name merges them) or remove an opponent (the sessions and points are kept).
 
 Tip: install it (iPhone: Share → *Add to Home Screen*; Android/desktop Chrome: *Install app*).
 Installed apps open full-screen and keep local data longer.
@@ -61,8 +66,10 @@ develop against your Supabase project; leave them empty for local-only mode.
 Layout:
 
 ```
-src/domain/   types, court geometry + zones, stats aggregation, analytics (trend/timeline/insights), CSV/JSON export   (pure, tested)
-src/data/     localRepo (persistence + merge), store (state + actions), syncEngine, supabaseClient, auth
+src/domain/   types, court geometry + zones, stats aggregation, analytics (trend/timeline/insights),
+              session labels + opponents/venues, row validation, CSV/JSON export   (pure, tested)
+src/data/     localRepo (persistence + merge), store (state + actions), syncEngine, supabaseClient, auth,
+              places (nearby tennis courts via Overpass/OpenStreetMap)
 src/components/  Court (SVG, tap→feet, flip, markers, heat), ShotSheet, Shell, charts (stacked columns, sparkline, sequence strip, share bars), small bits
 src/pages/    Sessions, Record (court + in-place stats), Dashboard, Settings
 supabase/migrations/0001_init.sql   tables + RLS policies
@@ -80,8 +87,15 @@ is `/tennis-marker/`; routing is hash-based so deep links survive refreshes on P
 The build is fully functional without this; do it when you want phone ↔ desktop sync.
 
 1. **Create a Supabase project** at https://supabase.com/dashboard (free tier is fine).
-2. **Create the tables:** Dashboard → *SQL Editor* → paste `supabase/migrations/0001_init.sql` → Run.
-   (Or with the CLI: `supabase link` then `supabase db push`.)
+2. **Create the tables:** Dashboard → *SQL Editor* → paste `supabase/migrations/0001_init.sql` → Run,
+   then do the same with `supabase/migrations/0002_session_fields.sql` (adds `opponent` and `venue`).
+   (Or with the CLI: `supabase link` then `supabase db push`.) If a migration is missing, the app
+   still syncs everything else — it drops the unknown columns and warns in the console — and picks
+   the fields up automatically once you run it.
+
+   **Location & privacy:** the "Nearby" court lookup sends your coordinates (rounded to ~11 m) to
+   the public OpenStreetMap Overpass API only when you tap the button; nothing about your location
+   is stored.
 3. **Create your user:** *Authentication → Users → Add user* (email + password, "auto confirm").
    Then *Authentication → Sign In / Providers → Email* → turn **off** "Allow new users to sign up".
    The app only has a sign-in form; the same account is used on every device.

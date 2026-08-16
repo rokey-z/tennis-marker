@@ -1,5 +1,6 @@
 import { clampToView, roundFeet } from './court'
 import { isValidIso, YMD_RE } from '../lib/format'
+import { cleanOpponent } from './session'
 import { isErrorType, isSessionKind, isStroke, type Point, type Session } from './types'
 
 const str = (v: unknown): string | null => (typeof v === 'string' && v.length > 0 ? v : null)
@@ -18,6 +19,8 @@ export function sanitizeSession(raw: unknown): Session | null {
     id,
     user_id: str(r.user_id),
     title: typeof r.title === 'string' ? r.title : '',
+    opponent: typeof r.opponent === 'string' ? cleanOpponent(r.opponent) : '',
+    venue: typeof r.venue === 'string' ? cleanOpponent(r.venue) : '',
     date,
     kind: isSessionKind(r.kind) ? r.kind : 'practice',
     notes: typeof r.notes === 'string' ? r.notes : '',

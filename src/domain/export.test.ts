@@ -6,7 +6,9 @@ const t0 = '2026-08-15T10:00:00.000Z'
 const s1: Session = {
   id: 's1',
   user_id: null,
-  title: 'vs "Emma", finals',
+  title: '',
+  opponent: 'Emma "Fast" Lee',
+  venue: 'Riverside Club',
   date: '2026-08-15',
   kind: 'match',
   notes: '',
@@ -42,9 +44,9 @@ describe('csv', () => {
     const csv = pointsToCsv([p1, { ...p1, id: 'p2', deleted_at: t0 }], { s1 })
     const lines = csv.trimEnd().split('\r\n')
     expect(lines).toHaveLength(2)
-    expect(lines[0]).toBe('session_title,session_date,session_kind,point_time,x_ft,y_ft,zone,stroke,error_type,forced')
+    expect(lines[0]).toBe('session,opponent,session_date,session_kind,point_time,x_ft,y_ft,zone,stroke,error_type,forced')
     expect(lines[1]).toBe(
-      `"vs ""Emma"", finals",2026-08-15,match,${t0},10.5,41,Baseline · deuce side,fh,long,unforced`,
+      `"vs Emma ""Fast"" Lee","Emma ""Fast"" Lee",2026-08-15,match,${t0},10.5,41,Baseline · deuce side,fh,long,unforced`,
     )
   })
 })

@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from 'react'
 import { roundFeet } from '../domain/court'
 import { compareSessionDesc } from '../domain/stats'
-import { KIND_LABEL, type NewPoint, type Point, type Session, type SessionKind } from '../domain/types'
+import type { NewPoint, Point, Session } from '../domain/types'
+import { cleanOpponent, opponentFromLegacyTitle, opponentKey } from '../domain/session'
 import { todayLocalISO } from '../lib/format'
 import { sanitizePoint, sanitizeSession } from '../domain/validate'
 import {
@@ -30,8 +31,12 @@ export interface Store {
   subscribe(listener: () => void): () => void
   /** Re-read from storage (another tab wrote). */
   reload(): void
-  createSession(input?: Partial<Pick<Session, 'title' | 'date' | 'kind' | 'notes'>>): Session
-  updateSession(id: string, patch: Partial<Pick<Session, 'title' | 'date' | 'kind' | 'notes'>>): void
+  createSession(input?: Partial<Pick<Session, 'opponent' | 'venue' | 'date' | 'kind' | 'notes'>>): Session
+  updateSession(id: string, patch: Partial<Pick<Session, 'opponent' | 'venue' | 'date' | 'kind' | 'notes'>>): void
+  /** Rename an opponent across every session that uses it (case-insensitive match). Returns sessions changed. */
+  renameOpponent(from: string, to: string): number
+  /** Clear an opponent from its sessions (the sessions themselves are kept). Returns sessions changed. */
+  clearOpponent(name: string): number
   /** Soft-deletes the session and all its live points. */
   deleteSession(id: string): void
   addPoint(input: NewPoint): Point
@@ -65,10 +70,6 @@ export function defaultId(): string {
 
 export { todayLocalISO }
 
-export function defaultSessionTitle(kind: SessionKind, date: string): string {
-  return `${KIND_LABEL[kind]} ${date}`
-}
-
 export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
   const now = deps.now ?? (() => new Date())
   const newId = deps.newId ?? defaultId
@@ -88,6 +89,48 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
 
   const iso = () => now().toISOString()
 
+  function bulkSetOpponent(key: string, opponent: string): number {
+    const t = iso()
+    const sessions = { ...state.sessions }
+    const ids: string[] = []
+    for (const s of Object.values(sessions)) {
+      if (s.deleted_at || opponentKey(s.opponent ?? '') !== key) continue
+      sessions[s.id] = { ...s, opponent, updated_at: t }
+      ids.push(s.id)
+    }
+    if (!ids.length) return 0
+    set(markDirty({ ...state, sessions }, 'sessions', ids))
+    return ids.length
+  }
+
+  /**
+   * One-time upgrade for rows written before opponents existed: a title like "vs Emma — league"
+   * becomes opponent "Emma" (the title is kept, and titles that don't name an opponent are untouched).
+   */
+  function migrateLegacyTitles(input: RepoState): RepoState {
+    const sessions = { ...input.sessions }
+    const ids: string[] = []
+    for (const s of Object.values(sessions)) {
+      if (s.opponent) continue
+      const opponent = opponentFromLegacyTitle(s.title ?? '')
+      if (!opponent) continue
+      sessions[s.id] = { ...s, opponent, updated_at: iso() }
+      ids.push(s.id)
+    }
+    if (!ids.length) return input
+    return markDirty({ ...input, sessions }, 'sessions', ids)
+  }
+
+  const migrated = migrateLegacyTitles(state)
+  if (migrated !== state) {
+    state = migrated
+    try {
+      saveState(storage, state)
+    } catch {
+      /* best effort */
+    }
+  }
+
   const store: Store = {
     getState: () => state,
     subscribe(listener) {
@@ -106,7 +149,9 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
       const s: Session = {
         id: newId(),
         user_id: state.meta.ownerId,
-        title: input.title?.trim() || defaultSessionTitle(kind, date),
+        title: '',
+        opponent: cleanOpponent(input.opponent ?? ''),
+        venue: cleanOpponent(input.venue ?? ''),
         date,
         kind,
         notes: input.notes ?? '',
@@ -121,7 +166,19 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
       const s = state.sessions[id]
       if (!s) return
       const next: Session = { ...s, ...patch, updated_at: iso() }
+      if (patch.opponent !== undefined) next.opponent = cleanOpponent(patch.opponent)
+      if (patch.venue !== undefined) next.venue = cleanOpponent(patch.venue)
       set(markDirty({ ...state, sessions: { ...state.sessions, [id]: next } }, 'sessions', [id]))
+    },
+    renameOpponent(from, to) {
+      const key = opponentKey(from)
+      const name = cleanOpponent(to)
+      if (!key || !name) return 0
+      return bulkSetOpponent(key, name)
+    },
+    clearOpponent(name) {
+      const key = opponentKey(name)
+      return key ? bulkSetOpponent(key, '') : 0
     },
     deleteSession(id) {
       const s = state.sessions[id]

@@ -5,6 +5,7 @@ import { PlusIcon } from '../components/Icons'
 import { Shell } from '../components/Shell'
 import { store, useAppState } from '../data/app'
 import { liveSessions } from '../data/store'
+import { sessionLabel } from '../domain/session'
 import { perSessionCounts } from '../domain/stats'
 import { KIND_LABEL, type SessionKind } from '../domain/types'
 
@@ -44,9 +45,10 @@ export function SessionsPage() {
               <li key={session.id}>
                 <Link to={`/session/${session.id}`} className="session-card">
                   <div className="grow">
-                    <div className="title">{session.title}</div>
+                    <div className="title">{sessionLabel(session)}</div>
                     <div className="sub">
                       {KIND_LABEL[session.kind]} · {formatDate(session.date)}
+                      {session.venue ? ` · ${session.venue}` : ''}
                       {session.notes ? ` · ${session.notes.slice(0, 40)}${session.notes.length > 40 ? '…' : ''}` : ''}
                     </div>
                     {count > 0 && (

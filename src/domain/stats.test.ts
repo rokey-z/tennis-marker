@@ -8,7 +8,9 @@ function session(over: Partial<Session> = {}): Session {
   return {
     id: over.id ?? 's1',
     user_id: null,
-    title: 'Practice',
+    title: '',
+    opponent: '',
+    venue: '',
     date: '2026-08-15',
     kind: 'practice',
     notes: '',

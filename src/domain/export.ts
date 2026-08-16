@@ -1,4 +1,5 @@
 import { describeZone, zoneFor } from './court'
+import { sessionLabel } from './session'
 import type { Point, Session } from './types'
 
 export function csvEscape(value: unknown): string {
@@ -7,7 +8,8 @@ export function csvEscape(value: unknown): string {
 }
 
 export const CSV_HEADER = [
-  'session_title',
+  'session',
+  'opponent',
   'session_date',
   'session_kind',
   'point_time',
@@ -27,7 +29,8 @@ export function pointsToCsv(points: Iterable<Point>, sessionsById: Record<string
     const s = sessionsById[p.session_id]
     lines.push(
       [
-        csvEscape(s?.title ?? ''),
+        csvEscape(s ? sessionLabel(s) : ''),
+        csvEscape(s?.opponent ?? ''),
         csvEscape(s?.date ?? ''),
         csvEscape(s?.kind ?? ''),
         csvEscape(p.created_at),

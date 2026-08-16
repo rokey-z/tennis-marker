@@ -1,10 +1,11 @@
-import { useRef, useState, type FormEvent } from 'react'
-import { downloadText, formatTime } from '../lib/format'
+import { useMemo, useRef, useState, type FormEvent } from 'react'
+import { downloadText, formatDate, formatTime } from '../lib/format'
 import { DownloadIcon } from '../components/Icons'
 import { Shell } from '../components/Shell'
 import { auth, isCloudConfigured, store, sync, useAppState, useAuthUser, useSyncStatus } from '../data/app'
 import { pendingCount } from '../data/store'
 import { parseExportBundle, safeFilename, toExportBundle } from '../domain/export'
+import { cleanOpponent, opponentRows, type OpponentRow } from '../domain/session'
 
 declare const __APP_VERSION__: string
 
@@ -135,6 +136,8 @@ export function SettingsPage() {
           )}
         </section>
 
+        <Opponents />
+
         <section className="card">
           <div className="section-title">Data</div>
           <div className="row wrap">
@@ -210,6 +213,90 @@ export function SettingsPage() {
         </p>
       </div>
     </Shell>
+  )
+}
+
+
+function Opponents() {
+  const state = useAppState()
+  const rows = useMemo(() => opponentRows(Object.values(state.sessions)), [state.sessions])
+  const [editing, setEditing] = useState<string | null>(null)
+  const [draft, setDraft] = useState('')
+  const [note, setNote] = useState<string | null>(null)
+
+  const startEdit = (o: OpponentRow) => {
+    setEditing(o.key)
+    setDraft(o.name)
+    setNote(null)
+  }
+  const saveEdit = (o: OpponentRow) => {
+    const name = cleanOpponent(draft)
+    setEditing(null)
+    if (!name || name === o.name) return
+    const merged = rows.some((r) => r.key !== o.key && r.name.toLowerCase() === name.toLowerCase())
+    const n = store.renameOpponent(o.name, name)
+    setNote(merged ? `Merged into ${name} (${n} session${n === 1 ? '' : 's'}).` : `Renamed to ${name} (${n} session${n === 1 ? '' : 's'}).`)
+  }
+  const remove = (o: OpponentRow) => {
+    if (!confirm(`Remove "${o.name}" from ${o.sessions} session${o.sessions === 1 ? '' : 's'}? The sessions and points are kept.`)) return
+    const n = store.clearOpponent(o.name)
+    setNote(`Cleared ${o.name} from ${n} session${n === 1 ? '' : 's'}.`)
+  }
+
+  return (
+    <section className="card">
+      <div className="section-title">Opponents</div>
+      {rows.length === 0 ? (
+        <p className="muted">No opponents yet — add one when you start a match, or in the session sheet.</p>
+      ) : (
+        <ul className="opponent-list">
+          {rows.map((o) => (
+            <li key={o.key}>
+              {editing === o.key ? (
+                <>
+                  <input
+                    className="input grow"
+                    value={draft}
+                    autoFocus
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') saveEdit(o)
+                      if (e.key === 'Escape') setEditing(null)
+                    }}
+                  />
+                  <button type="button" className="btn sm primary" onClick={() => saveEdit(o)}>
+                    Save
+                  </button>
+                  <button type="button" className="btn sm ghost" onClick={() => setEditing(null)}>
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="grow">
+                    <div className="o-name">{o.name}</div>
+                    <div className="o-sub muted">
+                      {o.sessions} session{o.sessions === 1 ? '' : 's'}
+                      {o.matches > 0 ? ` · ${o.matches} match${o.matches === 1 ? '' : 'es'}` : ''} · last {formatDate(o.lastDate)}
+                    </div>
+                  </div>
+                  <button type="button" className="btn sm ghost" onClick={() => startEdit(o)}>
+                    Rename
+                  </button>
+                  <button type="button" className="btn sm danger" onClick={() => remove(o)}>
+                    Remove
+                  </button>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      {note && <div className="notice ok" style={{ marginTop: 10 }}>{note}</div>}
+      <p className="kbd-hint" style={{ marginTop: 10 }}>
+        Renaming updates every session with that opponent; renaming onto an existing name merges them.
+      </p>
+    </section>
   )
 }
 

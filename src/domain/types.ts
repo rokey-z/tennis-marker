@@ -19,7 +19,12 @@ export const isSessionKind = (v: unknown): v is SessionKind => v === 'match' || 
 export interface Session {
   id: string
   user_id: string | null
+  /** Legacy free-text name from older versions; the UI derives the label instead (see domain/session.ts). */
   title: string
+  /** Who she played (optional); '' when unknown. */
+  opponent: string
+  /** Where it was played (club / court name, optional). */
+  venue: string
   date: string
   kind: SessionKind
   notes: string

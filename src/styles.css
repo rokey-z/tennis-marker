@@ -1707,3 +1707,73 @@ span.seq-dot {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
+
+/* ---------- opponents ---------- */
+.opponent-picker .opponent-chips {
+  margin-top: 8px;
+}
+.opponent-picker .chip.clear {
+  color: var(--danger);
+  border-style: dashed;
+}
+.opponent-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.opponent-list li:last-child {
+  border-bottom: 0;
+}
+.opponent-list .o-name {
+  font-weight: 700;
+}
+.opponent-list .o-sub {
+  font-size: 12px;
+}
+
+/* ---------- venue picker ---------- */
+.venue-picker .venue-near {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.venue-picker .venue-chips,
+.venue-picker .venue-note {
+  margin-top: 8px;
+}
+.venue-results {
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.venue-results ul {
+  max-height: 210px;
+  overflow: auto;
+}
+.venue-results li + li {
+  border-top: 1px solid var(--line);
+}
+.venue-hit {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  min-height: 44px;
+}
+.venue-hit:active {
+  background: var(--surface-2);
+}
+.venue-hit .dist {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.venue-results .kbd-hint,
+.venue-results .muted {
+  padding: 8px 12px;
+  margin: 0;
+}

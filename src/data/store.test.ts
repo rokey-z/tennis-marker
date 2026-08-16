@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { STORAGE_KEY, memoryStorage } from './localRepo'
-import { allLivePoints, createStore, defaultSessionTitle, livePointsForSession, liveSessions, pendingCount, todayLocalISO } from './store'
+import { allLivePoints, createStore, livePointsForSession, liveSessions, pendingCount, todayLocalISO } from './store'
+import { opponentRows, sessionLabel } from '../domain/session'
 
 function clock(start = Date.UTC(2026, 7, 15, 10, 0, 0)) {
   let t = start
@@ -16,13 +17,15 @@ describe('store', () => {
     const storage = memoryStorage()
     const store = createStore(storage, { ...clock(), newId: ids() })
     const s = store.createSession()
-    expect(s.title).toBe(defaultSessionTitle('practice', s.date))
+    expect(sessionLabel(s)).toBe('Practice')
+    expect(s.title).toBe('')
     expect(s.kind).toBe('practice')
     expect(s.user_id).toBeNull()
     expect(store.getState().dirty.sessions).toEqual([s.id])
     expect(JSON.parse(storage.getItem(STORAGE_KEY)!).sessions[s.id].title).toBe(s.title)
-    const m = store.createSession({ title: '  vs Emma ', kind: 'match', date: '2026-08-01' })
-    expect(m.title).toBe('vs Emma')
+    const m = store.createSession({ opponent: '  Emma  Stone ', kind: 'match', date: '2026-08-01' })
+    expect(m.opponent).toBe('Emma Stone')
+    expect(sessionLabel(m)).toBe('vs Emma Stone')
     expect(liveSessions(store.getState()).map((x) => x.id)).toEqual([s.id, m.id])
   })
 
@@ -68,9 +71,9 @@ describe('store', () => {
     const s = store.createSession()
     store.clearDirty('sessions', [[s.id, s.updated_at]])
     expect(pendingCount(store.getState())).toBe(0)
-    store.updateSession(s.id, { title: 'Renamed', kind: 'match' })
+    store.updateSession(s.id, { opponent: 'Renamed', kind: 'match' })
     const cur = store.getState().sessions[s.id]
-    expect(cur.title).toBe('Renamed')
+    expect(cur.opponent).toBe('Renamed')
     expect(cur.updated_at > s.updated_at).toBe(true)
     expect(store.getState().dirty.sessions).toEqual([s.id])
   })
@@ -102,13 +105,57 @@ describe('store', () => {
     const a = createStore(storage, { ...clock(), newId: ids() })
     a.setOwner('u1')
     const b = createStore(storage, { ...clock(), newId: () => 'other' })
-    b.createSession({ title: 'From tab B' })
+    b.createSession({ opponent: 'From tab B' })
     expect(liveSessions(a.getState())).toHaveLength(0)
     a.reload()
-    expect(liveSessions(a.getState()).map((s) => s.title)).toEqual(['From tab B'])
+    expect(liveSessions(a.getState()).map((s) => s.opponent)).toEqual(['From tab B'])
     a.clearAll()
     expect(liveSessions(a.getState())).toHaveLength(0)
     expect(a.getState().meta.ownerId).toBe('u1')
+  })
+
+  it('migrates legacy "vs …" titles into an opponent on load, once', () => {
+    const storage = memoryStorage()
+    const seed = createStore(storage, { ...clock(), newId: ids() })
+    const a = seed.createSession({ kind: 'match' })
+    const b = seed.createSession()
+    // simulate rows written by the old version (title typed, no opponent)
+    const raw = JSON.parse(storage.getItem(STORAGE_KEY)!)
+    raw.sessions[a.id] = { ...raw.sessions[a.id], title: 'vs Emma — club ladder', opponent: '' }
+    raw.sessions[b.id] = { ...raw.sessions[b.id], title: 'Practice — groundstrokes', opponent: '' }
+    raw.dirty = { sessions: [], points: [] }
+    storage.setItem(STORAGE_KEY, JSON.stringify(raw))
+
+    const store = createStore(storage, { ...clock(), newId: ids() })
+    expect(store.getState().sessions[a.id].opponent).toBe('Emma')
+    expect(sessionLabel(store.getState().sessions[a.id])).toBe('vs Emma')
+    // a description is never turned into an opponent, and keeps showing as-is
+    expect(store.getState().sessions[b.id].opponent).toBe('')
+    expect(sessionLabel(store.getState().sessions[b.id])).toBe('Practice — groundstrokes')
+    expect(store.getState().dirty.sessions).toEqual([a.id])
+
+    // second load has nothing left to migrate
+    const again = createStore(storage, { ...clock(), newId: ids() })
+    expect(again.getState().dirty.sessions).toEqual([a.id])
+  })
+
+  it('renames and clears opponents across sessions', () => {
+    const store = createStore(memoryStorage(), { ...clock(), newId: ids() })
+    const a = store.createSession({ kind: 'match', opponent: 'Emma' })
+    const b = store.createSession({ opponent: 'emma  ' })
+    const c = store.createSession({ kind: 'match', opponent: 'Mia' })
+    expect(store.renameOpponent('EMMA', 'Emma Stone')).toBe(2)
+    expect(store.getState().sessions[a.id].opponent).toBe('Emma Stone')
+    expect(store.getState().sessions[b.id].opponent).toBe('Emma Stone')
+    expect(store.getState().sessions[c.id].opponent).toBe('Mia')
+    // merge into an existing name
+    expect(store.renameOpponent('Mia', 'Emma Stone')).toBe(1)
+    expect(opponentRows(Object.values(store.getState().sessions)).map((r) => r.name)).toEqual(['Emma Stone'])
+    // clearing keeps the sessions themselves
+    expect(store.clearOpponent('Emma Stone')).toBe(3)
+    expect(liveSessions(store.getState())).toHaveLength(3)
+    expect(opponentRows(Object.values(store.getState().sessions))).toEqual([])
+    expect(store.renameOpponent('nobody', 'x')).toBe(0)
   })
 
   it('formats local dates', () => {

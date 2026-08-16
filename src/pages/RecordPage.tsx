@@ -10,6 +10,9 @@ import { ShotPopover } from '../components/ShotPopover'
 import { store, useAppState } from '../data/app'
 import { livePointsForSession } from '../data/store'
 import { describeZone, zoneFor } from '../domain/court'
+import { opponentRows, sessionLabel, venueRows } from '../domain/session'
+import { OpponentPicker } from '../components/OpponentPicker'
+import { VenuePicker } from '../components/VenuePicker'
 import { filterPoints, summarize } from '../domain/stats'
 import { pointsToCsv, safeFilename, toExportBundle } from '../domain/export'
 import { downloadText } from '../lib/format'
@@ -124,9 +127,10 @@ export function RecordPage() {
           <BackIcon />
         </Link>
         <button type="button" className="title-btn" onClick={() => setShowDetails(true)} title="Edit session">
-          <strong>{session.title}</strong>
+          <strong>{sessionLabel(session)}</strong>
           <small>
             {KIND_LABEL[session.kind]} · {formatDate(session.date)}
+            {!session.opponent && session.kind === 'match' ? ' · add opponent' : ''}
           </small>
         </button>
         <button type="button" className={`flip-btn${flipped ? ' on' : ''}`} onClick={() => setFlipped((f) => !f)} aria-pressed={flipped} title="Flip ends (she is on the far side)">
@@ -212,23 +216,25 @@ export function RecordPage() {
 }
 
 function SessionDetails({ session, onClose, onDeleted }: { session: Session; onClose: () => void; onDeleted: () => void }) {
-  const [title, setTitle] = useState(session.title)
+  const state = useAppState()
+  const [opponent, setOpponent] = useState(session.opponent)
+  const [venue, setVenue] = useState(session.venue)
   const [date, setDate] = useState(session.date)
   const [kind, setKind] = useState(session.kind)
   const [notes, setNotes] = useState(session.notes)
   const [confirm, setConfirm] = useState(false)
+  const known = useMemo(() => opponentRows(Object.values(state.sessions)), [state.sessions])
+  const venues = useMemo(() => venueRows(Object.values(state.sessions)), [state.sessions])
 
   const save = () => {
-    store.updateSession(session.id, { title: title.trim() || session.title, date, kind, notes })
+    store.updateSession(session.id, { opponent, venue, date, kind, notes })
     onClose()
   }
 
   return (
-    <Modal title="Session" onClose={onClose}>
-      <label className="field">
-        <span>Title</span>
-        <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. vs Emma — club league" />
-      </label>
+    <Modal title={sessionLabel({ kind, opponent, title: session.title })} onClose={onClose}>
+      <OpponentPicker value={opponent} onChange={setOpponent} kind={kind} known={known} />
+      <VenuePicker value={venue} onChange={setVenue} known={venues} />
       <div className="row">
         <label className="field grow">
           <span>Date</span>
@@ -244,7 +250,7 @@ function SessionDetails({ session, onClose, onDeleted }: { session: Session; onC
       </div>
       <label className="field">
         <span>Notes</span>
-        <textarea className="input" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Opponent, conditions, what to work on…" />
+        <textarea className="input" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Conditions, what to work on…" />
       </label>
       <div className="row">
         <button type="button" className="btn primary grow" onClick={save}>

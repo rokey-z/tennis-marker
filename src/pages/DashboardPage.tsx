@@ -25,6 +25,7 @@ import {
   type SessionStat,
 } from '../domain/analytics'
 import { describeZone, zoneFromId } from '../domain/court'
+import { sessionLabel } from '../domain/session'
 import { pct, summarize } from '../domain/stats'
 import { KIND_LABEL, STROKE_LABEL, STROKE_SHORT, type SessionKind, type Stroke } from '../domain/types'
 import { formatDate, formatMinutes, parseYMD, shortDate, weekday } from '../lib/format'
@@ -99,7 +100,7 @@ export function DashboardPage() {
       stats.map((s) => ({
         key: s.session.id,
         label: shortDate(s.session.date),
-        title: s.session.title,
+        title: sessionLabel(s.session),
         subtitle: `${formatDate(s.session.date)} · ${KIND_LABEL[s.session.kind]}${s.durationMin ? ` · ${formatMinutes(s.durationMin)}` : ''}`,
       })),
     [stats],
@@ -245,7 +246,7 @@ export function DashboardPage() {
                         <tr key={s.session.id} className={selected?.session.id === s.session.id ? 'sel' : ''} onClick={() => selectSession(s.session.id)}>
                           <td>{formatDate(s.session.date)}</td>
                           <td>
-                            {s.session.title} <span className="muted">· {KIND_LABEL[s.session.kind]}</span>
+                            {sessionLabel(s.session)} <span className="muted">· {KIND_LABEL[s.session.kind]}</span>
                           </td>
                           <td>{s.total}</td>
                           <td>{s.fh}</td>
@@ -282,7 +283,7 @@ export function DashboardPage() {
                 <select className="input" value={selected?.session.id ?? ''} onChange={(e) => selectSession(e.target.value)}>
                   {newestFirst.map((s) => (
                     <option key={s.session.id} value={s.session.id}>
-                      {s.session.title} · {formatDate(s.session.date)} · {s.total} errors
+                      {sessionLabel(s.session)} · {formatDate(s.session.date)} · {s.total} errors
                     </option>
                   ))}
                 </select>
@@ -430,7 +431,7 @@ export function DashboardPage() {
                       <div className="tl-body">
                         <div className="row wrap" style={{ gap: 6 }}>
                           <Link to={`/session/${s.session.id}`} className="tl-title">
-                            {s.session.title}
+                            {sessionLabel(s.session)}
                           </Link>
                           <span className="pill unforced">{KIND_LABEL[s.session.kind]}</span>
                           {s.durationMin > 0 && <span className="muted">· {formatMinutes(s.durationMin)}</span>}
