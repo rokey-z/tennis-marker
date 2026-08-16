@@ -98,12 +98,10 @@ export function ShotPopover({ anchor, containerRef, where, forced, onForcedChang
 function PopRow({ stroke, onPick }: { stroke: Stroke; onPick: (s: Stroke, e: ErrorType) => void }) {
   return (
     <>
-      <div className={`shot-row-label ${stroke}`} title={STROKE_LABEL[stroke]}>
-        {STROKE_SHORT[stroke]}
-      </div>
       {ERROR_TYPES.map((err) => (
         <button key={err} type="button" className={`pop-btn ${stroke}`} onClick={() => onPick(stroke, err)} aria-label={`${STROKE_LABEL[stroke]} ${ERROR_LABEL[err]}`}>
-          {ERROR_LABEL[err]}
+          <span className={`pop-tag ${stroke}`}>{STROKE_SHORT[stroke]}</span>
+          <span className="pop-err">{ERROR_LABEL[err]}</span>
         </button>
       ))}
     </>
