@@ -17,12 +17,12 @@ import { ERROR_LETTER, markLabel } from './marks'
 /** Extra headroom above the net line so the net band is visible (presentational only). */
 const NET_BAND = 1.5
 /**
- * Drawn margins now match the recordable area (VIEW): 6 ft beside the lines and 12 ft behind the
- * baseline. The court sits smaller inside a full band of green, and every position that can be
- * stored can also be tapped and seen.
+ * Drawn margins: half of what the data model keeps (6 ft beside the lines, 12 ft behind the
+ * baseline), so the court is large on a phone while a band of green stays visible around it.
+ * Points recorded further out than this are pinned to the drawn edge.
  */
-const DRAW_SIDE_MARGIN = COURT.sideMargin
-const DRAW_BACK_MARGIN = COURT.backMargin
+const DRAW_SIDE_MARGIN = COURT.sideMargin / 2
+const DRAW_BACK_MARGIN = 9
 export const DRAW_MIN_X = -(COURT.doublesHalfWidth + DRAW_SIDE_MARGIN)
 export const DRAW_WIDTH = 2 * (COURT.doublesHalfWidth + DRAW_SIDE_MARGIN)
 const DRAW_MAX_X = DRAW_MIN_X + DRAW_WIDTH

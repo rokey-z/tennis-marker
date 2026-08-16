@@ -28,10 +28,11 @@ export const FlipIcon = () => (
     <path d="M21 13v2a4 4 0 0 1-4 4H3" />
   </svg>
 )
+/** Curved arrow doubling back to the left — the usual "undo that" gesture. */
 export const UndoIcon = () => (
   <svg {...base}>
-    <path d="M3 7v6h6" />
-    <path d="M3.5 13A9 9 0 1 0 6 5.3L3 8" />
+    <path d="M9 14 4 9l5-5" />
+    <path d="M4 9h10a6 6 0 0 1 0 12h-3" />
   </svg>
 )
 export const ListIcon = () => (
