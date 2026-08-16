@@ -764,7 +764,7 @@ textarea.input {
 .shot-pop {
   position: absolute;
   z-index: 31;
-  width: 268px;
+  width: 236px;
   background: var(--surface);
   border-radius: 14px;
   padding: 6px 8px 8px;
@@ -826,23 +826,27 @@ textarea.input {
 }
 .pop-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 6px;
   margin-top: 4px;
 }
 .pop-btn {
-  min-height: 56px;
+  min-height: 50px;
   border-radius: 10px;
   border: 2px solid var(--line);
   background: var(--surface);
   font-size: 16px;
   font-weight: 700;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 2px;
-  padding: 4px 2px;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 4px 10px;
+}
+.pop-btn.fh {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
 }
 .pop-btn.fh {
   border-color: #f2cf7a;

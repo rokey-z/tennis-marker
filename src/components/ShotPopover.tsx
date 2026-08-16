@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
-import { ERROR_LABEL, ERROR_TYPES, STROKE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type Stroke } from '../domain/types'
+import { ERROR_LABEL, ERROR_TYPES, STROKE_LABEL, STROKE_SHORT, type ErrorType, type Stroke } from '../domain/types'
 import { CloseIcon } from './Icons'
 
 export interface ShotPopoverProps {
@@ -85,9 +85,10 @@ export function ShotPopover({ anchor, containerRef, where, forced, onForcedChang
             <CloseIcon />
           </button>
         </div>
+        {/* BH column on the left, FH on the right — like the court for a right-hander; rows = Long / Net / Wide */}
         <div className="pop-grid">
-          {STROKES.map((stroke) => (
-            <PopRow key={stroke} stroke={stroke} onPick={onPick} />
+          {ERROR_TYPES.map((err) => (
+            <PopRowPair key={err} err={err} onPick={onPick} />
           ))}
         </div>
       </div>
@@ -95,11 +96,13 @@ export function ShotPopover({ anchor, containerRef, where, forced, onForcedChang
   )
 }
 
-function PopRow({ stroke, onPick }: { stroke: Stroke; onPick: (s: Stroke, e: ErrorType) => void }) {
+const COLUMNS: Stroke[] = ['bh', 'fh']
+
+function PopRowPair({ err, onPick }: { err: ErrorType; onPick: (s: Stroke, e: ErrorType) => void }) {
   return (
     <>
-      {ERROR_TYPES.map((err) => (
-        <button key={err} type="button" className={`pop-btn ${stroke}`} onClick={() => onPick(stroke, err)} aria-label={`${STROKE_LABEL[stroke]} ${ERROR_LABEL[err]}`}>
+      {COLUMNS.map((stroke) => (
+        <button key={stroke} type="button" className={`pop-btn ${stroke}`} onClick={() => onPick(stroke, err)} aria-label={`${STROKE_LABEL[stroke]} ${ERROR_LABEL[err]}`}>
           <span className={`pop-tag ${stroke}`}>{STROKE_SHORT[stroke]}</span>
           <span className="pop-err">{ERROR_LABEL[err]}</span>
         </button>
