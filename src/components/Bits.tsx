@@ -1,0 +1,155 @@
+import { useEffect, type ReactNode } from 'react'
+import { useNavigate } from 'react-router'
+import { useSyncStatus } from '../data/app'
+import { describeZone, zoneFor } from '../domain/court'
+import { ERROR_LABEL, STROKE_SHORT, type Point } from '../domain/types'
+import type { Summary } from '../domain/stats'
+import { CloseIcon, TrashIcon } from './Icons'
+import { formatTime } from '../lib/format'
+
+// ---------- sync badge ----------
+export function SyncBadge({ compact = false }: { compact?: boolean }) {
+  const s = useSyncStatus()
+  const nav = useNavigate()
+  let cls = ''
+  let text = ''
+  switch (s.phase) {
+    case 'local':
+      cls = ''
+      text = compact ? 'Local' : 'Local only'
+      break
+    case 'signed-out':
+      cls = 'warn'
+      text = compact ? 'Sign in' : 'Not signed in'
+      break
+    case 'syncing':
+      cls = 'busy'
+      text = 'Syncing…'
+      break
+    case 'offline':
+      cls = 'warn'
+      text = 'Offline'
+      break
+    case 'error':
+      cls = 'err'
+      text = compact ? 'Sync error' : 'Sync error'
+      break
+    default:
+      cls = s.pending ? 'warn' : 'ok'
+      text = s.pending ? 'Unsynced' : 'Synced'
+  }
+  const pending = s.pending && s.phase !== 'local' && s.phase !== 'syncing' ? ` · ${s.pending}` : ''
+  return (
+    <button type="button" className={`badge ${cls}`} onClick={() => nav('/settings')} title={s.error ?? text}>
+      <span className="dot" />
+      {text}
+      {pending}
+    </button>
+  )
+}
+
+// ---------- tally ----------
+export function Tally({ s }: { s: Summary }) {
+  return (
+    <div className="tally" aria-live="polite">
+      <span className="total">
+        {s.total} {s.total === 1 ? 'error' : 'errors'}
+      </span>
+      <span className="sep" />
+      <span className="t-fh">FH {s.byStroke.fh}</span>
+      <span className="t-bh">BH {s.byStroke.bh}</span>
+      <span className="sep" />
+      <span>Long {s.byError.long}</span>
+      <span>Net {s.byError.net}</span>
+      <span>Wide {s.byError.wide}</span>
+      {s.byForced.forced > 0 && (
+        <>
+          <span className="sep" />
+          <span>Forced {s.byForced.forced}</span>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ---------- point list ----------
+export function PointList({ points, onDelete }: { points: Point[]; onDelete: (id: string) => void }) {
+  if (!points.length) return <p className="muted">No points logged yet.</p>
+  const rows = [...points].reverse()
+  return (
+    <ul className="point-list">
+      {rows.map((p, i) => (
+        <li key={p.id}>
+          <span className="n">{points.length - i}</span>
+          <div className="desc">
+            <span className={`pill ${p.stroke}`}>{STROKE_SHORT[p.stroke]}</span> <strong>{ERROR_LABEL[p.error_type]}</strong>{' '}
+            <span className={`pill ${p.forced ? 'forced' : 'unforced'}`}>{p.forced ? 'forced' : 'unforced'}</span>
+            <small>
+              {describeZone(zoneFor(p.x, p.y))} · {formatTime(p.created_at)}
+            </small>
+          </div>
+          <button type="button" className="icon-btn" aria-label="Delete point" onClick={() => onDelete(p.id)}>
+            <TrashIcon />
+          </button>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+// ---------- toast ----------
+export interface ToastState {
+  id: number
+  text: string
+  actionLabel?: string
+  onAction?: () => void
+}
+
+export function Toast({ toast, onDismiss, ms = 5000 }: { toast: ToastState | null; onDismiss: () => void; ms?: number }) {
+  useEffect(() => {
+    if (!toast) return
+    const h = setTimeout(onDismiss, ms)
+    return () => clearTimeout(h)
+  }, [toast, onDismiss, ms])
+  if (!toast) return null
+  return (
+    <div className="toast" role="status">
+      <span>{toast.text}</span>
+      {toast.actionLabel && toast.onAction && (
+        <button
+          type="button"
+          onClick={() => {
+            toast.onAction?.()
+            onDismiss()
+          }}
+        >
+          {toast.actionLabel}
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ---------- modal ----------
+export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <h2>{title}</h2>
+          <button type="button" className="icon-btn" aria-label="Close" onClick={onClose}>
+            <CloseIcon />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  )
+}
