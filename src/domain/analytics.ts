@@ -1,6 +1,7 @@
+import { isValidIso, todayLocalISO } from '../lib/format'
 import { describeZone, zoneFor, zoneFromId, zoneId } from './court'
 import { pct, type Summary } from './stats'
-import { STROKE_LABEL, type ErrorType, type Point, type Session, type SessionKind, type Stroke } from './types'
+import { STROKE_LABEL, isErrorType, isStroke, type ErrorType, type Point, type Session, type SessionKind, type Stroke } from './types'
 
 // ---------- ranges ----------
 
@@ -12,20 +13,13 @@ export const RANGES: Array<{ key: Range; label: string }> = [
   { key: 'all', label: 'All time' },
 ]
 
-function ymd(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-
 /** Inclusive lower bound (YYYY-MM-DD) for a range, or null for all time. */
 export function rangeStart(range: Range, today: Date): string | null {
   if (range === 'all') return null
   if (range === 'year') return `${today.getFullYear()}-01-01`
   const d = new Date(today.getFullYear(), today.getMonth(), today.getDate())
   d.setDate(d.getDate() - (range === '30d' ? 30 : 90))
-  return ymd(d)
+  return todayLocalISO(d)
 }
 
 export function filterSessions(sessions: Session[], range: Range, kind: SessionKind | 'all', today: Date): Session[] {
@@ -49,15 +43,43 @@ export interface SessionStat {
   unforced: number
   firstAt: string | null
   lastAt: string | null
-  /** minutes between first and last point (0 with < 2 points) */
+  /** minutes spanned by the main activity window (see activeWindow); 0 with < 2 points */
   durationMin: number
+  /** points inside the main activity window */
+  activeCount: number
   byZone: Record<string, number>
 }
 
 const byCreated = (a: Point, b: Point) => (a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0)
 
+/** Minutes from a to b (≥ 0); 0 when either timestamp is unparsable. */
 export function minutesBetween(aIso: string, bIso: string): number {
-  return Math.max(0, (new Date(bIso).getTime() - new Date(aIso).getTime()) / 60_000)
+  const d = (new Date(bIso).getTime() - new Date(aIso).getTime()) / 60_000
+  return Number.isFinite(d) ? Math.max(0, d) : 0
+}
+
+/** Consecutive points more than this many minutes apart are treated as separate activity (e.g. a point added the next day). */
+export const ACTIVE_GAP_MIN = 90
+
+/**
+ * The session's main activity window: the longest run of live, time-stamped points where consecutive
+ * points are ≤ ACTIVE_GAP_MIN apart (ties → earliest). Late additions/outliers fall outside it, so
+ * durations, buckets and thirds are not stretched by a point tapped into an old session.
+ */
+export function activeWindow(points: Point[], maxGapMin = ACTIVE_GAP_MIN): Point[] {
+  const pts = points.filter((p) => !p.deleted_at && isValidIso(p.created_at)).sort(byCreated)
+  if (pts.length <= 1) return pts
+  let best: Point[] = []
+  let run: Point[] = [pts[0]]
+  for (let i = 1; i < pts.length; i++) {
+    if (minutesBetween(pts[i - 1].created_at, pts[i].created_at) <= maxGapMin) run.push(pts[i])
+    else {
+      if (run.length > best.length) best = run
+      run = [pts[i]]
+    }
+  }
+  if (run.length > best.length) best = run
+  return best
 }
 
 /** One stat row per session, oldest first (chronological — the x-axis of the trend chart). */
@@ -73,6 +95,7 @@ export function sessionStats(sessions: Session[], points: Iterable<Point>): Sess
   for (const s of sessions) {
     if (s.deleted_at) continue
     const pts = (bySession.get(s.id) ?? []).sort(byCreated)
+    const win = activeWindow(pts)
     const row: SessionStat = {
       session: s,
       points: pts,
@@ -86,15 +109,13 @@ export function sessionStats(sessions: Session[], points: Iterable<Point>): Sess
       unforced: 0,
       firstAt: pts[0]?.created_at ?? null,
       lastAt: pts.at(-1)?.created_at ?? null,
-      durationMin: pts.length >= 2 ? minutesBetween(pts[0].created_at, pts[pts.length - 1].created_at) : 0,
+      durationMin: win.length >= 2 ? minutesBetween(win[0].created_at, win[win.length - 1].created_at) : 0,
+      activeCount: win.length,
       byZone: {},
     }
     for (const p of pts) {
-      if (p.stroke === 'fh') row.fh++
-      else row.bh++
-      if (p.error_type === 'long') row.long++
-      else if (p.error_type === 'net') row.net++
-      else row.wide++
+      if (isStroke(p.stroke)) row[p.stroke]++
+      if (isErrorType(p.error_type)) row[p.error_type]++
       if (p.forced) row.forced++
       else row.unforced++
       const z = zoneId(zoneFor(p.x, p.y))
@@ -128,7 +149,7 @@ export interface SequenceItem {
 }
 
 export function sequence(points: Point[]): SequenceItem[] {
-  const pts = points.filter((p) => !p.deleted_at).sort(byCreated)
+  const pts = points.filter((p) => !p.deleted_at && isValidIso(p.created_at)).sort(byCreated)
   if (!pts.length) return []
   const t0 = pts[0].created_at
   return pts.map((p, i) => ({
@@ -153,16 +174,26 @@ export interface Bucket {
   unforced: number
 }
 
-/** Errors per elapsed-time bucket since the first point of the session. Always returns ≥ 1 bucket when there are points. */
-export function elapsedBuckets(points: Point[], bucketMin = 10): Bucket[] {
-  const seq = sequence(points)
+/** Bucket width (minutes) that keeps a window of `durationMin` at ≤ ~24 buckets. */
+export function pickBucketMin(durationMin: number): number {
+  for (const b of [10, 15, 30, 60, 120]) if (durationMin / b <= 24) return b
+  return 240
+}
+
+/**
+ * Errors per elapsed-time bucket within the session's main activity window (see activeWindow).
+ * `bucketMin` defaults to pickBucketMin(window duration). Always ≥ 1 bucket when there are points.
+ */
+export function elapsedBuckets(points: Point[], bucketMin?: number): Bucket[] {
+  const seq = sequence(activeWindow(points))
   if (!seq.length) return []
   const last = seq[seq.length - 1].elapsedMin
-  const n = Math.max(1, Math.floor(last / bucketMin) + 1)
+  const bm = bucketMin ?? pickBucketMin(last)
+  const n = Math.min(1000, Math.max(1, Math.floor(last / bm) + 1))
   const buckets: Bucket[] = Array.from({ length: n }, (_, i) => ({
-    start: i * bucketMin,
-    end: (i + 1) * bucketMin,
-    label: `${i * bucketMin}–${(i + 1) * bucketMin}`,
+    start: i * bm,
+    end: (i + 1) * bm,
+    label: `${i * bm}–${(i + 1) * bm}`,
     total: 0,
     fh: 0,
     bh: 0,
@@ -173,13 +204,10 @@ export function elapsedBuckets(points: Point[], bucketMin = 10): Bucket[] {
     unforced: 0,
   }))
   for (const { point: p, elapsedMin } of seq) {
-    const b = buckets[Math.min(n - 1, Math.floor(elapsedMin / bucketMin))]
+    const b = buckets[Math.min(n - 1, Math.max(0, Math.floor(elapsedMin / bm)))]
     b.total++
-    if (p.stroke === 'fh') b.fh++
-    else b.bh++
-    if (p.error_type === 'long') b.long++
-    else if (p.error_type === 'net') b.net++
-    else b.wide++
+    if (isStroke(p.stroke)) b[p.stroke]++
+    if (isErrorType(p.error_type)) b[p.error_type]++
     if (p.forced) b.forced++
     else b.unforced++
   }
@@ -194,7 +222,7 @@ export interface Thirds {
 
 /** Errors in the first / middle / last third of the session by elapsed time (by order if the session has no duration). */
 export function thirds(points: Point[]): Thirds {
-  const seq = sequence(points)
+  const seq = sequence(activeWindow(points))
   const out: Thirds = { first: 0, middle: 0, last: 0 }
   if (!seq.length) return out
   const dur = seq[seq.length - 1].elapsedMin
@@ -244,17 +272,17 @@ export function summarizeKind(stats: SessionStat[], kind: SessionKind): KindSumm
   }
 }
 
-/** Average errors of the last k sessions (with points) vs the k before them. */
-export function recentTrend(stats: SessionStat[], k = 3): { recent: number; previous: number; changePct: number } | null {
+/** Average errors of the last k sessions (with points) vs the k before them; k shrinks to fit (min 2 per side). */
+export function recentTrend(stats: SessionStat[], k = 3): { k: number; recent: number; previous: number; changePct: number } | null {
   const rows = stats.filter((r) => r.total > 0)
-  if (rows.length < 2 * Math.min(k, 2)) return null
   const kk = Math.min(k, Math.floor(rows.length / 2))
+  if (kk < 2) return null
   const recent = rows.slice(-kk)
   const previous = rows.slice(-2 * kk, -kk)
   const avg = (rs: SessionStat[]) => rs.reduce((a, r) => a + r.total, 0) / rs.length
   const r = avg(recent)
   const p = avg(previous)
-  return { recent: r, previous: p, changePct: p === 0 ? 0 : Math.round(((r - p) / p) * 100) }
+  return { k: kk, recent: r, previous: p, changePct: p === 0 ? 0 : Math.round(((r - p) / p) * 100) }
 }
 
 export interface Insight {
@@ -293,13 +321,11 @@ export function buildInsights(stats: SessionStat[], summary: Summary): Insight[]
     const fhPct = pct(summary.byStroke.fh, total)
     if (fhPct >= 60) out.push({ id: 'stroke', tone: 'neutral', text: `Forehand accounts for ${fhPct}% of errors.` })
     else if (fhPct <= 40) out.push({ id: 'stroke', tone: 'neutral', text: `Backhand accounts for ${100 - fhPct}% of errors.` })
-    // forced share
-    out.push({ id: 'forced', tone: 'neutral', text: `${pct(summary.byForced.forced, total)}% of errors were forced (${summary.byForced.forced} of ${total}).` })
   }
   // trend
   const t = recentTrend(stats)
   if (t) {
-    const k = Math.min(3, Math.floor(stats.filter((r) => r.total > 0).length / 2))
+    const k = t.k
     if (Math.abs(t.changePct) < 5) {
       out.push({ id: 'trend', tone: 'neutral', text: `Errors per session are steady: ${t.recent.toFixed(1)} over the last ${k} vs ${t.previous.toFixed(1)} before.` })
     } else if (t.changePct < 0) {
@@ -339,7 +365,11 @@ export function buildInsights(stats: SessionStat[], summary: Summary): Insight[]
       text: `Matches average ${m.perSession.toFixed(1)} errors vs ${p.perSession.toFixed(1)} in practice.`,
     })
   }
-  return out.slice(0, 6)
+  // forced share (lowest information — last so it never crowds out the derived insights)
+  if (total >= 5) {
+    out.push({ id: 'forced', tone: 'neutral', text: `${pct(summary.byForced.forced, total)}% of errors were forced (${summary.byForced.forced} of ${total}).` })
+  }
+  return out.slice(0, 7)
 }
 
 function describeError(e: ErrorType): string {

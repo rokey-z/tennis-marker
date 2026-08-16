@@ -10,7 +10,7 @@ import { store, useAppState } from '../data/app'
 import { livePointsForSession } from '../data/store'
 import { describeZone, zoneFor } from '../domain/court'
 import { summarize } from '../domain/stats'
-import { ERROR_LABEL, STROKE_SHORT, type ErrorType, type Session, type Stroke } from '../domain/types'
+import { ERROR_LABEL, KIND_LABEL, STROKE_SHORT, type ErrorType, type Session, type Stroke } from '../domain/types'
 
 const FLIP_KEY = 'tennis-marker.flip'
 const AFTER_SAVE_IGNORE_MS = 300
@@ -120,7 +120,7 @@ export function RecordPage() {
         <button type="button" className="title-btn" onClick={() => setShowDetails(true)} title="Edit session">
           <strong>{session.title}</strong>
           <small>
-            {session.kind === 'match' ? 'Match' : 'Practice'} · {formatDate(session.date)}
+            {KIND_LABEL[session.kind]} · {formatDate(session.date)}
           </small>
         </button>
         <button type="button" className={`flip-btn${flipped ? ' on' : ''}`} onClick={() => setFlipped((f) => !f)} aria-pressed={flipped} title="Flip ends (she is on the far side)">

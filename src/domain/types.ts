@@ -8,6 +8,12 @@ export const ERROR_TYPES: ErrorType[] = ['long', 'net', 'wide']
 export const STROKE_LABEL: Record<Stroke, string> = { fh: 'Forehand', bh: 'Backhand' }
 export const STROKE_SHORT: Record<Stroke, string> = { fh: 'FH', bh: 'BH' }
 export const ERROR_LABEL: Record<ErrorType, string> = { long: 'Long', net: 'Net', wide: 'Wide' }
+export const SESSION_KINDS: SessionKind[] = ['match', 'practice']
+export const KIND_LABEL: Record<SessionKind, string> = { match: 'Match', practice: 'Practice' }
+
+export const isStroke = (v: unknown): v is Stroke => v === 'fh' || v === 'bh'
+export const isErrorType = (v: unknown): v is ErrorType => v === 'long' || v === 'net' || v === 'wide'
+export const isSessionKind = (v: unknown): v is SessionKind => v === 'match' || v === 'practice'
 
 /** A match or practice; groups points. Timestamps are ISO strings, dates are YYYY-MM-DD. */
 export interface Session {

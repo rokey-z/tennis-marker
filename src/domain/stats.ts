@@ -37,6 +37,8 @@ export interface Summary {
   byZone: Record<string, number>
   maxZone: number
   matrix: Record<Stroke, Record<ErrorType, number>>
+  /** forced errors per stroke (unforced = byStroke[s] - byStrokeForced[s]) */
+  byStrokeForced: Record<Stroke, number>
 }
 
 export function summarize(points: Iterable<Point>): Summary {
@@ -48,11 +50,15 @@ export function summarize(points: Iterable<Point>): Summary {
     byZone: {},
     maxZone: 0,
     matrix: { fh: { long: 0, net: 0, wide: 0 }, bh: { long: 0, net: 0, wide: 0 } },
+    byStrokeForced: { fh: 0, bh: 0 },
   }
   for (const p of points) {
     if (p.deleted_at) continue
     s.total++
-    if (STROKES.includes(p.stroke)) s.byStroke[p.stroke]++
+    if (STROKES.includes(p.stroke)) {
+      s.byStroke[p.stroke]++
+      if (p.forced) s.byStrokeForced[p.stroke]++
+    }
     if (ERROR_TYPES.includes(p.error_type)) s.byError[p.error_type]++
     if (p.forced) s.byForced.forced++
     else s.byForced.unforced++

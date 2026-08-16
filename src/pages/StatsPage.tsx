@@ -1,5 +1,6 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
+import { Chip } from '../components/Bits'
 import { downloadText, formatDate } from '../lib/format'
 import { Court } from '../components/Court'
 import { DownloadIcon } from '../components/Icons'
@@ -222,13 +223,5 @@ export function StatsPage() {
         </div>
       </div>
     </Shell>
-  )
-}
-
-function Chip({ on, cls, onClick, children }: { on: boolean; cls?: string; onClick: () => void; children: ReactNode }) {
-  return (
-    <button type="button" className={`chip${cls ? ` ${cls}` : ''}${on ? ' on' : ''}`} aria-pressed={on} onClick={onClick}>
-      {children}
-    </button>
   )
 }

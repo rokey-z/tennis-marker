@@ -1,7 +1,9 @@
 import { useSyncExternalStore } from 'react'
 import { roundFeet } from '../domain/court'
 import { compareSessionDesc } from '../domain/stats'
-import type { NewPoint, Point, Session, SessionKind } from '../domain/types'
+import { KIND_LABEL, type NewPoint, type Point, type Session, type SessionKind } from '../domain/types'
+import { todayLocalISO } from '../lib/format'
+import { sanitizePoint, sanitizeSession } from '../domain/validate'
 import {
   adoptOwnerless,
   clearDirty,
@@ -61,15 +63,10 @@ export function defaultId(): string {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`
 }
 
-export function todayLocalISO(d = new Date()): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
+export { todayLocalISO }
 
 export function defaultSessionTitle(kind: SessionKind, date: string): string {
-  return `${kind === 'match' ? 'Match' : 'Practice'} ${date}`
+  return `${KIND_LABEL[kind]} ${date}`
 }
 
 export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
@@ -191,13 +188,15 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
       const nextPoints = { ...state.points }
       const ds: string[] = []
       const dp: string[] = []
-      for (const s of sessions) {
-        if (!s?.id || nextSessions[s.id]) continue
+      for (const raw of sessions) {
+        const s = sanitizeSession(raw)
+        if (!s || nextSessions[s.id]) continue
         nextSessions[s.id] = { ...s, user_id: owner, updated_at: t, deleted_at: null }
         ds.push(s.id)
       }
-      for (const p of points) {
-        if (!p?.id || nextPoints[p.id] || !nextSessions[p.session_id]) continue
+      for (const raw of points) {
+        const p = sanitizePoint(raw)
+        if (!p || nextPoints[p.id] || !nextSessions[p.session_id]) continue
         nextPoints[p.id] = { ...p, user_id: owner, updated_at: t, deleted_at: null }
         dp.push(p.id)
       }

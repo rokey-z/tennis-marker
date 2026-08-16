@@ -69,7 +69,8 @@ h3 {
   margin: 0;
   line-height: 1.2;
 }
-ul {
+ul,
+ol {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1117,8 +1118,13 @@ textarea.input {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 4px 8px;
   margin-top: 4px;
+  min-width: 0;
+}
+.kpi {
+  overflow: hidden;
 }
 .kpi-value {
   font-size: 28px;
@@ -1304,6 +1310,13 @@ textarea.input {
   background: var(--bh);
   color: var(--bh-ink);
 }
+.seq-dot.unknown {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+span.seq-dot {
+  cursor: default;
+}
 .seq-dot.forced {
   background: var(--surface);
   color: var(--text);
@@ -1415,7 +1428,7 @@ textarea.input {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.data-table tbody tr {
+.data-table.clickable tbody tr {
   cursor: pointer;
 }
 .data-table tbody tr.sel {
@@ -1423,12 +1436,23 @@ textarea.input {
 }
 .zone-list {
   margin: 8px 0 0;
-  padding-left: 18px;
+}
+.zone-list .rank {
+  width: 18px;
+  color: var(--muted);
+  font-weight: 700;
 }
 .zone-list li {
   display: flex;
   gap: 4px;
   padding: 3px 0;
+}
+
+.dash-grid > * + * {
+  margin-top: 12px;
+}
+.scroll-target {
+  scroll-margin-top: calc(64px + env(safe-area-inset-top));
 }
 
 /* vertical timeline */
@@ -1487,10 +1511,10 @@ textarea.input {
 
 @media (min-width: 900px) {
   .kpi-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .kpi-value {
-    font-size: 26px;
+    font-size: 24px;
   }
   .dash-grid {
     display: grid;
@@ -1498,9 +1522,17 @@ textarea.input {
     gap: 14px;
     align-items: start;
   }
+  .dash-grid > * + * {
+    margin-top: 0;
+  }
 }
 @media (min-width: 640px) and (max-width: 899px) {
   .kpi-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1140px) {
+  .kpi-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }

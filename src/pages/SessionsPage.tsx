@@ -6,7 +6,7 @@ import { Shell } from '../components/Shell'
 import { store, useAppState } from '../data/app'
 import { liveSessions } from '../data/store'
 import { perSessionCounts } from '../domain/stats'
-import type { SessionKind } from '../domain/types'
+import { KIND_LABEL, type SessionKind } from '../domain/types'
 
 export function SessionsPage() {
   const state = useAppState()
@@ -46,7 +46,7 @@ export function SessionsPage() {
                   <div className="grow">
                     <div className="title">{session.title}</div>
                     <div className="sub">
-                      {session.kind === 'match' ? 'Match' : 'Practice'} · {formatDate(session.date)}
+                      {KIND_LABEL[session.kind]} · {formatDate(session.date)}
                       {session.notes ? ` · ${session.notes.slice(0, 40)}${session.notes.length > 40 ? '…' : ''}` : ''}
                     </div>
                     {count > 0 && (

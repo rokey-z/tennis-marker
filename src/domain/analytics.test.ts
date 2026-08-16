@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
+  activeWindow,
   buildInsights,
   elapsedBuckets,
   filterSessions,
   longestStreak,
+  minutesBetween,
   movingAverage,
+  pickBucketMin,
   rangeStart,
   recentTrend,
   sequence,
@@ -85,7 +88,7 @@ describe('sessionStats', () => {
     const rows = sessionStats(sessions, points)
     expect(rows.map((r) => r.session.id)).toEqual(['early', 'late'])
     const late = rows[1]
-    expect(late).toMatchObject({ total: 3, fh: 1, bh: 2, long: 1, net: 1, wide: 1, forced: 1, unforced: 2, durationMin: 30 })
+    expect(late).toMatchObject({ total: 3, fh: 1, bh: 2, long: 1, net: 1, wide: 1, forced: 1, unforced: 2, durationMin: 30, activeCount: 3 })
     expect(late.points.map((p) => p.created_at)).toEqual([T(0), T(15), T(30)])
     expect(late.byZone).toEqual({ 'baseline-deuce': 2, 'baseline-ad': 1 })
     expect(rows[0].durationMin).toBe(0)
@@ -153,8 +156,9 @@ describe('comparisons & insights', () => {
     const stats = sessionStats(sessions, points)
     expect(summarizeKind(stats, 'practice')).toMatchObject({ sessions: 6, errors: 48, perSession: 8 })
     expect(summarizeKind(stats, 'match').sessions).toBe(0)
-    expect(recentTrend(stats, 3)).toEqual({ recent: 6, previous: 10, changePct: -40 })
-    expect(recentTrend(stats.slice(0, 1))).toBeNull()
+    expect(recentTrend(stats, 3)).toEqual({ k: 3, recent: 6, previous: 10, changePct: -40 })
+    expect(recentTrend(stats.slice(0, 3))).toBeNull()
+    expect(recentTrend(stats.slice(0, 4))?.k).toBe(2)
   })
 
   it('builds insights only when the data supports them', () => {
@@ -169,5 +173,58 @@ describe('comparisons & insights', () => {
     expect(ins.find((i) => i.id === 'trend')?.tone).toBe('good')
     expect(ins.find((i) => i.id === 'trend')?.text).toMatch(/down 40%/)
     expect(ins.find((i) => i.id === 'stroke')?.text).toMatch(/Forehand accounts for 6\d%/)
+  })
+})
+
+describe('robustness', () => {
+  it('unparsable timestamps never produce NaN or crash', () => {
+    const bad = [pt({ created_at: 'garbage' }), pt({ created_at: T(5) }), pt({ created_at: '' })]
+    expect(minutesBetween('garbage', T(1))).toBe(0)
+    expect(sequence(bad)).toHaveLength(1)
+    expect(elapsedBuckets(bad)).toHaveLength(1)
+    expect(thirds(bad)).toEqual({ first: 1, middle: 0, last: 0 })
+    const rows = sessionStats([sess()], bad)
+    expect(rows[0]).toMatchObject({ total: 3, durationMin: 0, activeCount: 1 })
+  })
+
+  it('unknown stroke/error values are not counted (same rule as summarize)', () => {
+    const rows = sessionStats([sess()], [pt(), pt({ stroke: 'volley' as never, error_type: 'frame' as never })])
+    expect(rows[0]).toMatchObject({ total: 2, fh: 1, bh: 0, long: 1, net: 0, wide: 0 })
+    expect(elapsedBuckets(rows[0].points)[0]).toMatchObject({ total: 2, fh: 1, bh: 0 })
+  })
+
+  it('a point added long after the session is excluded from the active window, buckets and thirds', () => {
+    const pts = [pt({ created_at: T(0) }), pt({ created_at: T(20) }), pt({ created_at: T(40) }), pt({ created_at: T(24 * 60 + 5) })]
+    expect(activeWindow(pts)).toHaveLength(3)
+    const rows = sessionStats([sess()], pts)
+    expect(rows[0]).toMatchObject({ total: 4, activeCount: 3, durationMin: 40 })
+    expect(elapsedBuckets(pts).map((b) => b.total)).toEqual([1, 0, 1, 0, 1])
+    expect(thirds(pts)).toEqual({ first: 1, middle: 1, last: 1 })
+  })
+
+  it('bucket width adapts so long windows stay readable', () => {
+    expect(pickBucketMin(45)).toBe(10)
+    expect(pickBucketMin(240)).toBe(10)
+    expect(pickBucketMin(300)).toBe(15)
+    expect(pickBucketMin(700)).toBe(30)
+    const long = Array.from({ length: 30 }, (_, i) => pt({ created_at: T(i * 20) })) // 580 min, gaps of 20
+    const b = elapsedBuckets(long)
+    expect(b.length).toBeLessThanOrEqual(24)
+    expect(b[1].start).toBe(30)
+  })
+
+  it('insights: forced share is last and never crowds out the match-vs-practice line', () => {
+    const sessions: Session[] = []
+    const points: Point[] = []
+    for (let i = 0; i < 6; i++) {
+      const kind = i % 2 ? 'match' : 'practice'
+      const id = `k${i}`
+      sessions.push(sess({ id, kind, date: `2026-08-${String(i + 1).padStart(2, '0')}` }))
+      for (let j = 0; j < 8; j++) points.push(pt({ session_id: id, created_at: T(j * 5), stroke: 'fh', error_type: j % 2 ? 'net' : 'long' }))
+    }
+    const ins = buildInsights(sessionStats(sessions, points), summarize(points))
+    const ids = ins.map((i) => i.id)
+    expect(ids).toContain('kind')
+    expect(ids.at(-1)).toBe('forced')
   })
 })

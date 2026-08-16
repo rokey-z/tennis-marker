@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
+import { Chip } from '../components/Bits'
 import { Delta, SequenceStrip, ShareBars, Sparkline, StackedColumns, type Category, type Series } from '../components/charts'
 import { CHART } from '../components/chartUtils'
 import { Court } from '../components/Court'
+import { useToday } from '../components/hooks'
 import { Shell } from '../components/Shell'
 import { useAppState } from '../data/app'
-import { liveSessions } from '../data/store'
 import {
   RANGES,
   buildInsights,
@@ -13,23 +14,29 @@ import {
   filterSessions,
   longestStreak,
   movingAverage,
+  pickBucketMin,
   recentTrend,
   sequence,
   sessionStats,
   summarizeKind,
   thirds,
-  type Bucket,
   type Range,
+  type SequenceItem,
   type SessionStat,
 } from '../domain/analytics'
 import { describeZone, zoneFromId } from '../domain/court'
 import { pct, summarize } from '../domain/stats'
-import { STROKE_LABEL, STROKE_SHORT, type SessionKind } from '../domain/types'
-import { formatDate } from '../lib/format'
+import { KIND_LABEL, STROKE_LABEL, STROKE_SHORT, type SessionKind, type Stroke } from '../domain/types'
+import { formatDate, formatMinutes, parseYMD, shortDate, weekday } from '../lib/format'
 
 type StackMode = 'total' | 'stroke' | 'error' | 'forced'
+/** Numeric fields shared by SessionStat and Bucket that a stacked series can read. */
+type CountKey = 'total' | 'fh' | 'bh' | 'long' | 'net' | 'wide' | 'unforced' | 'forced'
+type CountRow = Record<CountKey, number>
+type StackSeries = Series & { key: CountKey }
 
-const SERIES: Record<StackMode, Series[]> = {
+/** One table drives series order, colors, legend and values — no parallel switch to keep in sync. */
+const SERIES: Record<StackMode, StackSeries[]> = {
   total: [{ key: 'total', label: 'Errors', color: CHART.total }],
   stroke: [
     { key: 'fh', label: 'Forehand', color: CHART.fh },
@@ -45,36 +52,18 @@ const SERIES: Record<StackMode, Series[]> = {
     { key: 'forced', label: 'Forced', color: CHART.forced },
   ],
 }
+const valuesFor = (mode: StackMode, row: CountRow): number[] => SERIES[mode].map((s) => row[s.key])
 
-function valuesFor(mode: StackMode, r: { total: number; fh: number; bh: number; long: number; net: number; wide: number; forced: number; unforced: number }): number[] {
-  switch (mode) {
-    case 'total':
-      return [r.total]
-    case 'stroke':
-      return [r.fh, r.bh]
-    case 'error':
-      return [r.long, r.net, r.wide]
-    case 'forced':
-      return [r.unforced, r.forced]
-  }
-}
-
-function shortDate(ymd: string): string {
-  const [y, m, d] = ymd.split('-').map(Number)
-  if (!y || !m || !d) return ymd
-  return new Date(y, m - 1, d).toLocaleDateString([], { month: 'short', day: 'numeric' })
-}
-
-function fmtMin(min: number): string {
-  if (min < 1) return '<1 min'
-  if (min < 60) return `${Math.round(min)} min`
-  const h = Math.floor(min / 60)
-  const m = Math.round(min % 60)
-  return m ? `${h} h ${m} min` : `${h} h`
-}
+const MODES: Array<[StackMode, string]> = [
+  ['total', 'Total'],
+  ['stroke', 'Stroke'],
+  ['error', 'Error type'],
+  ['forced', 'Forced'],
+]
 
 export function DashboardPage() {
   const state = useAppState()
+  const today = useToday()
   const [range, setRange] = useState<Range>('all')
   const [kind, setKind] = useState<SessionKind | 'all'>('all')
   const [mode, setMode] = useState<StackMode>('stroke')
@@ -82,49 +71,69 @@ export function DashboardPage() {
   const [selId, setSelId] = useState<string | null>(null)
   const sessionCardRef = useRef<HTMLDivElement>(null)
 
-  const sessions = useMemo(() => filterSessions(liveSessions(state), range, kind, new Date()), [state, range, kind])
-  const stats = useMemo(() => sessionStats(sessions, Object.values(state.points)), [sessions, state])
+  // key on the row maps, not the whole state, so sync bookkeeping (dirty flags, meta) doesn't recompute analytics
+  const sessionsMap = state.sessions
+  const pointsMap = state.points
+  const sessions = useMemo(() => filterSessions(Object.values(sessionsMap), range, kind, parseYMD(today) ?? new Date()), [sessionsMap, range, kind, today])
+  const stats = useMemo(() => sessionStats(sessions, Object.values(pointsMap)), [sessions, pointsMap])
+  const newestFirst = useMemo(() => [...stats].reverse(), [stats])
   const allPoints = useMemo(() => stats.flatMap((s) => s.points), [stats])
   const summary = useMemo(() => summarize(allPoints), [allPoints])
   const insights = useMemo(() => buildInsights(stats, summary), [stats, summary])
   const withPoints = useMemo(() => stats.filter((s) => s.total > 0), [stats])
   const trend = useMemo(() => recentTrend(stats), [stats])
   const perSession = withPoints.length ? summary.total / withPoints.length : 0
-  const totalsSeries = withPoints.slice(-12).map((s) => s.total)
+  const recent = useMemo(() => withPoints.slice(-12), [withPoints])
+  const spark = (f: (s: SessionStat) => number) => recent.map(f)
+  const share = (n: (s: SessionStat) => number) => (s: SessionStat) => (s.total ? n(s) / s.total : 0)
 
   const selected: SessionStat | null = useMemo(() => stats.find((s) => s.session.id === selId) ?? withPoints.at(-1) ?? stats.at(-1) ?? null, [stats, withPoints, selId])
-
   useEffect(() => {
-    // keep the selection valid when filters change
+    // a session filtered out of view is no longer "the selection" (don't silently re-select it when the filter widens)
     if (selId && !stats.some((s) => s.session.id === selId)) setSelId(null)
   }, [stats, selId])
 
   // ----- trend chart data -----
-  const trendCats: Category[] = stats.map((s) => ({
-    key: s.session.id,
-    label: shortDate(s.session.date),
-    title: s.session.title,
-    subtitle: `${formatDate(s.session.date)} · ${s.session.kind === 'match' ? 'Match' : 'Practice'}${s.durationMin ? ` · ${fmtMin(s.durationMin)}` : ''}`,
-  }))
-  const trendValues = stats.map((s) => valuesFor(mode, s))
-  const avg = movingAverage(
-    stats.map((s) => s.total),
-    3,
+  const trendCats: Category[] = useMemo(
+    () =>
+      stats.map((s) => ({
+        key: s.session.id,
+        label: shortDate(s.session.date),
+        title: s.session.title,
+        subtitle: `${formatDate(s.session.date)} · ${KIND_LABEL[s.session.kind]}${s.durationMin ? ` · ${formatMinutes(s.durationMin)}` : ''}`,
+      })),
+    [stats],
   )
+  const trendValues = useMemo(() => stats.map((s) => valuesFor(mode, s)), [stats, mode])
+  const avg = useMemo(() => movingAverage(stats.map((s) => s.total), 3), [stats])
   const selectedIndex = selected ? stats.findIndex((s) => s.session.id === selected.session.id) : null
 
   // ----- selected session timeline -----
   const seq = useMemo(() => (selected ? sequence(selected.points) : []), [selected])
-  const buckets: Bucket[] = useMemo(() => (selected ? elapsedBuckets(selected.points, 10) : []), [selected])
+  const buckets = useMemo(() => (selected ? elapsedBuckets(selected.points) : []), [selected])
+  const bucketMin = selected ? pickBucketMin(selected.durationMin) : 10
   const th = useMemo(() => (selected ? thirds(selected.points) : { first: 0, middle: 0, last: 0 }), [selected])
   const streak = useMemo(() => (selected ? longestStreak(selected.points, (p) => p.stroke) : null), [selected])
-  const bucketCats: Category[] = buckets.map((b) => ({ key: b.label, label: `${b.start}′`, title: `${b.label} min`, subtitle: 'since the first error' }))
-  const bucketValues = buckets.map((b) => valuesFor(mode, b))
+  const bucketCats: Category[] = useMemo(
+    () => buckets.map((b) => ({ key: b.label, label: `${b.start}′`, title: `${b.label} min`, subtitle: 'since the first error' })),
+    [buckets],
+  )
+  const bucketValues = useMemo(() => buckets.map((b) => valuesFor(mode, b)), [buckets, mode])
+  const lateCount = selected ? selected.total - selected.activeCount : 0
 
   // ----- breakdowns -----
   const matchK = summarizeKind(stats, 'match')
   const practiceK = summarizeKind(stats, 'practice')
-  const zonesSorted = Object.entries(summary.byZone).sort((a, b) => b[1] - a[1])
+  const zonesSorted = useMemo(() => Object.entries(summary.byZone).sort((a, b) => b[1] - a[1]), [summary])
+  const strokeRows = (parts: (s: Stroke) => StackSeries[], value: (s: Stroke, key: CountKey) => number) =>
+    (['fh', 'bh'] as const).map((s) => ({
+      label: STROKE_LABEL[s],
+      total: summary.byStroke[s],
+      parts: parts(s).map((se) => ({ key: se.key, label: se.label, color: se.color, value: value(s, se.key) })),
+    }))
+
+  // ----- timeline items (memoized once per data change, not per render) -----
+  const timelineItems = useMemo(() => new Map(stats.map((s) => [s.session.id, sequence(s.points)] as [string, SequenceItem[]])), [stats])
 
   const selectSession = (id: string, scroll = false) => {
     setSelId(id)
@@ -138,29 +147,22 @@ export function DashboardPage() {
         <div className="filters-row">
           <div className="chip-group" role="group" aria-label="Date range">
             {RANGES.map((r) => (
-              <button key={r.key} type="button" className={`chip${range === r.key ? ' on' : ''}`} aria-pressed={range === r.key} onClick={() => setRange(r.key)}>
+              <Chip key={r.key} on={range === r.key} onClick={() => setRange(r.key)}>
                 {r.label}
-              </button>
+              </Chip>
             ))}
           </div>
           <div className="chip-group" role="group" aria-label="Session type">
             {(['all', 'match', 'practice'] as const).map((k) => (
-              <button key={k} type="button" className={`chip${kind === k ? ' on' : ''}`} aria-pressed={kind === k} onClick={() => setKind(k)}>
+              <Chip key={k} on={kind === k} onClick={() => setKind(k)}>
                 {k === 'all' ? 'All types' : k === 'match' ? 'Matches' : 'Practice'}
-              </button>
+              </Chip>
             ))}
           </div>
           <div className="row" style={{ gap: 6 }}>
             <span className="kbd-hint">Stack by</span>
             <div className="segmented small" role="radiogroup" aria-label="Stack by">
-              {(
-                [
-                  ['total', 'Total'],
-                  ['stroke', 'Stroke'],
-                  ['error', 'Error type'],
-                  ['forced', 'Forced'],
-                ] as Array<[StackMode, string]>
-              ).map(([m, label]) => (
+              {MODES.map(([m, label]) => (
                 <button key={m} type="button" role="radio" aria-checked={mode === m} className={mode === m ? 'on' : ''} onClick={() => setMode(m)}>
                   {label}
                 </button>
@@ -179,16 +181,16 @@ export function DashboardPage() {
             {/* KPI row */}
             <div className="kpi-grid">
               <Kpi label="Sessions" value={stats.length} sub={`${withPoints.length} with errors logged`} />
-              <Kpi label="Errors" value={summary.total} sub={`${summary.byForced.unforced} unforced · ${summary.byForced.forced} forced`} spark={totalsSeries} />
+              <Kpi label="Errors" value={summary.total} sub={`${summary.byForced.unforced} unforced · ${summary.byForced.forced} forced`} spark={spark((s) => s.total)} />
               <Kpi
                 label="Errors per session"
                 value={perSession ? perSession.toFixed(1) : '—'}
                 sub={<Delta pct={trend ? trend.changePct : null} label="vs previous" upIsGood={false} />}
-                spark={totalsSeries}
+                spark={spark((s) => s.total)}
               />
-              <Kpi label="Forehand share" value={`${pct(summary.byStroke.fh, summary.total)}%`} sub={`${summary.byStroke.fh} errors`} spark={withPoints.slice(-12).map((s) => s.fh)} />
-              <Kpi label="Backhand share" value={`${pct(summary.byStroke.bh, summary.total)}%`} sub={`${summary.byStroke.bh} errors`} spark={withPoints.slice(-12).map((s) => s.bh)} />
-              <Kpi label="Forced share" value={`${pct(summary.byForced.forced, summary.total)}%`} sub={`${summary.byForced.forced} of ${summary.total}`} spark={withPoints.slice(-12).map((s) => s.forced)} />
+              <Kpi label="Forehand share" value={`${pct(summary.byStroke.fh, summary.total)}%`} sub={`${summary.byStroke.fh} errors`} spark={spark(share((s) => s.fh))} />
+              <Kpi label="Backhand share" value={`${pct(summary.byStroke.bh, summary.total)}%`} sub={`${summary.byStroke.bh} errors`} spark={spark(share((s) => s.bh))} />
+              <Kpi label="Forced share" value={`${pct(summary.byForced.forced, summary.total)}%`} sub={`${summary.byForced.forced} of ${summary.total}`} spark={spark(share((s) => s.forced))} />
             </div>
 
             {/* insights */}
@@ -223,7 +225,7 @@ export function DashboardPage() {
               </div>
               {showTable ? (
                 <div className="table-wrap">
-                  <table className="data-table">
+                  <table className="data-table clickable">
                     <thead>
                       <tr>
                         <th>Date</th>
@@ -239,11 +241,11 @@ export function DashboardPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {[...stats].reverse().map((s) => (
+                      {newestFirst.map((s) => (
                         <tr key={s.session.id} className={selected?.session.id === s.session.id ? 'sel' : ''} onClick={() => selectSession(s.session.id)}>
                           <td>{formatDate(s.session.date)}</td>
                           <td>
-                            {s.session.title} <span className="muted">· {s.session.kind}</span>
+                            {s.session.title} <span className="muted">· {KIND_LABEL[s.session.kind]}</span>
                           </td>
                           <td>{s.total}</td>
                           <td>{s.fh}</td>
@@ -252,7 +254,7 @@ export function DashboardPage() {
                           <td>{s.net}</td>
                           <td>{s.wide}</td>
                           <td>{s.forced}</td>
-                          <td>{s.durationMin ? fmtMin(s.durationMin) : '—'}</td>
+                          <td>{s.durationMin ? formatMinutes(s.durationMin) : '—'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -273,12 +275,12 @@ export function DashboardPage() {
             </div>
 
             {/* within-session timeline */}
-            <div className="card" ref={sessionCardRef}>
+            <div className="card scroll-target" ref={sessionCardRef}>
               <div className="section-title">Session timeline</div>
               <label className="field" style={{ marginBottom: 10 }}>
                 <span className="sr-only">Session</span>
                 <select className="input" value={selected?.session.id ?? ''} onChange={(e) => selectSession(e.target.value)}>
-                  {[...stats].reverse().map((s) => (
+                  {newestFirst.map((s) => (
                     <option key={s.session.id} value={s.session.id}>
                       {s.session.title} · {formatDate(s.session.date)} · {s.total} errors
                     </option>
@@ -289,9 +291,9 @@ export function DashboardPage() {
                 <>
                   <div className="facts">
                     <Fact label="Errors" value={selected.total} />
-                    <Fact label="Duration" value={selected.durationMin ? fmtMin(selected.durationMin) : '—'} />
-                    <Fact label="Per 10 min" value={selected.durationMin >= 5 ? (selected.total / (selected.durationMin / 10)).toFixed(1) : '—'} />
-                    <Fact label="Longest run" value={streak && streak.length > 1 ? `${streak.length} ${STROKE_SHORT[streak.key as 'fh' | 'bh']} in a row` : '—'} />
+                    <Fact label="Duration" value={selected.durationMin ? formatMinutes(selected.durationMin) : '—'} hint="Span of the main activity; points added long after are not counted in the span" />
+                    <Fact label={`Per ${bucketMin} min`} value={selected.durationMin >= 5 ? (selected.activeCount / (selected.durationMin / bucketMin)).toFixed(1) : '—'} />
+                    <Fact label="Longest run" value={streak && streak.length > 1 ? `${streak.length} ${STROKE_SHORT[streak.key as 'fh' | 'bh'] ?? streak.key} in a row` : '—'} />
                     <Fact label="Thirds" value={selected.total ? `${th.first} · ${th.middle} · ${th.last}` : '—'} hint="first · middle · last third of the session" />
                     <div className="fact-link">
                       <Link to={`/session/${selected.session.id}`}>Open session →</Link>
@@ -313,8 +315,19 @@ export function DashboardPage() {
                   {selected.total > 0 && (
                     <>
                       <div className="section-title">When in the session</div>
-                      <StackedColumns categories={bucketCats} series={SERIES[mode]} values={bucketValues} height={120} ariaLabel="Errors per 10 minutes of the session" emptyText="No timing data." />
-                      <div className="kbd-hint">Minutes since the first error, in 10-minute buckets.</div>
+                      <StackedColumns
+                        categories={bucketCats}
+                        series={SERIES[mode]}
+                        values={bucketValues}
+                        height={120}
+                        resetKey={selected.session.id}
+                        ariaLabel={`Errors per ${bucketMin} minutes of the session`}
+                        emptyText="No timing data."
+                      />
+                      <div className="kbd-hint">
+                        Minutes since the first error, in {bucketMin}-minute buckets.
+                        {lateCount > 0 && ` ${lateCount} ${lateCount === 1 ? 'point' : 'points'} logged well after the session (e.g. added later) ${lateCount === 1 ? 'is' : 'are'} not shown here.`}
+                      </div>
                     </>
                   )}
                 </>
@@ -325,29 +338,14 @@ export function DashboardPage() {
             <div className="dash-grid">
               <div className="card">
                 <div className="section-title">Error mix by stroke</div>
-                <ShareBars
-                  series={SERIES.error}
-                  rows={(['fh', 'bh'] as const).map((s) => ({
-                    label: STROKE_LABEL[s],
-                    total: summary.byStroke[s],
-                    parts: SERIES.error.map((se) => ({ key: se.key, label: se.label, color: se.color, value: summary.matrix[s][se.key as 'long' | 'net' | 'wide'] })),
-                  }))}
-                />
+                <ShareBars series={SERIES.error} rows={strokeRows(() => SERIES.error, (s, key) => summary.matrix[s][key as 'long' | 'net' | 'wide'])} />
                 <div className="section-title">Forced vs unforced by stroke</div>
                 <ShareBars
                   series={SERIES.forced}
-                  rows={(['fh', 'bh'] as const).map((s) => {
-                    const forced = allPoints.filter((p) => p.stroke === s && p.forced).length
-                    const total = summary.byStroke[s]
-                    return {
-                      label: STROKE_LABEL[s],
-                      total,
-                      parts: [
-                        { key: 'unforced', label: 'Unforced', color: CHART.unforced, value: total - forced },
-                        { key: 'forced', label: 'Forced', color: CHART.forced, value: forced },
-                      ],
-                    }
-                  })}
+                  rows={strokeRows(
+                    () => SERIES.forced,
+                    (s, key) => (key === 'forced' ? summary.byStrokeForced[s] : summary.byStroke[s] - summary.byStrokeForced[s]),
+                  )}
                 />
               </div>
 
@@ -364,7 +362,7 @@ export function DashboardPage() {
                     </thead>
                     <tbody>
                       <tr>
-                        <td>Sessions</td>
+                        <td>Sessions with errors</td>
                         <td>{matchK.sessions}</td>
                         <td>{practiceK.sessions}</td>
                       </tr>
@@ -403,8 +401,9 @@ export function DashboardPage() {
                 </div>
                 {zonesSorted.length > 0 && (
                   <ol className="zone-list">
-                    {zonesSorted.slice(0, 3).map(([zid, n]) => (
+                    {zonesSorted.slice(0, 3).map(([zid, n], i) => (
                       <li key={zid}>
+                        <span className="rank">{i + 1}.</span>
                         <span className="grow">{describeZone(zoneFromId(zid))}</span>
                         <strong>{n}</strong>
                         <span className="muted"> · {pct(n, summary.total)}%</span>
@@ -419,22 +418,22 @@ export function DashboardPage() {
             <div className="card">
               <div className="section-title">Timeline</div>
               <ol className="timeline">
-                {[...stats].reverse().map((s) => {
-                  const items = sequence(s.points)
+                {newestFirst.map((s) => {
+                  const items = timelineItems.get(s.session.id) ?? []
                   const isSel = selected?.session.id === s.session.id
                   return (
                     <li key={s.session.id} className={`tl-item${isSel ? ' sel' : ''}`}>
                       <div className="tl-date">
                         <span className="tl-day">{shortDate(s.session.date)}</span>
-                        <span className="tl-wd">{new Date(s.session.date + 'T00:00').toLocaleDateString([], { weekday: 'short' })}</span>
+                        <span className="tl-wd">{weekday(s.session.date)}</span>
                       </div>
                       <div className="tl-body">
                         <div className="row wrap" style={{ gap: 6 }}>
                           <Link to={`/session/${s.session.id}`} className="tl-title">
                             {s.session.title}
                           </Link>
-                          <span className="pill unforced">{s.session.kind}</span>
-                          {s.durationMin > 0 && <span className="muted">· {fmtMin(s.durationMin)}</span>}
+                          <span className="pill unforced">{KIND_LABEL[s.session.kind]}</span>
+                          {s.durationMin > 0 && <span className="muted">· {formatMinutes(s.durationMin)}</span>}
                         </div>
                         <div className="tl-stats">
                           <strong>{s.total}</strong> {s.total === 1 ? 'error' : 'errors'}
@@ -446,7 +445,7 @@ export function DashboardPage() {
                             </span>
                           )}
                         </div>
-                        {items.length > 0 && <SequenceStrip items={items.slice(0, 40)} onSelect={() => selectSession(s.session.id, true)} />}
+                        {items.length > 0 && <SequenceStrip items={items.slice(0, 40)} />}
                         {items.length > 40 && <div className="kbd-hint">+{items.length - 40} more</div>}
                         {s.session.notes && <div className="tl-notes">{s.session.notes}</div>}
                         <button type="button" className="btn sm ghost" style={{ marginTop: 6 }} onClick={() => selectSession(s.session.id, true)}>

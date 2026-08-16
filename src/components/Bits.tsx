@@ -7,6 +7,15 @@ import type { Summary } from '../domain/stats'
 import { CloseIcon, TrashIcon } from './Icons'
 import { formatTime } from '../lib/format'
 
+// ---------- chip (filter toggle) ----------
+export function Chip({ on, cls, onClick, children }: { on: boolean; cls?: string; onClick: () => void; children: ReactNode }) {
+  return (
+    <button type="button" className={`chip${cls ? ` ${cls}` : ''}${on ? ' on' : ''}`} aria-pressed={on} onClick={onClick}>
+      {children}
+    </button>
+  )
+}
+
 // ---------- sync badge ----------
 export function SyncBadge({ compact = false }: { compact?: boolean }) {
   const s = useSyncStatus()

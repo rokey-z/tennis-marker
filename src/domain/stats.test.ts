@@ -75,6 +75,7 @@ describe('summarize', () => {
     expect(s.maxZone).toBe(2)
     expect(s.matrix.fh).toEqual({ long: 1, net: 1, wide: 0 })
     expect(s.matrix.bh).toEqual({ long: 1, net: 0, wide: 1 })
+    expect(s.byStrokeForced).toEqual({ fh: 0, bh: 1 })
   })
 
   it('handles empty input', () => {

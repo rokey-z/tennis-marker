@@ -1,7 +1,7 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import type { SequenceItem } from '../domain/analytics'
 import { describeZone, zoneFor } from '../domain/court'
-import { ERROR_LABEL, STROKE_SHORT } from '../domain/types'
+import { ERROR_LABEL, STROKE_SHORT, isErrorType, isStroke } from '../domain/types'
 import { formatTime } from '../lib/format'
 import { CHART, niceTicks, useMeasure } from './chartUtils'
 
@@ -60,15 +60,29 @@ export interface StackedColumnsProps {
   avgLabel?: string
   selectedIndex?: number | null
   onSelect?: (index: number) => void
+  /** Change this (e.g. the selected session id) to drop any pinned tooltip when the underlying dataset changes. */
+  resetKey?: string
   ariaLabel: string
   emptyText?: string
 }
 
-export function StackedColumns({ categories, series, values, height = 170, avgLine, avgLabel = 'avg', selectedIndex = null, onSelect, ariaLabel, emptyText = 'No data in this range.' }: StackedColumnsProps) {
+export function StackedColumns({ categories, series, values, height = 170, avgLine, avgLabel = 'avg', selectedIndex = null, onSelect, resetKey, ariaLabel, emptyText = 'No data in this range.' }: StackedColumnsProps) {
   const [ref, width] = useMeasure<HTMLDivElement>()
   const [hover, setHover] = useState<number | null>(null)
-  const [pinned, setPinned] = useState<number | null>(null)
+  // pinned tooltip is stored by category KEY so it survives reordering and never points at the wrong column
+  const [pinnedKey, setPinnedKey] = useState<string | null>(null)
   const n = categories.length
+  const catKeys = categories.map((c) => c.key).join('\u0000')
+  useEffect(() => {
+    // dataset or selection changed underneath us → drop stale hover/pin
+    setHover(null)
+    setPinnedKey(null)
+  }, [catKeys, resetKey])
+  useEffect(() => {
+    // parent moved the selection elsewhere (select box, table, timeline) → un-pin
+    if (pinnedKey !== null && selectedIndex !== null && categories[selectedIndex]?.key !== pinnedKey) setPinnedKey(null)
+  }, [selectedIndex, pinnedKey, categories])
+  const pinned = pinnedKey === null ? null : categories.findIndex((c) => c.key === pinnedKey)
   const totals = values.map((row) => row.reduce((a, b) => a + b, 0))
   const maxVal = Math.max(...totals, ...(avgLine ?? []), 0)
   const { max, ticks } = niceTicks(maxVal)
@@ -82,8 +96,9 @@ export function StackedColumns({ categories, series, values, height = 170, avgLi
   const cx = (i: number) => M.left + band * i + band / 2
 
   const labelEvery = n <= 6 ? 1 : Math.max(1, Math.ceil(n / Math.max(2, Math.floor(plotW / 52))))
-  const shown = hover ?? pinned
-  const active = shown ?? selectedIndex
+  const shown = hover ?? (pinned !== null && pinned >= 0 ? pinned : null)
+  // highlight band: hover wins, then the parent's selection, then a pin (charts without selection)
+  const active = hover ?? selectedIndex ?? shown
 
   return (
     <div className="chart" ref={ref}>
@@ -156,7 +171,12 @@ export function StackedColumns({ categories, series, values, height = 170, avgLi
                       onPointerEnter={() => setHover(i)}
                       onPointerMove={() => setHover(i)}
                       onClick={() => {
-                        setPinned((p) => (p === i ? null : i))
+                        const key = categories[i].key
+                        if (pinnedKey === key) {
+                          setPinnedKey(null) // just un-pin; don't re-trigger selection/scroll
+                          return
+                        }
+                        setPinnedKey(key)
                         onSelect?.(i)
                       }}
                     />
@@ -190,7 +210,7 @@ export function StackedColumns({ categories, series, values, height = 170, avgLi
                     <span>{totals[shown]}</span>
                   </div>
                 )}
-                {avgLine && (
+                {avgLine && avgLine[shown] !== undefined && (
                   <div className="tip-row">
                     <span className="sw line" style={{ background: CHART.avg }} />
                     <span className="grow">{avgLabel}</span>
@@ -208,7 +228,7 @@ export function StackedColumns({ categories, series, values, height = 170, avgLi
 
 // ---------- sparkline ----------
 
-export function Sparkline({ values, width = 76, height = 26 }: { values: number[]; width?: number; height?: number }) {
+export function Sparkline({ values, width = 56, height = 24 }: { values: number[]; width?: number; height?: number }) {
   if (values.length < 2) return null
   const max = Math.max(1, ...values)
   const gap = 2
@@ -233,19 +253,22 @@ export function SequenceStrip({ items, gapThresholdMin = 5, onSelect }: { items:
       {items.map((it, i) => {
         const p = it.point
         const gap = it.gapMin !== null && it.gapMin >= gapThresholdMin ? it.gapMin : null
-        const title = `#${i + 1} · ${STROKE_SHORT[p.stroke]} ${ERROR_LABEL[p.error_type].toLowerCase()} · ${p.forced ? 'forced' : 'unforced'} · ${describeZone(zoneFor(p.x, p.y))} · ${formatTime(p.created_at)}`
+        const stroke = isStroke(p.stroke) ? p.stroke : null
+        const errLabel = isErrorType(p.error_type) ? ERROR_LABEL[p.error_type] : '?'
+        const title = `#${i + 1} · ${stroke ? STROKE_SHORT[stroke] : '?'} ${errLabel.toLowerCase()} · ${p.forced ? 'forced' : 'unforced'} · ${describeZone(zoneFor(p.x, p.y))} · ${formatTime(p.created_at)}`
+        const cls = `seq-dot ${stroke ?? 'unknown'}${p.forced ? ' forced' : ''}`
         return (
           <span key={p.id} className="seq-item" role="listitem">
             {gap !== null && <span className="seq-gap" title={`${Math.round(gap)} min without an error`}>{Math.round(gap)}m</span>}
-            <button
-              type="button"
-              className={`seq-dot ${p.stroke}${p.forced ? ' forced' : ''}`}
-              title={title}
-              aria-label={title}
-              onClick={() => onSelect?.(i)}
-            >
-              {ERROR_LABEL[p.error_type][0]}
-            </button>
+            {onSelect ? (
+              <button type="button" className={cls} title={title} aria-label={title} onClick={() => onSelect(i)}>
+                {errLabel[0]}
+              </button>
+            ) : (
+              <span className={cls} title={title} aria-label={title}>
+                {errLabel[0]}
+              </span>
+            )}
           </span>
         )
       })}
