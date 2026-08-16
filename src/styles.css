@@ -657,11 +657,15 @@ textarea.input {
     width: 100%;
     max-height: 100%; /* only letterboxes on very short screens, so the tally/undo row always fits */
   }
+  /* the log gets a real share of the screen when open; the court shrinks to make room */
   .record-log.open {
-    flex: 1 1 0;
+    flex: 1 1 auto;
     height: auto;
-    min-height: 44px;
-    max-height: 45dvh;
+    min-height: clamp(120px, 22dvh, 220px);
+    max-height: 55dvh;
+  }
+  .record-bottom {
+    flex: 0 0 auto;
   }
 }
 @supports (width: 1cqh) {
@@ -800,9 +804,10 @@ textarea.input {
   font-size: 12px;
 }
 .log-body {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain; /* scrolling the list never drags the screen behind it */
   -webkit-overflow-scrolling: touch;
   padding: 0 8px 6px;
 }
