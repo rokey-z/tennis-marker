@@ -11,6 +11,7 @@ const s1: Session = {
   venue: 'Riverside Club',
   date: '2026-08-15',
   kind: 'match',
+  mode: 'errors',
   notes: '',
   created_at: t0,
   updated_at: t0,

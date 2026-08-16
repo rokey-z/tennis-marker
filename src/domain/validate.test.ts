@@ -37,6 +37,12 @@ describe('sanitizeSession', () => {
     expect(sanitizeSession({ ...good, kind: 'drill' })?.kind).toBe('practice')
     expect(sanitizeSession(good)?.date).toBe('2026-08-15')
   })
+  it('defaults an unknown mode to errors', () => {
+    expect(sanitizeSession({ ...good, mode: 'nonsense' })?.mode).toBe('errors')
+    expect(sanitizeSession({ ...good, mode: 'placement' })?.mode).toBe('placement')
+    expect(sanitizeSession(good)?.mode).toBe('errors')
+  })
+
   it('rejects malformed dates / ids', () => {
     expect(sanitizeSession({ ...good, date: '' })).toBeNull()
     expect(sanitizeSession({ ...good, date: '2026-8-5' })).toBeNull()

@@ -29,6 +29,7 @@ function sess(over: Partial<Session> = {}): Session {
     venue: '',
     date: '2026-08-15',
     kind: 'practice',
+    mode: 'errors',
     notes: '',
     created_at: T(0),
     updated_at: T(0),

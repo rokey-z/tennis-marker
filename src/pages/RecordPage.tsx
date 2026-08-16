@@ -18,10 +18,9 @@ import { VenuePicker } from '../components/VenuePicker'
 import { filterPoints, summarize } from '../domain/stats'
 import { pointsToCsv, safeFilename, toExportBundle } from '../domain/export'
 import { downloadText } from '../lib/format'
-import { ERROR_LABEL, KIND_LABEL, STROKE_SHORT, type ErrorType, type Outcome, type Point, type Session, type Stroke } from '../domain/types'
+import { ERROR_LABEL, KIND_LABEL, MODE_HINT, MODE_LABEL, SESSION_MODES, STROKE_SHORT, type ErrorType, type Outcome, type Point, type Session, type Stroke } from '../domain/types'
 
 const LOG_KEY = 'tennis-marker.logOpen'
-const MODE_KEY = 'tennis-marker.mode'
 const FLIP_KEY = 'tennis-marker.flip'
 const AFTER_SAVE_IGNORE_MS = 300
 const DEFAULT_STATS_FILTERS: StatsFilterState = { stroke: 'all', error: 'all', forced: 'all' }
@@ -32,8 +31,7 @@ export function RecordPage() {
   const nav = useNavigate()
   const isDesktop = useIsDesktop()
   const session = state.sessions[id]
-  const [mode, setMode] = useState<'errors' | 'placement'>(() => (localStorage.getItem(MODE_KEY) === 'placement' ? 'placement' : 'errors'))
-  const placementMode = mode === 'placement'
+  const placementMode = session?.mode === 'placement'
   const allPoints = useMemo(() => livePointsForSession(state, id), [state, id])
   // each mode shows its own marks: they live in different halves of the court
   const points = useMemo(
@@ -65,9 +63,8 @@ export function RecordPage() {
     localStorage.setItem(LOG_KEY, logOpen ? '1' : '0')
   }, [logOpen])
   useEffect(() => {
-    localStorage.setItem(MODE_KEY, mode)
     setPending(null)
-  }, [mode])
+  }, [placementMode])
 
   const onTap = useCallback((x: number, y: number, at: { clientX: number; clientY: number }) => {
     if (performance.now() < ignoreUntil.current) return
@@ -189,7 +186,7 @@ export function RecordPage() {
           </span>
           <span className="tb-meta">
             <span className="tb-line">
-              {KIND_LABEL[session.kind]} · {shortDate(session.date)}
+              {MODE_LABEL[session.mode]} · {KIND_LABEL[session.kind]} · {shortDate(session.date)}
               {session.venue ? ` · ${session.venue}` : ''}
               {flipped ? ' · far end' : ''}
               {!session.opponent && session.kind === 'match' ? ' · add opponent' : ''}
@@ -210,16 +207,6 @@ export function RecordPage() {
       </header>
 
       <div className="record-court">
-        {!statsMode && (
-          <div className="mode-bar segmented" role="radiogroup" aria-label="Recording mode">
-            <button type="button" role="radio" aria-checked={!placementMode} className={!placementMode ? 'on' : ''} onClick={() => setMode('errors')}>
-              Errors
-            </button>
-            <button type="button" role="radio" aria-checked={placementMode} className={placementMode ? 'on' : ''} onClick={() => setMode('placement')}>
-              Placement
-            </button>
-          </div>
-        )}
         {statsMode && <StatsFilters value={filters} onChange={setFilters} />}
         <div className="court-box" ref={courtRef}>
           {statsMode ? (
@@ -333,6 +320,7 @@ export function RecordPage() {
 
 function SessionDetails({ session, onClose, onDeleted }: { session: Session; onClose: () => void; onDeleted: () => void }) {
   const state = useAppState()
+  const [mode, setMode] = useState(session.mode)
   const [opponent, setOpponent] = useState(session.opponent ?? '')
   const [venue, setVenue] = useState(session.venue ?? '')
   const [date, setDate] = useState(session.date)
@@ -343,12 +331,23 @@ function SessionDetails({ session, onClose, onDeleted }: { session: Session; onC
   const venues = useMemo(() => venueRows(Object.values(state.sessions)), [state.sessions])
 
   const save = () => {
-    store.updateSession(session.id, { opponent, venue, date, kind, notes })
+    store.updateSession(session.id, { opponent, venue, date, kind, mode, notes })
     onClose()
   }
 
   return (
     <Modal title={sessionLabel({ kind, opponent, title: session.title })} onClose={onClose}>
+      <div className="field">
+        <span>Records</span>
+        <div className="segmented mode-pick" role="radiogroup" aria-label="What this session records">
+          {SESSION_MODES.map((m) => (
+            <button key={m} type="button" role="radio" aria-checked={mode === m} className={mode === m ? 'on' : ''} onClick={() => setMode(m)}>
+              {MODE_LABEL[m]}
+            </button>
+          ))}
+        </div>
+        <p className="kbd-hint" style={{ marginTop: 6 }}>{MODE_HINT[mode]}</p>
+      </div>
       <OpponentPicker value={opponent} onChange={setOpponent} kind={kind} known={known} />
       <VenuePicker value={venue} onChange={setVenue} known={venues} />
       <div className="row">

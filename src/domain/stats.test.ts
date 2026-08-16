@@ -13,6 +13,7 @@ function session(over: Partial<Session> = {}): Session {
     venue: '',
     date: '2026-08-15',
     kind: 'practice',
+    mode: 'errors',
     notes: '',
     created_at: t0,
     updated_at: t0,

@@ -24,7 +24,7 @@ export function createSupabase(): SupabaseClient | null {
 const PAGE = 1000
 
 /** Columns added after 0001; dropped from the payload until the matching migration is applied. */
-const OPTIONAL_SESSION_COLUMNS = ['opponent', 'venue'] as const
+const OPTIONAL_SESSION_COLUMNS = ['opponent', 'venue', 'mode'] as const
 const OPTIONAL_POINT_COLUMNS = ['outcome'] as const
 const missingColumns = new Set<string>()
 
@@ -54,6 +54,7 @@ function normalizeSession(r: Record<string, unknown>): Session {
     venue: String(r.venue ?? ''),
     date: String(r.date ?? '').slice(0, 10),
     kind: r.kind === 'match' ? 'match' : 'practice',
+    mode: r.mode === 'placement' ? 'placement' : 'errors',
     notes: String(r.notes ?? ''),
     created_at: toIso(r.created_at),
     updated_at: toIso(r.updated_at),
@@ -109,7 +110,7 @@ export function createSupabaseRemote(client: SupabaseClient): Remote {
         const missing = missingColumnFrom(error, OPTIONAL_SESSION_COLUMNS)
         if (!missing || missingColumns.has(missing)) return { error: asRemoteError(error, status) }
         missingColumns.add(missing)
-        console.warn(`Supabase: sessions.${missing} column missing — run supabase/migrations/0002_session_fields.sql`)
+        console.warn(`Supabase: sessions.${missing} column missing — run the matching supabase/migrations file`)
       }
       return { error: null }
     },

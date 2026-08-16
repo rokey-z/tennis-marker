@@ -7,7 +7,7 @@ import { store, useAppState } from '../data/app'
 import { liveSessions } from '../data/store'
 import { sessionLabel } from '../domain/session'
 import { perSessionCounts } from '../domain/stats'
-import { KIND_LABEL, type SessionKind } from '../domain/types'
+import { KIND_LABEL, MODE_LABEL, type SessionKind } from '../domain/types'
 
 export function SessionsPage() {
   const state = useAppState()
@@ -47,7 +47,7 @@ export function SessionsPage() {
                   <div className="grow">
                     <div className="title">{sessionLabel(session)}</div>
                     <div className="sub">
-                      {KIND_LABEL[session.kind]} · {formatDate(session.date)}
+                      {MODE_LABEL[session.mode]} · {KIND_LABEL[session.kind]} · {formatDate(session.date)}
                       {session.venue ? ` · ${session.venue}` : ''}
                       {session.notes ? ` · ${session.notes.slice(0, 40)}${session.notes.length > 40 ? '…' : ''}` : ''}
                     </div>

@@ -28,6 +28,7 @@ function sess(over: Partial<Session> = {}): Session {
     venue: '',
     date: '2026-08-15',
     kind: 'practice',
+    mode: 'errors',
     notes: '',
     created_at: t1,
     updated_at: t1,
@@ -70,6 +71,7 @@ describe('load/save', () => {
     const loaded = loadState(st)
     expect(loaded.sessions.s1.opponent).toBe('')
     expect(loaded.sessions.s1.venue).toBe('')
+    expect(loaded.sessions.s1.mode).toBe('errors')
     expect(loaded.sessions.s1.title).toBe('Practice 2026-08-01')
   })
 

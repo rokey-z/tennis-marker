@@ -31,8 +31,8 @@ export interface Store {
   subscribe(listener: () => void): () => void
   /** Re-read from storage (another tab wrote). */
   reload(): void
-  createSession(input?: Partial<Pick<Session, 'opponent' | 'venue' | 'date' | 'kind' | 'notes'>>): Session
-  updateSession(id: string, patch: Partial<Pick<Session, 'opponent' | 'venue' | 'date' | 'kind' | 'notes'>>): void
+  createSession(input?: Partial<Pick<Session, 'opponent' | 'venue' | 'date' | 'kind' | 'mode' | 'notes'>>): Session
+  updateSession(id: string, patch: Partial<Pick<Session, 'opponent' | 'venue' | 'date' | 'kind' | 'mode' | 'notes'>>): void
   /** Add an opponent before she has played them (device-local until used in a session). Returns false if blank/duplicate. */
   addRosterOpponent(name: string): boolean
   /** Rename an opponent across every session that uses it (case-insensitive match). Returns sessions changed. */
@@ -166,6 +166,7 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
         venue: cleanOpponent(input.venue ?? ''),
         date,
         kind,
+        mode: input.mode ?? 'errors',
         notes: input.notes ?? '',
         created_at: t,
         updated_at: t,

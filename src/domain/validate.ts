@@ -1,7 +1,7 @@
 import { clampToView, roundFeet } from './court'
 import { isValidIso, YMD_RE } from '../lib/format'
 import { cleanOpponent } from './session'
-import { isErrorType, isOutcome, isSessionKind, isStroke, type Point, type Session } from './types'
+import { isErrorType, isOutcome, isSessionKind, isSessionMode, isStroke, type Point, type Session } from './types'
 
 const str = (v: unknown): string | null => (typeof v === 'string' && v.length > 0 ? v : null)
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : null)
@@ -23,6 +23,7 @@ export function sanitizeSession(raw: unknown): Session | null {
     venue: typeof r.venue === 'string' ? cleanOpponent(r.venue) : '',
     date,
     kind: isSessionKind(r.kind) ? r.kind : 'practice',
+    mode: isSessionMode(r.mode) ? r.mode : 'errors',
     notes: typeof r.notes === 'string' ? r.notes : '',
     created_at: created,
     updated_at: isoOrNull(r.updated_at) ?? created,

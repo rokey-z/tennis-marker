@@ -1,6 +1,8 @@
 export type Stroke = 'fh' | 'bh'
 export type ErrorType = 'long' | 'net' | 'wide'
 export type SessionKind = 'match' | 'practice'
+/** What a session records: her errors on her own half, or where her balls landed on the far half. */
+export type SessionMode = 'errors' | 'placement'
 /**
  * What a mark records:
  *   error / winner — recorded in Errors mode, positioned where SHE was on her half
@@ -17,11 +19,18 @@ export const STROKE_SHORT: Record<Stroke, string> = { fh: 'FH', bh: 'BH' }
 export const ERROR_LABEL: Record<ErrorType, string> = { long: 'Long', net: 'Net', wide: 'Wide' }
 export const SESSION_KINDS: SessionKind[] = ['match', 'practice']
 export const KIND_LABEL: Record<SessionKind, string> = { match: 'Match', practice: 'Practice' }
+export const SESSION_MODES: SessionMode[] = ['errors', 'placement']
+export const MODE_LABEL: Record<SessionMode, string> = { errors: 'Errors', placement: 'Placement' }
+export const MODE_HINT: Record<SessionMode, string> = {
+  errors: 'Tap her half where she lost the point, then pick the stroke and error.',
+  placement: 'Shows the far half: press where the ball landed and drag left for backhand, right for forehand.',
+}
 
 export const isStroke = (v: unknown): v is Stroke => v === 'fh' || v === 'bh'
 export const isErrorType = (v: unknown): v is ErrorType => v === 'long' || v === 'net' || v === 'wide'
 export const isOutcome = (v: unknown): v is Outcome => v === 'error' || v === 'winner' || v === 'placement'
 export const isSessionKind = (v: unknown): v is SessionKind => v === 'match' || v === 'practice'
+export const isSessionMode = (v: unknown): v is SessionMode => v === 'errors' || v === 'placement'
 
 /** A match or practice; groups points. Timestamps are ISO strings, dates are YYYY-MM-DD. */
 export interface Session {
@@ -35,6 +44,8 @@ export interface Session {
   venue: string
   date: string
   kind: SessionKind
+  /** Sessions record one thing or the other; the court and the gesture follow from this. */
+  mode: SessionMode
   notes: string
   created_at: string
   updated_at: string

@@ -99,6 +99,15 @@ describe('store', () => {
     expect(Object.values(st.points).filter((p) => p.session_id === a.id).every((p) => p.deleted_at)).toBe(true)
   })
 
+  it('a session records one mode, defaulting to errors', () => {
+    const store = createStore(memoryStorage(), { ...clock(), newId: ids() })
+    expect(store.createSession().mode).toBe('errors')
+    const p = store.createSession({ mode: 'placement' })
+    expect(p.mode).toBe('placement')
+    store.updateSession(p.id, { mode: 'errors' })
+    expect(store.getState().sessions[p.id].mode).toBe('errors')
+  })
+
   it('updateSession bumps updated_at and re-dirties', () => {
     const store = createStore(memoryStorage(), { ...clock(), newId: ids() })
     const s = store.createSession()

@@ -11,13 +11,13 @@
   --danger: #d64545;
   --ok: #1f9d55;
   --warn: #e0a100;
-  /* Identity: colour = stroke — forehand red, backhand blue. The backhand blue is deliberately
-     much darker than the court (2.0:1 against it) so marks stay visible on the blue surface, and
-     both carry white text. Separation for colour-blind readers is CVD ΔE 24.7 (floor 8). */
-  --fh: #d92d20;
-  --fh-soft: #fdeae8;
+  /* Identity: colour = stroke — forehand teal, backhand blue: two cool tones that still separate
+     well for colour-blind readers (CVD ΔE 23.6, floor 8) and differ in lightness (2.3:1) so they
+     stay apart on the blue court; both carry white text. */
+  --fh: #0d9488;
+  --fh-soft: #d9f2ee;
   --fh-ink: #ffffff;
-  --fh-text: #b3261e;
+  --fh-text: #0e7c70;
   --bh: #1e40af;
   --bh-soft: #e5eafb;
   --bh-ink: #ffffff;
@@ -2074,4 +2074,11 @@ span
   border-radius: 50%;
   background: var(--muted);
   display: inline-block;
+}
+
+.mode-pick {
+  width: 100%;
+}
+.mode-pick button {
+  flex: 1;
 }

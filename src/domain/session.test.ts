@@ -10,6 +10,7 @@ const base: Session = {
   venue: '',
   date: '2026-08-15',
   kind: 'practice',
+  mode: 'errors',
   notes: '',
   created_at: '2026-08-15T10:00:00.000Z',
   updated_at: '2026-08-15T10:00:00.000Z',

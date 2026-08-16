@@ -84,9 +84,14 @@ export function saveState(storage: StorageLike, state: RepoState): void {
 function upgradeSessions(sessions: Record<string, Session>): Record<string, Session> {
   let out = sessions
   for (const [id, s] of Object.entries(sessions)) {
-    if (typeof s?.opponent === 'string' && typeof s?.venue === 'string') continue
+    if (typeof s?.opponent === 'string' && typeof s?.venue === 'string' && typeof s?.mode === 'string') continue
     if (out === sessions) out = { ...sessions }
-    out[id] = { ...s, opponent: typeof s?.opponent === 'string' ? s.opponent : '', venue: typeof s?.venue === 'string' ? s.venue : '' }
+    out[id] = {
+      ...s,
+      opponent: typeof s?.opponent === 'string' ? s.opponent : '',
+      venue: typeof s?.venue === 'string' ? s.venue : '',
+      mode: s?.mode === 'placement' ? 'placement' : 'errors',
+    }
   }
   return out
 }
