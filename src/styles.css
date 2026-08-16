@@ -11,15 +11,18 @@
   --danger: #d64545;
   --ok: #1f9d55;
   --warn: #e0a100;
-  /* Identity: colour = stroke. A bright amber against an ink tone — a lightness contrast that
-     survives sunlight, cheap screens and every kind of colour blindness. The same two values are
-     used for court marks, tags and chart bars, so one entity has exactly one colour. */
-  --fh: #e8940f;
-  --fh-soft: #fdf0d8;
-  --fh-ink: #241500;
-  --bh: #232a36;
-  --bh-soft: #e8eaef;
+  /* Identity: colour = stroke — forehand orange, backhand pink. Both are chosen to sit clearly
+     on the blue court and to stay apart for colour-blind readers (CVD ΔE 20.6, floor 8). */
+  --fh: #ef7d1a;
+  --fh-soft: #fdeada;
+  --fh-ink: #2b1200;
+  --fh-text: #9a4f06;
+  --bh: #c2185b;
+  --bh-soft: #fbe4ee;
   --bh-ink: #ffffff;
+  --bh-text: #a3134c;
+  /* forced errors carry a dark outline; unforced carry none */
+  --mark-outline: #14181d;
   /* chart-only series (error type / forced), validated against the white card surface */
   --chart-total: #2a78d6;
   --err-long: #2a78d6;
@@ -708,12 +711,6 @@ textarea.input {
   height: 14px;
   background: var(--line);
 }
-.tally .t-fh {
-  color: #9a6300;
-}
-.tally .t-bh {
-  color: var(--bh);
-}
 .record-actions {
   display: grid;
   grid-template-columns: 1.4fr 1fr;
@@ -861,18 +858,18 @@ textarea.input {
   text-overflow: ellipsis;
 }
 .forced-toggle {
-  min-height: 28px;
-  padding: 0 10px;
+  min-height: 30px;
+  padding: 0 12px;
   border-radius: 999px;
-  border: 1.5px solid var(--line);
+  border: 2px solid var(--mark-outline);
   font-size: 12px;
-  font-weight: 700;
-  color: var(--muted);
+  font-weight: 800;
+  color: var(--mark-outline);
   background: var(--surface);
 }
 .forced-toggle.on {
-  background: var(--text);
-  border-color: var(--text);
+  background: var(--mark-outline);
+  border-color: var(--mark-outline);
   color: #fff;
 }
 .pop-close {
@@ -913,10 +910,10 @@ textarea.input {
   justify-content: flex-start;
 }
 .pop-btn.fh {
-  border-color: #f2cf7a;
+  border-color: var(--fh-soft);
 }
 .pop-btn.bh {
-  border-color: #b9bcc6;
+  border-color: var(--bh-soft);
 }
 .pop-tag {
   font-size: 11px;
@@ -1894,25 +1891,24 @@ span
   font-weight: 700;
 }
 .mark.fh .mark-sign {
-  color: #8a5200;
+  color: var(--fh-text);
 }
 .mark.bh .mark-sign {
-  color: var(--bh);
+  color: var(--bh-text);
 }
 .mark-forced {
   font-size: var(--fs-tag);
   font-weight: 700;
-  color: var(--muted);
-  border: 1.5px solid var(--line);
+  color: var(--mark-outline);
+  border: 2px solid var(--mark-outline);
   border-radius: 999px;
-  padding: 1px 7px;
+  padding: 0 7px;
 }
 .dot {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  box-shadow: 0 0 0 2px var(--surface);
   flex-shrink: 0;
 }
 .dot.fh {
@@ -1924,15 +1920,7 @@ span
   color: var(--bh-ink);
 }
 .dot.forced {
-  background: var(--surface);
-}
-.dot.fh.forced {
-  box-shadow: inset 0 0 0 2px var(--fh), 0 0 0 2px var(--surface);
-  color: var(--fh);
-}
-.dot.bh.forced {
-  box-shadow: inset 0 0 0 2px var(--bh), 0 0 0 2px var(--surface);
-  color: var(--bh);
+  box-shadow: inset 0 0 0 2px var(--mark-outline);
 }
 .seq-hit {
   display: inline-flex;
@@ -1957,10 +1945,11 @@ span
   gap: 4px;
 }
 .mark-legend .ml-ring {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  border: 2px solid var(--muted);
+  border: 2px solid var(--mark-outline);
+  background: var(--surface-2);
 }
 
 .log-legend {
@@ -1977,9 +1966,10 @@ span
   font-variant-numeric: tabular-nums;
 }
 .tally .ml-ring {
-  width: 11px;
-  height: 11px;
+  width: 13px;
+  height: 13px;
   border-radius: 50%;
-  border: 2px solid var(--muted);
+  border: 2px solid var(--mark-outline);
+  background: var(--surface-2);
   display: inline-block;
 }

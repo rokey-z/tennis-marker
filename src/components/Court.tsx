@@ -264,16 +264,15 @@ function Marker({ p: pt, flipped }: { p: Point; flipped: boolean }) {
   return (
     <g transform={flipped ? `rotate(180 ${p.x} ${p.y})` : undefined}>
       <title>{markLabel(stroke, error, p.forced)}</title>
-      {/* white ring: keeps overlapping marks separable on a busy court */}
-      <circle cx={p.x} cy={p.y} r={r} fill={p.forced ? 'var(--surface)' : color} stroke="var(--surface)" strokeWidth={0.28} />
-      {p.forced && <circle cx={p.x} cy={p.y} r={r - 0.2} fill="none" stroke={color} strokeWidth={0.4} />}
+      {/* colour carries the stroke; a dark outline marks a forced error */}
+      <circle cx={p.x} cy={p.y} r={r} fill={color} stroke={p.forced ? 'var(--mark-outline)' : 'none'} strokeWidth={p.forced ? 0.36 : 0} />
       <text
         x={p.x}
         y={p.y + 0.52}
         fontSize={1.5}
         fontWeight={800}
         textAnchor="middle"
-        fill={p.forced ? color : ink}
+        fill={ink}
         fontFamily="var(--font)"
       >
         {ERROR_LETTER[error]}
