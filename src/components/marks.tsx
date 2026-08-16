@@ -93,3 +93,44 @@ export function MarkLegend({ className = '' }: { className?: string }) {
     </div>
   )
 }
+
+/** BH left, FH right — one tag per column, then a round button per error type, in the mark's colour. */
+const GRID_COLUMNS: Stroke[] = ['bh', 'fh']
+
+export function ShotGrid({
+  current,
+  forced = false,
+  onPick,
+}: {
+  current?: { stroke: Stroke; error: ErrorType } | null
+  forced?: boolean
+  onPick: (stroke: Stroke, error: ErrorType) => void
+}) {
+  return (
+    <div className="shot-grid">
+      {GRID_COLUMNS.map((stroke) => (
+        <div key={stroke} className="sg-head">
+          <StrokeTag stroke={stroke} />
+        </div>
+      ))}
+      {ERROR_TYPES.map((err) =>
+        GRID_COLUMNS.map((stroke) => {
+          const sel = current?.stroke === stroke && current?.error === err
+          return (
+            <button
+              key={`${stroke}-${err}`}
+              type="button"
+              className={`sg-btn ${stroke}${sel ? ' sel' : ''}`}
+              aria-pressed={current ? sel : undefined}
+              aria-label={`${STROKE_LABEL[stroke]} ${ERROR_LABEL[err]}`}
+              title={markLabel(stroke, err, forced)}
+              onClick={() => onPick(stroke, err)}
+            >
+              {ERROR_LABEL[err]}
+            </button>
+          )
+        }),
+      )}
+    </div>
+  )
+}

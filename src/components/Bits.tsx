@@ -4,7 +4,7 @@ import { useSyncStatus } from '../data/app'
 import { describeZone, zoneFor } from '../domain/court'
 import { ERROR_LABEL, ERROR_TYPES, STROKE_LABEL, STROKES, type Point } from '../domain/types'
 import type { Summary } from '../domain/stats'
-import { CloseIcon } from './Icons'
+import { CloseIcon, TrashIcon } from './Icons'
 import { ErrorLetter, MarkChip, StrokeTag } from './marks'
 import { formatTime } from '../lib/format'
 
@@ -93,7 +93,7 @@ export function Tally({ s }: { s: Summary }) {
 }
 
 // ---------- point list ----------
-export function PointList({ points, onOpen }: { points: Point[]; onOpen: (point: Point, index: number) => void }) {
+export function PointList({ points, onOpen, onDelete }: { points: Point[]; onOpen: (point: Point, index: number) => void; onDelete: (point: Point) => void }) {
   if (!points.length) return <p className="muted">No points logged yet.</p>
   const rows = [...points].reverse()
   return (
@@ -110,9 +110,9 @@ export function PointList({ points, onOpen }: { points: Point[]; onOpen: (point:
                   {describeZone(zoneFor(p.x, p.y))} · {formatTime(p.created_at)}
                 </small>
               </span>
-              <span className="chev" aria-hidden="true">
-                ›
-              </span>
+            </button>
+            <button type="button" className="icon-btn row-del" aria-label={`Delete point ${index}`} onClick={() => onDelete(p)}>
+              <TrashIcon />
             </button>
           </li>
         )

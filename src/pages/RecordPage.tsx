@@ -18,7 +18,7 @@ import { VenuePicker } from '../components/VenuePicker'
 import { filterPoints, summarize } from '../domain/stats'
 import { pointsToCsv, safeFilename, toExportBundle } from '../domain/export'
 import { downloadText } from '../lib/format'
-import { ERROR_LABEL, KIND_LABEL, STROKE_SHORT, type ErrorType, type Session, type Stroke } from '../domain/types'
+import { ERROR_LABEL, KIND_LABEL, STROKE_SHORT, type ErrorType, type Point, type Session, type Stroke } from '../domain/types'
 
 const LOG_KEY = 'tennis-marker.logOpen'
 const FLIP_KEY = 'tennis-marker.flip'
@@ -88,6 +88,16 @@ export function RecordPage() {
   }
 
   const dismissToast = useCallback(() => setToast(null), [])
+
+  const deletePoint = useCallback((p: Point) => {
+    store.deletePoint(p.id)
+    setToast({
+      id: Date.now(),
+      text: `Removed ${STROKE_SHORT[p.stroke]} ${ERROR_LABEL[p.error_type].toLowerCase()}`,
+      actionLabel: 'Undo',
+      onAction: () => store.restorePoint(p.id),
+    })
+  }, [])
 
   const exportCsv = () => {
     downloadText(safeFilename(`tennis-${session?.title ?? 'session'}`, 'csv'), pointsToCsv(shownPoints, state.sessions), 'text/csv;charset=utf-8')
@@ -184,7 +194,7 @@ export function RecordPage() {
           ) : (
             <div className="card side-list">
               <div className="section-title">Points</div>
-              <PointList points={points} onOpen={(p, index) => setOpenPoint({ id: p.id, index })} />
+              <PointList points={points} onOpen={(p, index) => setOpenPoint({ id: p.id, index })} onDelete={deletePoint} />
             </div>
           )}
         </aside>
@@ -210,7 +220,7 @@ export function RecordPage() {
             {logOpen && (
               <div className="log-body">
                 <MarkLegend className="log-legend" />
-                <PointList points={points} onOpen={(p, index) => setOpenPoint({ id: p.id, index })} />
+                <PointList points={points} onOpen={(p, index) => setOpenPoint({ id: p.id, index })} onDelete={deletePoint} />
               </div>
             )}
           </section>
@@ -223,9 +233,8 @@ export function RecordPage() {
           index={openPoint.index}
           onChange={(patch) => store.updatePoint(openPoint.id, patch)}
           onDelete={() => {
-            store.deletePoint(openPoint.id)
+            deletePoint(state.points[openPoint.id])
             setOpenPoint(null)
-            setToast({ id: Date.now(), text: 'Point deleted' })
           }}
           onClose={() => setOpenPoint(null)}
         />

@@ -1,9 +1,9 @@
 import { describeZone, zoneFor } from '../domain/court'
-import { ERROR_LABEL, ERROR_TYPES, STROKE_LABEL, type ErrorType, type Point, type Stroke } from '../domain/types'
+import type { ErrorType, Point, Stroke } from '../domain/types'
 import { formatTime } from '../lib/format'
 import { Modal } from './Bits'
 import { TrashIcon } from './Icons'
-import { MarkDot, StrokeTag, markLabel } from './marks'
+import { MarkDot, ShotGrid, markLabel } from './marks'
 
 export interface PointSheetProps {
   point: Point
@@ -13,9 +13,6 @@ export interface PointSheetProps {
   onDelete: () => void
   onClose: () => void
 }
-
-/** BH left, FH right — the same grid as the shot menu, so correcting a point works like recording one. */
-const COLUMNS: Stroke[] = ['bh', 'fh']
 
 export function PointSheet({ point, index, onChange, onDelete, onClose }: PointSheetProps) {
   const pick = (stroke: Stroke, error: ErrorType) => {
@@ -46,27 +43,7 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
         </div>
 
         <div className="section-title">Change it to</div>
-        <div className="pop-grid">
-          {ERROR_TYPES.map((err) =>
-            COLUMNS.map((stroke) => {
-              const current = point.stroke === stroke && point.error_type === err
-              return (
-                <button
-                  key={`${stroke}-${err}`}
-                  type="button"
-                  className={`pop-btn ${stroke}${current ? ' sel' : ''}`}
-                  aria-pressed={current}
-                  onClick={() => pick(stroke, err)}
-                  aria-label={`${STROKE_LABEL[stroke]} ${ERROR_LABEL[err]}`}
-                  title={markLabel(stroke, err, point.forced)}
-                >
-                  <StrokeTag stroke={stroke} />
-                  <span className="pop-err">{ERROR_LABEL[err]}</span>
-                </button>
-              )
-            }),
-          )}
-        </div>
+        <ShotGrid current={{ stroke: point.stroke, error: point.error_type }} forced={point.forced} onPick={pick} />
 
         <button type="button" className="btn danger block ps-delete" onClick={onDelete}>
           <TrashIcon /> Delete this point

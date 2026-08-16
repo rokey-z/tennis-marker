@@ -640,9 +640,14 @@ textarea.input {
 }
 /* phones: edge to edge — the court is always full width; the log below takes what's left */
 @media (max-width: 899px) {
-  /* the court takes the full width; leftover height goes to the log, not to empty bands */
+  /* the record screen scrolls as one page: court, actions, then the whole log */
+  .record {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
   .record:not(.stats) .record-court {
-    flex: 0 1 auto;
+    flex: 0 0 auto;
     min-height: 0;
   }
   .record:not(.stats) .court-box {
@@ -657,12 +662,23 @@ textarea.input {
     width: 100%;
     max-height: 100%; /* only letterboxes on very short screens, so the tally/undo row always fits */
   }
-  /* the log gets a real share of the screen when open; the court shrinks to make room */
+  /* the log is as long as it needs to be — the page scrolls, not a box inside it */
   .record-log.open {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     height: auto;
-    min-height: clamp(120px, 22dvh, 220px);
-    max-height: 55dvh;
+    min-height: 0;
+    max-height: none;
+  }
+  .record-log .log-body {
+    overflow: visible;
+    max-height: none;
+  }
+  .record-log .log-head {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
   }
   .record-bottom {
     flex: 0 0 auto;
@@ -891,36 +907,6 @@ textarea.input {
   width: 18px;
   height: 18px;
 }
-.pop-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-  margin-top: 4px;
-}
-.pop-btn {
-  min-height: 50px;
-  border-radius: 10px;
-  border: 2px solid var(--line);
-  background: var(--surface);
-  font-size: 16px;
-  font-weight: 700;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  padding: 4px 10px;
-}
-.pop-btn.fh {
-  flex-direction: row-reverse;
-  justify-content: flex-start;
-}
-.pop-btn.fh {
-  border-color: var(--fh-soft);
-}
-.pop-btn.bh {
-  border-color: var(--bh-soft);
-}
 .pop-tag {
   font-size: 11px;
   font-weight: 800;
@@ -937,31 +923,8 @@ textarea.input {
   background: var(--bh);
   color: var(--bh-ink);
 }
-.pop-err {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  line-height: 1.1;
-  white-space: nowrap;
-}
-.pop-btn.fh:active {
-  background: var(--fh-soft);
-  border-color: var(--fh);
-}
-.pop-btn.bh:active {
-  background: var(--bh-soft);
-  border-color: var(--bh);
-}
 @media (hover: hover) {
-  .pop-btn.fh:hover {
-    background: var(--fh-soft);
-    border-color: var(--fh);
-  }
-  .pop-btn.bh:hover {
-    background: var(--bh-soft);
-    border-color: var(--bh);
-  }
-}
+    }
 
 .shot-row-label {
   display: flex;
@@ -1981,10 +1944,6 @@ span
 }
 
 /* ---------- point sheet (tap a log row) ---------- */
-.pop-btn.sel {
-  border-color: var(--mark-outline);
-  box-shadow: inset 0 0 0 1px var(--mark-outline);
-}
 .point-sheet .ps-head {
   display: flex;
   align-items: center;
@@ -1998,14 +1957,21 @@ span
   font-size: var(--fs-meta);
   color: var(--muted);
 }
-.point-sheet .pop-grid {
-  grid-template-columns: repeat(2, 1fr);
-}
-.point-sheet .ps-delete {
+.point-sheet .point-sheet .ps-delete {
   margin-top: 14px;
 }
 .point-list li.row-btn {
   padding: 0;
+  gap: 0;
+}
+.point-list .row-del {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.point-list .row-del:active {
+  color: var(--danger);
 }
 .point-list .row-open {
   display: flex;
@@ -2019,8 +1985,37 @@ span
 .point-list .row-open:active {
   background: var(--surface-2);
 }
-.point-list .chev {
-  color: var(--muted);
-  font-size: 18px;
-  flex-shrink: 0;
+
+/* ---------- shot grid: one tag per column, round buttons in the mark's colour ---------- */
+.shot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 6px;
+}
+.sg-head {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 2px;
+}
+.sg-btn {
+  min-height: 52px;
+  border-radius: 999px;
+  border: 3px solid transparent;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.sg-btn.fh {
+  background: var(--fh);
+}
+.sg-btn.bh {
+  background: var(--bh);
+}
+.sg-btn:active {
+  filter: brightness(0.92);
+}
+.sg-btn.sel {
+  border-color: var(--mark-outline);
 }

@@ -45,6 +45,8 @@ export interface Store {
   /** Correct a logged point (wrong stroke, wrong error, forced) without moving it. */
   updatePoint(id: string, patch: Partial<Pick<Point, 'stroke' | 'error_type' | 'forced'>>): void
   deletePoint(id: string): void
+  /** Bring back a soft-deleted point (undo of a delete). */
+  restorePoint(id: string): void
   /** Soft-deletes the most recent live point of the session; returns it or null. */
   undoLastPoint(sessionId: string): Point | null
   clearDirty(table: Table, snapshot: Array<[string, string]>): void
@@ -258,6 +260,12 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
       if (!p || p.deleted_at) return
       const t = iso()
       set(markDirty({ ...state, points: { ...state.points, [id]: { ...p, deleted_at: t, updated_at: t } } }, 'points', [id]))
+    },
+    restorePoint(id) {
+      const p = state.points[id]
+      if (!p || !p.deleted_at) return
+      const t = iso()
+      set(markDirty({ ...state, points: { ...state.points, [id]: { ...p, deleted_at: null, updated_at: t } } }, 'points', [id]))
     },
     undoLastPoint(sessionId) {
       const last = livePointsForSession(state, sessionId).at(-1) ?? null
