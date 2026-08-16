@@ -11,17 +11,17 @@
   --danger: #d64545;
   --ok: #1f9d55;
   --warn: #e0a100;
-  /* Identity: colour = stroke — forehand orange, backhand pink. Both are chosen to sit clearly
-     on the blue court, to carry white text, and to stay apart for colour-blind readers
-     (CVD ΔE 17.2, floor 8). */
-  --fh: #e2700d;
-  --fh-soft: #fdeada;
+  /* Identity: colour = stroke — forehand red, backhand blue. The backhand blue is deliberately
+     much darker than the court (2.0:1 against it) so marks stay visible on the blue surface, and
+     both carry white text. Separation for colour-blind readers is CVD ΔE 24.7 (floor 8). */
+  --fh: #d92d20;
+  --fh-soft: #fdeae8;
   --fh-ink: #ffffff;
-  --fh-text: #9a4f06;
-  --bh: #c2185b;
-  --bh-soft: #fbe4ee;
+  --fh-text: #b3261e;
+  --bh: #1e40af;
+  --bh-soft: #e5eafb;
   --bh-ink: #ffffff;
-  --bh-text: #a3134c;
+  --bh-text: #1b3a9c;
   /* forced errors carry a dark outline; unforced carry none */
   --mark-outline: #14181d;
   /* chart-only series (error type / forced), validated against the white card surface */
@@ -29,7 +29,8 @@
   --err-long: #2a78d6;
   --err-net: #1baf7a;
   --err-wide: #4a3aa7;
-  --err-forced: #e34948;
+  --chart-unforced: #8fa0b3;
+  --err-forced: #14181d;
   /* type scale for marks and meta text */
   --fs-tag: 11px;
   --fs-meta: 12px;

@@ -12,7 +12,7 @@ export const CHART = {
   long: 'var(--err-long)',
   net: 'var(--err-net)',
   wide: 'var(--err-wide)',
-  unforced: 'var(--chart-total)',
+  unforced: 'var(--chart-unforced)',
   forced: 'var(--err-forced)',
   avg: 'var(--muted)',
   spark: 'var(--line)',

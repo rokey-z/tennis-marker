@@ -243,10 +243,11 @@ function Marker({ p: pt, flipped, dim = false }: { p: Point; flipped: boolean; d
   const error = isErrorType(p.error_type) ? p.error_type : 'long'
   const color = `var(--${stroke})`
   const ink = `var(--${stroke}-ink)`
-  // earlier marks step back so the point just logged is the one you see
-  const r = dim ? 0.95 : 1.35
+  // earlier marks step back so the point just logged is the one you see; they stay solid enough
+  // that a backhand blue still reads against the blue court
+  const r = dim ? 0.95 : 1.4
   return (
-    <g transform={flipped ? `rotate(180 ${p.x} ${p.y})` : undefined} opacity={dim ? 0.55 : 1}>
+    <g transform={flipped ? `rotate(180 ${p.x} ${p.y})` : undefined} opacity={dim ? 0.78 : 1}>
       <title>{markLabel(stroke, error, p.forced)}</title>
       {/* colour carries the stroke; a dark outline marks a forced error */}
       <circle cx={p.x} cy={p.y} r={r} fill={color} stroke={p.forced ? 'var(--mark-outline)' : 'none'} strokeWidth={p.forced ? (dim ? 0.28 : 0.36) : 0} />
