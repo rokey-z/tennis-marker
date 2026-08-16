@@ -209,30 +209,6 @@ export function Court({ flipped = false, onTap, disabled = false, points, pendin
         )}
       </g>
 
-      {/* orientation labels — outside the flip group so they stay upright */}
-      <text
-        x={DRAW_MIN_X + 0.8}
-        y={flipped ? VB_MIN_Y + VB_HEIGHT - 0.7 : VB_MIN_Y + NET_BAND / 2 + 0.55}
-        fontSize={1.4}
-        fontWeight={700}
-        fill="rgba(255,255,255,0.9)"
-        fontFamily="var(--font)"
-        letterSpacing={0.08}
-      >
-        NET
-      </text>
-      <text
-        x={DRAW_MAX_X - 0.8}
-        y={flipped ? VB_MIN_Y + 1.9 : VB_MIN_Y + VB_HEIGHT - 1}
-        fontSize={1.4}
-        fontWeight={700}
-        fill="rgba(255,255,255,0.9)"
-        fontFamily="var(--font)"
-        textAnchor="end"
-        letterSpacing={0.08}
-      >
-        HER BASELINE
-      </text>
     </svg>
   )
 }
