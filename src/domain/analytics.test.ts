@@ -98,6 +98,21 @@ describe('sessionStats', () => {
   })
 })
 
+describe('sessionStats outcomes', () => {
+  it('counts only errors in the error tallies, and winners/placements apart', () => {
+    const points = [
+      pt({ session_id: 's1', error_type: 'long', stroke: 'fh' }),
+      pt({ session_id: 's1', error_type: 'net', stroke: 'bh', forced: true }),
+      pt({ session_id: 's1', error_type: '', outcome: 'winner', stroke: 'fh' }),
+      pt({ session_id: 's1', error_type: '', outcome: 'placement', stroke: 'bh' }),
+      pt({ session_id: 's1', error_type: '', outcome: 'placement', stroke: 'fh' }),
+    ]
+    const row = sessionStats([sess()], points)[0]
+    expect(row).toMatchObject({ total: 2, fh: 1, bh: 1, long: 1, net: 1, forced: 1, unforced: 1, winners: 1, placements: 2 })
+    expect(Object.values(row.byZone).reduce((a, b) => a + b, 0)).toBe(2)
+  })
+})
+
 describe('movingAverage', () => {
   it('uses a trailing window that grows at the start', () => {
     expect(movingAverage([2, 4, 6, 8], 3)).toEqual([2, 3, 4, 6])

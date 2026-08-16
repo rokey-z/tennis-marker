@@ -20,21 +20,26 @@ as a home-screen app, records offline.
    and lets you delete any of them.
 4. **Near end / Far end** flips the court 180° so you can tap what you physically see when she's on
    the far side. Data is always stored from *her* point of view (net at top, deuce side right).
-5. **Dashboard** is the analysis view: KPI tiles with sparklines and a trend delta, auto-generated
+5. **Placement mode** (the switch above the court) records where her ball *landed* instead of where
+   she lost the point: it shows the **far half** of the court, and one motion logs a shot — press
+   where the ball landed and **drag left for a backhand, right for a forehand**, with a live BH/FH
+   indicator while you drag. A plain tap falls back to two buttons. Placements are kept apart from
+   errors everywhere; each mode shows only its own marks.
+6. **Dashboard** is the analysis view: KPI tiles with sparklines and a trend delta, auto-generated
    "what stands out" insights, an **errors-per-session** chart over time (stack by stroke / error
    type / forced, 3-session average, click a column to drill in, table view), a **session
    timeline** (point-by-point strip with quiet-gap markers, when-in-the-session buckets, longest
    run, thirds), error mix by stroke, match vs practice, the zone heatmap, and a chronological
    **timeline** of every session. Filters (date range, match/practice) scope the whole page.
-6. **Stats** (button on the record screen) flips the same court into the 3×3 zone heatmap with every
+7. **Stats** (button on the record screen) flips the same court into the 3×3 zone heatmap with every
    point drawn (Ad side | Middle | Deuce side × Net | Mid-court | Baseline), with stroke / error /
    forced filters, and shows the tiles, "where the ball went" bars, the FH/BH × long/net/wide matrix
    and CSV / JSON export below — no page change. Tap **Court** to go back to recording.
-7. Tap the session name in the header to edit it: **opponent** (one-tap chips for people she has
+8. Tap the session name in the header to edit it: **opponent** (one-tap chips for people she has
    played before), **court / venue** (type it, pick a previous one, or tap **Nearby** to list tennis
    courts around you from OpenStreetMap), date, type and notes. There is no title to invent — the
    name is derived (`vs Emma` / `Practice with Coach Dan` / `Match` / `Practice`).
-8. **Settings → Opponents** manages the list: rename (updates every session, renaming onto an
+9. **Settings → Opponents** manages the list: rename (updates every session, renaming onto an
    existing name merges them) or remove an opponent (the sessions and points are kept).
 
 Tip: install it (iPhone: Share → *Add to Home Screen*; Android/desktop Chrome: *Install app*).

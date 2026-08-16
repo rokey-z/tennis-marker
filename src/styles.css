@@ -2056,3 +2056,22 @@ span
   color: var(--win);
   font-weight: 800;
 }
+
+/* ---------- recording mode switch ---------- */
+.mode-bar {
+  align-self: center;
+  margin: 2px 0 4px;
+}
+.mode-bar button {
+  min-height: 32px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+.ml-place {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--muted);
+  display: inline-block;
+}

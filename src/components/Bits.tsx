@@ -88,6 +88,15 @@ export function Tally({ s }: { s: Summary }) {
           </span>
         </>
       )}
+      {s.placements > 0 && (
+        <>
+          <span className="sep" />
+          <span className="t-item" title={`Placements: ${s.placements}`}>
+            <span className="ml-place" aria-hidden="true" />
+            {s.placements}
+          </span>
+        </>
+      )}
       {s.winners > 0 && (
         <>
           <span className="sep" />

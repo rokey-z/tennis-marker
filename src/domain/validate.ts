@@ -52,7 +52,7 @@ export function sanitizePoint(raw: unknown): Point | null {
     x: roundFeet(c.x),
     y: roundFeet(c.y),
     stroke: r.stroke,
-    error_type: outcome === 'winner' ? '' : (r.error_type as Point['error_type']),
+    error_type: outcome === 'error' ? (r.error_type as Point['error_type']) : '',
     outcome,
     forced: outcome === 'error' && (r.forced === true || r.forced === 'true' || r.forced === 1),
     created_at: created,

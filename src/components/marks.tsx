@@ -49,7 +49,7 @@ export function MarkChip({ stroke, error, forced, outcome = 'error', word = true
   return (
     <span className={`mark ${safeStroke}${forced ? ' forced' : ''}`} title={markLabel(safeStroke, error, forced, outcome)}>
       <StrokeTag stroke={safeStroke} />
-      <span className="mark-sign">{winner ? 'Winner' : word ? ERROR_LABEL[safeError] : ERROR_LETTER[safeError]}</span>
+      <span className="mark-sign">{outcome === 'placement' ? 'Placement' : winner ? 'Winner' : word ? ERROR_LABEL[safeError] : ERROR_LETTER[safeError]}</span>
       {winner && <span className="mark-win">◆</span>}
       {forced && !winner && <span className="mark-forced">forced</span>}
     </span>
@@ -113,6 +113,7 @@ export function ShotGrid({
   current,
   forced = false,
   winner = false,
+  strokeOnly = false,
   onPick,
   onPickWinner,
 }: {
@@ -120,9 +121,29 @@ export function ShotGrid({
   forced?: boolean
   /** Winner mode: one button per stroke, since a winner has no error type. */
   winner?: boolean
+  /** Placement mode: one button per stroke, with no outcome at all. */
+  strokeOnly?: boolean
   onPick: (stroke: Stroke, error: ErrorType) => void
   onPickWinner?: (stroke: Stroke) => void
 }) {
+  if (strokeOnly) {
+    return (
+      <div className="shot-grid">
+        {GRID_COLUMNS.map((stroke) => (
+          <button
+            key={stroke}
+            type="button"
+            className={`sg-btn ${stroke}`}
+            aria-label={STROKE_LABEL[stroke]}
+            title={STROKE_LABEL[stroke]}
+            onClick={() => onPick(stroke, 'long')}
+          >
+            {STROKE_LABEL[stroke]}
+          </button>
+        ))}
+      </div>
+    )
+  }
   if (winner) {
     return (
       <div className="shot-grid">

@@ -42,9 +42,11 @@ export interface Summary {
   matrix: Record<Stroke, Record<ErrorType, number>>
   /** forced errors per stroke (unforced = byStroke[s] - byStrokeForced[s]) */
   byStrokeForced: Record<Stroke, number>
-  /** winners are counted apart — they are not errors */
+  /** winners and placements are counted apart — neither is an error */
   winners: number
   winnersByStroke: Record<Stroke, number>
+  placements: number
+  placementsByStroke: Record<Stroke, number>
 }
 
 export function summarize(points: Iterable<Point>): Summary {
@@ -59,12 +61,20 @@ export function summarize(points: Iterable<Point>): Summary {
     byStrokeForced: { fh: 0, bh: 0 },
     winners: 0,
     winnersByStroke: { fh: 0, bh: 0 },
+    placements: 0,
+    placementsByStroke: { fh: 0, bh: 0 },
   }
   for (const p of points) {
     if (p.deleted_at) continue
-    if ((p.outcome ?? 'error') === 'winner') {
+    const outcome = p.outcome ?? 'error'
+    if (outcome === 'winner') {
       s.winners++
       if (STROKES.includes(p.stroke)) s.winnersByStroke[p.stroke]++
+      continue
+    }
+    if (outcome === 'placement') {
+      s.placements++
+      if (STROKES.includes(p.stroke)) s.placementsByStroke[p.stroke]++
       continue
     }
     s.total++

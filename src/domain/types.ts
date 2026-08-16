@@ -1,12 +1,16 @@
 export type Stroke = 'fh' | 'bh'
 export type ErrorType = 'long' | 'net' | 'wide'
 export type SessionKind = 'match' | 'practice'
-/** How the point ended: she made an error, or she hit a winner. */
-export type Outcome = 'error' | 'winner'
+/**
+ * What a mark records:
+ *   error / winner — recorded in Errors mode, positioned where SHE was on her half
+ *   placement      — recorded in Placement mode, positioned where the BALL LANDED on the far half
+ */
+export type Outcome = 'error' | 'winner' | 'placement'
 
 export const STROKES: Stroke[] = ['fh', 'bh']
 export const ERROR_TYPES: ErrorType[] = ['long', 'net', 'wide']
-export const OUTCOMES: Outcome[] = ['error', 'winner']
+export const OUTCOMES: Outcome[] = ['error', 'winner', 'placement']
 
 export const STROKE_LABEL: Record<Stroke, string> = { fh: 'Forehand', bh: 'Backhand' }
 export const STROKE_SHORT: Record<Stroke, string> = { fh: 'FH', bh: 'BH' }
@@ -16,7 +20,7 @@ export const KIND_LABEL: Record<SessionKind, string> = { match: 'Match', practic
 
 export const isStroke = (v: unknown): v is Stroke => v === 'fh' || v === 'bh'
 export const isErrorType = (v: unknown): v is ErrorType => v === 'long' || v === 'net' || v === 'wide'
-export const isOutcome = (v: unknown): v is Outcome => v === 'error' || v === 'winner'
+export const isOutcome = (v: unknown): v is Outcome => v === 'error' || v === 'winner' || v === 'placement'
 export const isSessionKind = (v: unknown): v is SessionKind => v === 'match' || v === 'practice'
 
 /** A match or practice; groups points. Timestamps are ISO strings, dates are YYYY-MM-DD. */

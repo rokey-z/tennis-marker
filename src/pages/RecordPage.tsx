@@ -18,9 +18,10 @@ import { VenuePicker } from '../components/VenuePicker'
 import { filterPoints, summarize } from '../domain/stats'
 import { pointsToCsv, safeFilename, toExportBundle } from '../domain/export'
 import { downloadText } from '../lib/format'
-import { ERROR_LABEL, KIND_LABEL, STROKE_SHORT, type ErrorType, type Point, type Session, type Stroke } from '../domain/types'
+import { ERROR_LABEL, KIND_LABEL, STROKE_SHORT, type ErrorType, type Outcome, type Point, type Session, type Stroke } from '../domain/types'
 
 const LOG_KEY = 'tennis-marker.logOpen'
+const MODE_KEY = 'tennis-marker.mode'
 const FLIP_KEY = 'tennis-marker.flip'
 const AFTER_SAVE_IGNORE_MS = 300
 const DEFAULT_STATS_FILTERS: StatsFilterState = { stroke: 'all', error: 'all', forced: 'all' }
@@ -31,8 +32,15 @@ export function RecordPage() {
   const nav = useNavigate()
   const isDesktop = useIsDesktop()
   const session = state.sessions[id]
-  const points = useMemo(() => livePointsForSession(state, id), [state, id])
-  const summary = useMemo(() => summarize(points), [points])
+  const [mode, setMode] = useState<'errors' | 'placement'>(() => (localStorage.getItem(MODE_KEY) === 'placement' ? 'placement' : 'errors'))
+  const placementMode = mode === 'placement'
+  const allPoints = useMemo(() => livePointsForSession(state, id), [state, id])
+  // each mode shows its own marks: they live in different halves of the court
+  const points = useMemo(
+    () => allPoints.filter((p) => ((p.outcome ?? 'error') === 'placement') === placementMode),
+    [allPoints, placementMode],
+  )
+  const summary = useMemo(() => summarize(allPoints), [allPoints])
 
   const [flipped, setFlipped] = useState(() => localStorage.getItem(FLIP_KEY) === '1')
   const [pending, setPending] = useState<{ x: number; y: number; at: { clientX: number; clientY: number } } | null>(null)
@@ -56,6 +64,10 @@ export function RecordPage() {
   useEffect(() => {
     localStorage.setItem(LOG_KEY, logOpen ? '1' : '0')
   }, [logOpen])
+  useEffect(() => {
+    localStorage.setItem(MODE_KEY, mode)
+    setPending(null)
+  }, [mode])
 
   const onTap = useCallback((x: number, y: number, at: { clientX: number; clientY: number }) => {
     if (performance.now() < ignoreUntil.current) return
@@ -66,7 +78,7 @@ export function RecordPage() {
 
   const cancel = useCallback(() => setPending(null), [])
 
-  const logPoint = (stroke: Stroke, error: ErrorType | '', outcome: 'error' | 'winner') => {
+  const logPoint = (stroke: Stroke, error: ErrorType | '', outcome: Outcome) => {
     if (!pending) return
     const p = store.addPoint({ session_id: id, x: pending.x, y: pending.y, stroke, error_type: error, forced: outcome === 'error' && forced, outcome })
     setPending(null)
@@ -79,7 +91,9 @@ export function RecordPage() {
     setToast({
       id: Date.now(),
       text:
-        outcome === 'winner'
+        outcome === 'placement'
+          ? `${STROKE_SHORT[stroke]} placement · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
+          : outcome === 'winner'
           ? `${STROKE_SHORT[stroke]} winner · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
           : `${STROKE_SHORT[stroke]} ${ERROR_LABEL[error as ErrorType].toLowerCase()} · ${forced ? 'forced' : 'unforced'} · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`,
       actionLabel: 'Undo',
@@ -87,8 +101,29 @@ export function RecordPage() {
     })
   }
 
-  const pick = (stroke: Stroke, error: ErrorType) => logPoint(stroke, error, 'error')
+  const pick = (stroke: Stroke, error: ErrorType) => logPoint(stroke, error, placementMode ? 'placement' : 'error')
   const pickWinner = (stroke: Stroke) => logPoint(stroke, '', 'winner')
+
+  /** Placement mode: one motion — press where the ball landed, drag left for BH or right for FH. */
+  const onStrokeDrag = useCallback(
+    (x: number, y: number, stroke: Stroke) => {
+      if (performance.now() < ignoreUntil.current) return
+      const p = store.addPoint({ session_id: id, x, y, stroke, error_type: '', forced: false, outcome: 'placement' })
+      ignoreUntil.current = performance.now() + AFTER_SAVE_IGNORE_MS
+      try {
+        navigator.vibrate?.(12)
+      } catch {
+        /* ignore */
+      }
+      setToast({
+        id: Date.now(),
+        text: `${STROKE_SHORT[stroke]} placement · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`,
+        actionLabel: 'Undo',
+        onAction: () => store.deletePoint(p.id),
+      })
+    },
+    [id],
+  )
 
   const undo = () => {
     const p = store.undoLastPoint(id)
@@ -175,12 +210,32 @@ export function RecordPage() {
       </header>
 
       <div className="record-court">
+        {!statsMode && (
+          <div className="mode-bar segmented" role="radiogroup" aria-label="Recording mode">
+            <button type="button" role="radio" aria-checked={!placementMode} className={!placementMode ? 'on' : ''} onClick={() => setMode('errors')}>
+              Errors
+            </button>
+            <button type="button" role="radio" aria-checked={placementMode} className={placementMode ? 'on' : ''} onClick={() => setMode('placement')}>
+              Placement
+            </button>
+          </div>
+        )}
         {statsMode && <StatsFilters value={filters} onChange={setFilters} />}
         <div className="court-box" ref={courtRef}>
           {statsMode ? (
             <Court flipped={flipped} points={shownPoints} heat={statsSummary.byZone} heatTotal={statsSummary.total} showZones />
           ) : (
-            <Court flipped={flipped} onTap={onTap} disabled={!!pending} points={points} emphasizeLast pending={pending} showZones />
+            <Court
+              flipped={flipped}
+              onTap={onTap}
+              onStrokeDrag={placementMode ? onStrokeDrag : undefined}
+              half={placementMode ? 'opposite' : 'own'}
+              disabled={!!pending}
+              points={points}
+              emphasizeLast
+              pending={pending}
+              showZones
+            />
           )}
           {pending && !statsMode && (
             <ShotPopover
@@ -191,6 +246,7 @@ export function RecordPage() {
             onForcedChange={setForced}
             winner={winner}
             onWinnerChange={setWinner}
+            strokeOnly={placementMode}
             onPick={pick}
             onPickWinner={pickWinner}
             onCancel={cancel}

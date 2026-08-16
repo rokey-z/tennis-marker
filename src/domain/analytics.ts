@@ -41,6 +41,9 @@ export interface SessionStat {
   wide: number
   forced: number
   unforced: number
+  /** kept apart from the error counts above */
+  winners: number
+  placements: number
   firstAt: string | null
   lastAt: string | null
   /** minutes spanned by the main activity window (see activeWindow); 0 with < 2 points */
@@ -99,7 +102,7 @@ export function sessionStats(sessions: Session[], points: Iterable<Point>): Sess
     const row: SessionStat = {
       session: s,
       points: pts,
-      total: pts.length,
+      total: pts.filter((p) => (p.outcome ?? 'error') === 'error').length,
       fh: 0,
       bh: 0,
       long: 0,
@@ -107,6 +110,8 @@ export function sessionStats(sessions: Session[], points: Iterable<Point>): Sess
       wide: 0,
       forced: 0,
       unforced: 0,
+      winners: 0,
+      placements: 0,
       firstAt: pts[0]?.created_at ?? null,
       lastAt: pts.at(-1)?.created_at ?? null,
       durationMin: win.length >= 2 ? minutesBetween(win[0].created_at, win[win.length - 1].created_at) : 0,
@@ -114,6 +119,15 @@ export function sessionStats(sessions: Session[], points: Iterable<Point>): Sess
       byZone: {},
     }
     for (const p of pts) {
+      const outcome = p.outcome ?? 'error'
+      if (outcome === 'winner') {
+        row.winners++
+        continue
+      }
+      if (outcome === 'placement') {
+        row.placements++
+        continue
+      }
       if (isStroke(p.stroke)) row[p.stroke]++
       if (isErrorType(p.error_type)) row[p.error_type]++
       if (p.forced) row.forced++

@@ -99,6 +99,22 @@ describe('summarize', () => {
     expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(2)
   })
 
+  it('counts placements apart from errors and winners', () => {
+    const s = summarize([
+      point({ error_type: 'long' }),
+      point({ stroke: 'bh', error_type: '', outcome: 'placement' }),
+      point({ stroke: 'fh', error_type: '', outcome: 'placement' }),
+      point({ stroke: 'fh', error_type: '', outcome: 'winner' }),
+    ])
+    expect(s.total).toBe(1)
+    expect(s.placements).toBe(2)
+    expect(s.placementsByStroke).toEqual({ fh: 1, bh: 1 })
+    expect(s.winners).toBe(1)
+    // placements never enter the error views
+    expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(1)
+    expect(s.byStroke).toEqual({ fh: 1, bh: 0 })
+  })
+
   it('filters by outcome', () => {
     const pts = [point({ error_type: 'long' }), point({ error_type: '', outcome: 'winner' })]
     expect(filterPoints(pts, { outcome: 'winner' })).toHaveLength(1)

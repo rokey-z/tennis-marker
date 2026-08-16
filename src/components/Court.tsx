@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { useCallback, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import {
   COURT,
   VIEW,
@@ -39,6 +39,17 @@ const drawY = (y: number) => Math.min(DRAW_MAX_Y - 1.4, Math.max(VB_MIN_Y + 1.4,
 
 /** A mouse press that travels further than this before release is a drag, not a tap. */
 const DRAG_PX = 12
+/** Horizontal travel that turns a placement drag into a stroke choice: left = backhand, right = forehand. */
+const STROKE_DRAG_PX = 26
+
+interface DragState {
+  /** where the ball landed, in court feet */
+  start: { x: number; y: number }
+  cur: { x: number; y: number }
+  /** horizontal travel in screen pixels — its sign picks the stroke */
+  dx: number
+  at: { x: number; y: number }
+}
 
 export interface CourtProps {
   /** Rotate 180° so the parent taps what they see when she plays the far end. */
@@ -50,6 +61,10 @@ export interface CourtProps {
   points?: Point[]
   /** Recording view: the newest mark stays full size, earlier ones shrink and fade back. */
   emphasizeLast?: boolean
+  /** 'own' = her half (errors); 'opposite' = the far half, mirrored, for ball placements. */
+  half?: 'own' | 'opposite'
+  /** Placement mode: press where the ball landed and drag left for backhand, right for forehand. */
+  onStrokeDrag?: (x: number, y: number, stroke: 'bh' | 'fh') => void
   pending?: { x: number; y: number } | null
   showZones?: boolean
   /** zoneId → count; draws a heat overlay with labels. */
@@ -58,9 +73,12 @@ export interface CourtProps {
   className?: string
 }
 
-export function Court({ flipped = false, onTap, disabled = false, points, emphasizeLast = false, pending, showZones = false, heat, heatTotal = 0, className }: CourtProps) {
+export function Court({ flipped = false, onTap, disabled = false, points, emphasizeLast = false, half = 'own', onStrokeDrag, pending, showZones = false, heat, heatTotal = 0, className }: CourtProps) {
   const gRef = useRef<SVGGElement>(null)
   const down = useRef<{ id: number; x: number; y: number; t: number } | null>(null)
+  // the ref is authoritative (pointer events can arrive faster than React re-renders); state drives the drawing
+  const dragRef = useRef<DragState | null>(null)
+  const [drag, setDrag] = useState<DragState | null>(null)
   const interactive = !!onTap
 
   const toCourt = useCallback((clientX: number, clientY: number): { x: number; y: number } | null => {
@@ -77,12 +95,50 @@ export function Court({ flipped = false, onTap, disabled = false, points, emphas
   // We only remember where the pointer went down to reject mouse drags (mouse fires click regardless).
   const onPointerDown = (e: ReactPointerEvent<SVGSVGElement>) => {
     down.current = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() }
+    if (!onStrokeDrag || disabled) return
+    const c = toCourt(e.clientX, e.clientY)
+    if (!c) return
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch {
+      /* capture is a nicety, not a requirement */
+    }
+    const next: DragState = { start: c, dx: 0, at: { x: e.clientX, y: e.clientY }, cur: c }
+    dragRef.current = next
+    setDrag(next)
   }
+
+  const onPointerMove = (e: ReactPointerEvent<SVGSVGElement>) => {
+    const d = dragRef.current
+    if (!d) return
+    const c = toCourt(e.clientX, e.clientY)
+    const next: DragState = { ...d, dx: e.clientX - d.at.x, cur: c ?? d.cur }
+    dragRef.current = next
+    setDrag(next)
+  }
+
+  const endDrag = (e: ReactPointerEvent<SVGSVGElement>) => {
+    const d = dragRef.current
+    if (!d) return
+    const dx = e.clientX - d.at.x
+    dragRef.current = null
+    setDrag(null)
+    down.current = null
+    if (Math.abs(dx) < STROKE_DRAG_PX) {
+      // too short to mean a direction — fall back to the tap chooser
+      onTap?.(d.start.x, d.start.y, { clientX: d.at.x, clientY: d.at.y })
+      return
+    }
+    onStrokeDrag?.(d.start.x, d.start.y, dx < 0 ? 'bh' : 'fh')
+  }
+
   const onPointerCancel = () => {
     down.current = null
+    dragRef.current = null
+    setDrag(null)
   }
   const onClick = (e: ReactMouseEvent<SVGSVGElement>) => {
-    if (!interactive || disabled) return
+    if (!interactive || disabled || onStrokeDrag) return
     const d = down.current
     down.current = null
     if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) > DRAG_PX) return
@@ -95,7 +151,10 @@ export function Court({ flipped = false, onTap, disabled = false, points, emphas
     return points.reduce((newest, p) => (!newest || p.created_at > newest.created_at ? p : newest), null as Point | null)?.id ?? null
   }, [emphasizeLast, points])
 
-  const flipTransform = flipped ? `rotate(180 ${PIVOT.x} ${PIVOT.y})` : undefined
+  // the far half is the same drawing mirrored about the net, so the net stays nearest the player
+  const mirror = half === 'opposite' ? `translate(0 ${2 * PIVOT.y}) scale(1 -1)` : ''
+  const rotate = flipped ? `rotate(180 ${PIVOT.x} ${PIVOT.y})` : ''
+  const flipTransform = [rotate, mirror].filter(Boolean).join(' ') || undefined
   const pendingZone = pending ? zoneId(zoneFor(pending.x, pending.y)) : null
 
   const heatCells = useMemo(() => {
@@ -118,8 +177,11 @@ export function Court({ flipped = false, onTap, disabled = false, points, emphas
       role={interactive ? 'button' : 'img'}
       aria-label={interactive ? 'Half tennis court — tap where the point was lost' : 'Half tennis court'}
       onPointerDown={onPointerDown}
+      onPointerMove={onStrokeDrag ? onPointerMove : undefined}
+      onPointerUp={onStrokeDrag ? endDrag : undefined}
       onPointerCancel={onPointerCancel}
       onClick={onClick}
+      style={onStrokeDrag ? { touchAction: 'none' } : undefined}
       onContextMenu={(e) => e.preventDefault()}
     >
       <g ref={gRef} transform={flipTransform}>
@@ -144,6 +206,38 @@ export function Court({ flipped = false, onTap, disabled = false, points, emphas
             {heatCells.map((c) => (
               <rect key={c.id} x={c.r.x} y={c.r.y} width={c.r.width} height={c.r.height} fill={c.fill} fillOpacity={c.a} stroke="rgba(255,255,255,0.35)" strokeWidth={0.15} />
             ))}
+          </g>
+        )}
+
+        {/* live drag: the press point is the placement, the direction picks the stroke */}
+        {drag && (
+          <g pointerEvents="none">
+            <line
+              x1={drag.start.x}
+              y1={drag.start.y}
+              x2={drag.cur.x}
+              y2={drag.start.y}
+              stroke={Math.abs(drag.dx) < STROKE_DRAG_PX ? 'rgba(255,255,255,0.7)' : `var(--${drag.dx < 0 ? 'bh' : 'fh'})`}
+              strokeWidth={0.5}
+              strokeLinecap="round"
+            />
+            <circle cx={drag.start.x} cy={drag.start.y} r={1.5} fill="none" stroke="#ffffff" strokeWidth={0.4} />
+            {Math.abs(drag.dx) >= STROKE_DRAG_PX && (
+              <g transform={flipped ? `rotate(180 ${drag.cur.x} ${drag.start.y})` : undefined}>
+                <circle cx={drag.cur.x} cy={drag.start.y} r={2.4} fill={`var(--${drag.dx < 0 ? 'bh' : 'fh'})`} />
+                <text
+                  x={drag.cur.x}
+                  y={drag.start.y + 0.85}
+                  fontSize={2.4}
+                  fontWeight={800}
+                  textAnchor="middle"
+                  fill="#ffffff"
+                  fontFamily="var(--font)"
+                >
+                  {drag.dx < 0 ? 'BH' : 'FH'}
+                </text>
+              </g>
+            )}
           </g>
         )}
 
@@ -250,7 +344,9 @@ function Marker({ p: pt, flipped, dim = false }: { p: Point; flipped: boolean; d
     <g transform={flipped ? `rotate(180 ${p.x} ${p.y})` : undefined} opacity={dim ? 0.78 : 1}>
       <title>{markLabel(stroke, error, p.forced, p.outcome)}</title>
       {/* colour carries the stroke; a dark outline marks a forced error, a diamond marks a winner */}
-      {p.outcome === 'winner' ? (
+      {p.outcome === 'placement' ? (
+        <circle cx={p.x} cy={p.y} r={r * 0.82} fill={color} stroke="#ffffff" strokeWidth={dim ? 0.18 : 0.26} />
+      ) : p.outcome === 'winner' ? (
         <rect
           x={p.x - r * 0.82}
           y={p.y - r * 0.82}
@@ -265,6 +361,7 @@ function Marker({ p: pt, flipped, dim = false }: { p: Point; flipped: boolean; d
       ) : (
         <circle cx={p.x} cy={p.y} r={r} fill={color} stroke={p.forced ? 'var(--mark-outline)' : 'none'} strokeWidth={p.forced ? (dim ? 0.28 : 0.36) : 0} />
       )}
+      {p.outcome !== 'placement' && (
       <text
         x={p.x}
         y={p.y + (dim ? 0.38 : 0.54)}
@@ -276,6 +373,7 @@ function Marker({ p: pt, flipped, dim = false }: { p: Point; flipped: boolean; d
       >
         {p.outcome === 'winner' ? '★' : ERROR_LETTER[error]}
       </text>
+      )}
     </g>
   )
 }
