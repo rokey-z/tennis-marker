@@ -1,10 +1,11 @@
 import { useMemo, useRef, useState, type FormEvent } from 'react'
 import { downloadText, formatDate, formatTime } from '../lib/format'
-import { DownloadIcon } from '../components/Icons'
+import { DownloadIcon, RefreshIcon } from '../components/Icons'
 import { Shell } from '../components/Shell'
 import { auth, isCloudConfigured, store, sync, useAppState, useAuthUser, useSyncStatus } from '../data/app'
 import { pendingCount } from '../data/store'
 import { parseExportBundle, safeFilename, toExportBundle } from '../domain/export'
+import { checkForUpdate, reinstallApp } from '../data/appUpdate'
 import { cleanOpponent, opponentRowsWithRoster, type OpponentRow } from '../domain/session'
 
 declare const __APP_VERSION__: string
@@ -136,6 +137,8 @@ export function SettingsPage() {
           )}
         </section>
 
+        <AppVersion />
+
         <Opponents />
 
         <section className="card">
@@ -216,6 +219,45 @@ export function SettingsPage() {
   )
 }
 
+
+
+function AppVersion() {
+  const [state, setState] = useState<'idle' | 'checking' | 'current' | 'updating' | 'unsupported'>('idle')
+
+  const check = async () => {
+    setState('checking')
+    const r = await checkForUpdate()
+    setState(r)
+    // a new worker installs in the background; reload once it has had a moment to take over
+    if (r === 'updating') setTimeout(() => location.reload(), 1200)
+  }
+
+  return (
+    <section className="card">
+      <div className="section-title">App</div>
+      <div className="status-line">
+        <span>
+          Version <strong>{typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : 'dev'}</strong>
+        </span>
+      </div>
+      <div className="row wrap" style={{ marginTop: 10 }}>
+        <button type="button" className="btn primary" onClick={() => void check()} disabled={state === 'checking' || state === 'updating'}>
+          <RefreshIcon /> {state === 'checking' ? 'Checking…' : state === 'updating' ? 'Updating…' : 'Check for updates'}
+        </button>
+        <button type="button" className="btn ghost" onClick={() => void reinstallApp()}>
+          Force refresh
+        </button>
+      </div>
+      {state === 'current' && <div className="notice ok" style={{ marginTop: 10 }}>You are on the latest version.</div>}
+      {state === 'updating' && <div className="notice info" style={{ marginTop: 10 }}>New version found — reloading…</div>}
+      {state === 'unsupported' && <div className="notice" style={{ marginTop: 10 }}>This browser is not running the installed app, so there is nothing to update — just reload the page.</div>}
+      <p className="kbd-hint" style={{ marginTop: 10 }}>
+        Use this instead of reinstalling: “Force refresh” clears the cached app and loads the newest build. Your sessions and
+        points are untouched.
+      </p>
+    </section>
+  )
+}
 
 function Opponents() {
   const state = useAppState()

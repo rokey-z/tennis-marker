@@ -1,18 +1,22 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 
-/** Chart palette — validated for the white card surface (see dataviz notes in README). */
+/**
+ * Chart palette — the same CSS custom properties the marks use, so one entity has one colour
+ * everywhere (a forehand bar is the forehand amber). Only the chart-only series (error type,
+ * forced) add their own validated hues.
+ */
 export const CHART = {
-  total: '#2a78d6',
-  fh: '#e08e00',
-  bh: '#3d4699',
-  long: '#2a78d6',
-  net: '#1baf7a',
-  wide: '#4a3aa7',
-  unforced: '#2a78d6',
-  forced: '#e34948',
-  avg: '#5b6672',
-  spark: '#c9d1d9',
-  grid: '#e3e8ed',
+  total: 'var(--chart-total)',
+  fh: 'var(--fh)',
+  bh: 'var(--bh)',
+  long: 'var(--err-long)',
+  net: 'var(--err-net)',
+  wide: 'var(--err-wide)',
+  unforced: 'var(--chart-total)',
+  forced: 'var(--err-forced)',
+  avg: 'var(--muted)',
+  spark: 'var(--line)',
+  grid: 'var(--line)',
 } as const
 
 export function useMeasure<T extends HTMLElement>(): [RefObject<T | null>, number] {

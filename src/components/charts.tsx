@@ -1,7 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import type { SequenceItem } from '../domain/analytics'
 import { describeZone, zoneFor } from '../domain/court'
-import { ERROR_LABEL, STROKE_SHORT, isErrorType, isStroke } from '../domain/types'
+import { isErrorType, isStroke } from '../domain/types'
+import { MarkDot, markLabel } from './marks'
 import { formatTime } from '../lib/format'
 import { CHART, niceTicks, useMeasure } from './chartUtils'
 
@@ -253,21 +254,23 @@ export function SequenceStrip({ items, gapThresholdMin = 5, onSelect }: { items:
       {items.map((it, i) => {
         const p = it.point
         const gap = it.gapMin !== null && it.gapMin >= gapThresholdMin ? it.gapMin : null
-        const stroke = isStroke(p.stroke) ? p.stroke : null
-        const errLabel = isErrorType(p.error_type) ? ERROR_LABEL[p.error_type] : '?'
-        const title = `#${i + 1} · ${stroke ? STROKE_SHORT[stroke] : '?'} ${errLabel.toLowerCase()} · ${p.forced ? 'forced' : 'unforced'} · ${describeZone(zoneFor(p.x, p.y))} · ${formatTime(p.created_at)}`
-        const cls = `seq-dot ${stroke ?? 'unknown'}${p.forced ? ' forced' : ''}`
+        const stroke = isStroke(p.stroke) ? p.stroke : 'fh'
+        const error = isErrorType(p.error_type) ? p.error_type : 'long'
+        const title = `#${i + 1} · ${markLabel(stroke, error, p.forced)} · ${describeZone(zoneFor(p.x, p.y))} · ${formatTime(p.created_at)}`
+        const dot = <MarkDot stroke={stroke} error={error} forced={p.forced} size={24} title={title} />
         return (
           <span key={p.id} className="seq-item" role="listitem">
-            {gap !== null && <span className="seq-gap" title={`${Math.round(gap)} min without an error`}>{Math.round(gap)}m</span>}
+            {gap !== null && (
+              <span className="seq-gap" title={`${Math.round(gap)} min without an error`}>
+                {Math.round(gap)}m
+              </span>
+            )}
             {onSelect ? (
-              <button type="button" className={cls} title={title} aria-label={title} onClick={() => onSelect(i)}>
-                {errLabel[0]}
+              <button type="button" className="seq-hit" aria-label={title} onClick={() => onSelect(i)}>
+                {dot}
               </button>
             ) : (
-              <span className={cls} title={title} aria-label={title}>
-                {errLabel[0]}
-              </span>
+              dot
             )}
           </span>
         )

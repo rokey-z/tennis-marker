@@ -4,6 +4,7 @@ import { Chip } from '../components/Bits'
 import { Delta, SequenceStrip, ShareBars, Sparkline, StackedColumns, type Category, type Series } from '../components/charts'
 import { CHART } from '../components/chartUtils'
 import { Court } from '../components/Court'
+import { MarkLegend } from '../components/marks'
 import { useToday } from '../components/hooks'
 import { Shell } from '../components/Shell'
 import { useAppState } from '../data/app'
@@ -303,15 +304,8 @@ export function DashboardPage() {
                   <div className="section-title">Point by point</div>
                   <SequenceStrip items={seq} />
                   <div className="legend-row" style={{ marginTop: 6 }}>
-                    <span className="legend-item">
-                      <span className="sw" style={{ background: 'var(--fh)' }} />
-                      FH
-                    </span>
-                    <span className="legend-item">
-                      <span className="sw" style={{ background: 'var(--bh)' }} />
-                      BH
-                    </span>
-                    <span className="legend-item muted">hollow = forced · L/N/W = long/net/wide · “12m” = quiet gap</span>
+                    <MarkLegend />
+                    <span className="legend-item muted">“12m” = quiet gap</span>
                   </div>
                   {selected.total > 0 && (
                     <>

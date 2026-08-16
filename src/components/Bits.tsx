@@ -2,9 +2,10 @@ import { useEffect, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { useSyncStatus } from '../data/app'
 import { describeZone, zoneFor } from '../domain/court'
-import { ERROR_LABEL, STROKE_SHORT, type Point } from '../domain/types'
+import { ERROR_LABEL, ERROR_TYPES, STROKE_LABEL, STROKES, type Point } from '../domain/types'
 import type { Summary } from '../domain/stats'
 import { CloseIcon, TrashIcon } from './Icons'
+import { ErrorGlyph, MarkChip, StrokeTag } from './marks'
 import { formatTime } from '../lib/format'
 
 // ---------- chip (filter toggle) ----------
@@ -65,16 +66,26 @@ export function Tally({ s }: { s: Summary }) {
         {s.total} {s.total === 1 ? 'error' : 'errors'}
       </span>
       <span className="sep" />
-      <span className="t-fh">FH {s.byStroke.fh}</span>
-      <span className="t-bh">BH {s.byStroke.bh}</span>
+      {STROKES.map((k) => (
+        <span key={k} className="t-item" title={`${STROKE_LABEL[k]}: ${s.byStroke[k]}`}>
+          <StrokeTag stroke={k} />
+          {s.byStroke[k]}
+        </span>
+      ))}
       <span className="sep" />
-      <span>Long {s.byError.long}</span>
-      <span>Net {s.byError.net}</span>
-      <span>Wide {s.byError.wide}</span>
+      {ERROR_TYPES.map((e) => (
+        <span key={e} className="t-item" title={`${ERROR_LABEL[e]}: ${s.byError[e]}`}>
+          <ErrorGlyph type={e} size={12} />
+          {s.byError[e]}
+        </span>
+      ))}
       {s.byForced.forced > 0 && (
         <>
           <span className="sep" />
-          <span>Forced {s.byForced.forced}</span>
+          <span className="t-item" title={`Forced: ${s.byForced.forced}`}>
+            <span className="ml-ring" aria-hidden="true" />
+            {s.byForced.forced}
+          </span>
         </>
       )}
     </div>
@@ -91,8 +102,7 @@ export function PointList({ points, onDelete }: { points: Point[]; onDelete: (id
         <li key={p.id}>
           <span className="n">{points.length - i}</span>
           <div className="desc">
-            <span className={`pill ${p.stroke}`}>{STROKE_SHORT[p.stroke]}</span> <strong>{ERROR_LABEL[p.error_type]}</strong>{' '}
-            <span className={`pill ${p.forced ? 'forced' : 'unforced'}`}>{p.forced ? 'forced' : 'unforced'}</span>
+            <MarkChip stroke={p.stroke} error={p.error_type} forced={p.forced} />
             <small>
               {describeZone(zoneFor(p.x, p.y))} · {formatTime(p.created_at)}
             </small>

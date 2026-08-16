@@ -11,7 +11,8 @@ import {
   zoneId,
   zoneRect,
 } from '../domain/court'
-import type { Point } from '../domain/types'
+import { isErrorType, isStroke, type Point } from '../domain/types'
+import { errorShapePath, markLabel } from './marks'
 
 /** Extra headroom above the net line so the net band is visible (presentational only). */
 const NET_BAND = 1.5
@@ -236,7 +237,6 @@ export function Court({ flipped = false, onTap, disabled = false, points, pendin
   )
 }
 
-const LETTER: Record<Point['error_type'], string> = { long: 'L', net: 'N', wide: 'W' }
 
 /** Sequential heat scale: pale amber → deep orange-red. t in [0,1]. */
 function heatColor(t: number): string {
@@ -256,26 +256,18 @@ function clampRect(r: { x: number; y: number; width: number; height: number }) {
 
 function Marker({ p: pt, flipped }: { p: Point; flipped: boolean }) {
   const p = { ...pt, x: drawX(pt.x), y: drawY(pt.y) }
-  const color = p.stroke === 'fh' ? 'var(--fh)' : 'var(--bh)'
-  const ink = p.stroke === 'fh' ? '#3a2a00' : '#ffffff'
-  const r = 1.25
+  const stroke = isStroke(p.stroke) ? p.stroke : 'fh'
+  const error = isErrorType(p.error_type) ? p.error_type : 'long'
+  const color = `var(--${stroke})`
+  const ink = `var(--${stroke}-ink)`
+  const r = 1.3
   return (
     <g transform={flipped ? `rotate(180 ${p.x} ${p.y})` : undefined}>
-      {p.forced ? (
-        <>
-          <circle cx={p.x} cy={p.y} r={r} fill="rgba(255,255,255,0.85)" stroke={color} strokeWidth={0.45} />
-          <text x={p.x} y={p.y + 0.55} fontSize={1.5} fontWeight={800} textAnchor="middle" fill="#14181d" fontFamily="var(--font)">
-            {LETTER[p.error_type]}
-          </text>
-        </>
-      ) : (
-        <>
-          <circle cx={p.x} cy={p.y} r={r} fill={color} stroke="rgba(0,0,0,0.35)" strokeWidth={0.15} />
-          <text x={p.x} y={p.y + 0.55} fontSize={1.5} fontWeight={800} textAnchor="middle" fill={ink} fontFamily="var(--font)">
-            {LETTER[p.error_type]}
-          </text>
-        </>
-      )}
+      <title>{markLabel(stroke, error, p.forced)}</title>
+      {/* white ring: keeps overlapping marks separable on a busy court */}
+      <circle cx={p.x} cy={p.y} r={r} fill={p.forced ? 'var(--surface)' : color} stroke="var(--surface)" strokeWidth={0.28} />
+      {p.forced && <circle cx={p.x} cy={p.y} r={r - 0.2} fill="none" stroke={color} strokeWidth={0.4} />}
+      <path d={errorShapePath(error, r * 0.46)} transform={`translate(${p.x} ${p.y})`} fill={p.forced ? color : ink} />
     </g>
   )
 }

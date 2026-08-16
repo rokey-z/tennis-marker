@@ -2,15 +2,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { Modal, PointList, SyncBadge, Tally, Toast, type ToastState } from '../components/Bits'
 import { useIsDesktop } from '../components/hooks'
-import { formatDate } from '../lib/format'
+import { shortDate } from '../lib/format'
 import { Court } from '../components/Court'
 import { StatsFilters, StatsPanel, type StatsFilterState } from '../components/StatsPanel'
-import { BackIcon, ChartIcon, FlipIcon, ListIcon, UndoIcon } from '../components/Icons'
+import { BackIcon, ChartIcon, FlipIcon, ListIcon, PencilIcon, UndoIcon } from '../components/Icons'
 import { ShotPopover } from '../components/ShotPopover'
 import { store, useAppState } from '../data/app'
 import { livePointsForSession } from '../data/store'
 import { describeZone, zoneFor } from '../domain/court'
 import { opponentRowsWithRoster, sessionLabel, venueRows } from '../domain/session'
+import { MarkLegend } from '../components/marks'
 import { OpponentPicker } from '../components/OpponentPicker'
 import { VenuePicker } from '../components/VenuePicker'
 import { filterPoints, summarize } from '../domain/stats'
@@ -126,17 +127,31 @@ export function RecordPage() {
         <Link to="/" className="icon-btn" aria-label="Back to sessions">
           <BackIcon />
         </Link>
-        <button type="button" className="title-btn" onClick={() => setShowDetails(true)} title="Edit session">
-          <strong>{sessionLabel(session)}</strong>
-          <small>
-            {KIND_LABEL[session.kind]} · {formatDate(session.date)}
-            {!session.opponent && session.kind === 'match' ? ' · add opponent' : ''}
-          </small>
+        <button type="button" className="title-btn" onClick={() => setShowDetails(true)} aria-label="Edit session details">
+          <span className="tb-name">
+            <strong>{sessionLabel(session)}</strong>
+            <PencilIcon />
+          </span>
+          <span className="tb-meta">
+            <span className="tb-line">
+              {KIND_LABEL[session.kind]} · {shortDate(session.date)}
+              {session.venue ? ` · ${session.venue}` : ''}
+              {flipped ? ' · far end' : ''}
+              {!session.opponent && session.kind === 'match' ? ' · add opponent' : ''}
+            </span>
+            <SyncBadge compact />
+          </span>
         </button>
-        <button type="button" className={`flip-btn${flipped ? ' on' : ''}`} onClick={() => setFlipped((f) => !f)} aria-pressed={flipped} title="Flip ends (she is on the far side)">
-          <FlipIcon /> {flipped ? 'Far end' : 'Near end'}
+        <button
+          type="button"
+          className={`flip-fab${flipped ? ' on' : ''}`}
+          onClick={() => setFlipped((f) => !f)}
+          aria-pressed={flipped}
+          aria-label={flipped ? 'She is at the far end — tap to flip back' : 'Flip ends (she is at the far end)'}
+          title={flipped ? 'Far end — tap to flip back' : 'Flip ends (she is at the far end)'}
+        >
+          <FlipIcon />
         </button>
-        <SyncBadge compact />
       </header>
 
       <div className="record-court">
@@ -192,6 +207,7 @@ export function RecordPage() {
             </button>
             {logOpen && (
               <div className="log-body">
+                <MarkLegend className="log-legend" />
                 <PointList points={points} onDelete={(pid) => store.deletePoint(pid)} />
               </div>
             )}
