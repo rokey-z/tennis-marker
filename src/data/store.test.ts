@@ -53,6 +53,27 @@ describe('store', () => {
     expect(notified).toBeGreaterThanOrEqual(5)
   })
 
+  it('updatePoint corrects a logged point and re-queues it', () => {
+    const store = createStore(memoryStorage(), { ...clock(), newId: ids() })
+    const s = store.createSession()
+    const p = store.addPoint({ session_id: s.id, x: 1, y: 40, stroke: 'fh', error_type: 'long', forced: false })
+    store.clearDirty('points', [[p.id, p.updated_at]])
+    expect(pendingCount(store.getState())).toBe(1) // the session is still dirty
+
+    store.updatePoint(p.id, { stroke: 'bh', error_type: 'net', forced: true })
+    const cur = store.getState().points[p.id]
+    expect(cur).toMatchObject({ stroke: 'bh', error_type: 'net', forced: true, x: 1, y: 40 })
+    expect(cur.created_at).toBe(p.created_at) // position and time are untouched
+    expect(cur.updated_at > p.updated_at).toBe(true)
+    expect(store.getState().dirty.points).toEqual([p.id])
+
+    // deleted or unknown points are left alone
+    store.deletePoint(p.id)
+    store.updatePoint(p.id, { forced: false })
+    expect(store.getState().points[p.id].forced).toBe(true)
+    store.updatePoint('nope', { forced: true })
+  })
+
   it('deleting a session soft-deletes its points and hides them from all-points', () => {
     const store = createStore(memoryStorage(), { ...clock(), newId: ids() })
     const a = store.createSession()

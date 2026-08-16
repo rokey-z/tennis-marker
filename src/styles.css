@@ -12,10 +12,11 @@
   --ok: #1f9d55;
   --warn: #e0a100;
   /* Identity: colour = stroke — forehand orange, backhand pink. Both are chosen to sit clearly
-     on the blue court and to stay apart for colour-blind readers (CVD ΔE 20.6, floor 8). */
-  --fh: #ef7d1a;
+     on the blue court, to carry white text, and to stay apart for colour-blind readers
+     (CVD ΔE 17.2, floor 8). */
+  --fh: #e2700d;
   --fh-soft: #fdeada;
-  --fh-ink: #2b1200;
+  --fh-ink: #ffffff;
   --fh-text: #9a4f06;
   --bh: #c2185b;
   --bh-soft: #fbe4ee;
@@ -1972,4 +1973,49 @@ span
   border: 2px solid var(--mark-outline);
   background: var(--surface-2);
   display: inline-block;
+}
+
+/* ---------- point sheet (tap a log row) ---------- */
+.pop-btn.sel {
+  border-color: var(--mark-outline);
+  box-shadow: inset 0 0 0 1px var(--mark-outline);
+}
+.point-sheet .ps-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.point-sheet .ps-now {
+  font-weight: 700;
+}
+.point-sheet .ps-meta {
+  font-size: var(--fs-meta);
+  color: var(--muted);
+}
+.point-sheet .pop-grid {
+  grid-template-columns: repeat(2, 1fr);
+}
+.point-sheet .ps-delete {
+  margin-top: 14px;
+}
+.point-list li.row-btn {
+  padding: 0;
+}
+.point-list .row-open {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 2px;
+  text-align: left;
+  min-height: var(--tap);
+}
+.point-list .row-open:active {
+  background: var(--surface-2);
+}
+.point-list .chev {
+  color: var(--muted);
+  font-size: 18px;
+  flex-shrink: 0;
 }

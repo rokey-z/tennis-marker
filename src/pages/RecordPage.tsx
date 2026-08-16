@@ -12,6 +12,7 @@ import { livePointsForSession } from '../data/store'
 import { describeZone, zoneFor } from '../domain/court'
 import { opponentRowsWithRoster, sessionLabel, venueRows } from '../domain/session'
 import { MarkLegend } from '../components/marks'
+import { PointSheet } from '../components/PointSheet'
 import { OpponentPicker } from '../components/OpponentPicker'
 import { VenuePicker } from '../components/VenuePicker'
 import { filterPoints, summarize } from '../domain/stats'
@@ -45,6 +46,7 @@ export function RecordPage() {
   const shownPoints = useMemo(() => (statsMode ? filterPoints(points, filters) : points), [statsMode, points, filters])
   const statsSummary = useMemo(() => summarize(shownPoints), [shownPoints])
   const [showDetails, setShowDetails] = useState(false)
+  const [openPoint, setOpenPoint] = useState<{ id: string; index: number } | null>(null)
   const ignoreUntil = useRef(0)
 
   useEffect(() => {
@@ -182,7 +184,7 @@ export function RecordPage() {
           ) : (
             <div className="card side-list">
               <div className="section-title">Points</div>
-              <PointList points={points} onDelete={(pid) => store.deletePoint(pid)} />
+              <PointList points={points} onOpen={(p, index) => setOpenPoint({ id: p.id, index })} />
             </div>
           )}
         </aside>
@@ -208,11 +210,25 @@ export function RecordPage() {
             {logOpen && (
               <div className="log-body">
                 <MarkLegend className="log-legend" />
-                <PointList points={points} onDelete={(pid) => store.deletePoint(pid)} />
+                <PointList points={points} onOpen={(p, index) => setOpenPoint({ id: p.id, index })} />
               </div>
             )}
           </section>
         </>
+      )}
+
+      {openPoint && state.points[openPoint.id] && !state.points[openPoint.id].deleted_at && (
+        <PointSheet
+          point={state.points[openPoint.id]}
+          index={openPoint.index}
+          onChange={(patch) => store.updatePoint(openPoint.id, patch)}
+          onDelete={() => {
+            store.deletePoint(openPoint.id)
+            setOpenPoint(null)
+            setToast({ id: Date.now(), text: 'Point deleted' })
+          }}
+          onClose={() => setOpenPoint(null)}
+        />
       )}
 
       <Toast toast={toast} onDismiss={dismissToast} />

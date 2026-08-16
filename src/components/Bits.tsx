@@ -4,7 +4,7 @@ import { useSyncStatus } from '../data/app'
 import { describeZone, zoneFor } from '../domain/court'
 import { ERROR_LABEL, ERROR_TYPES, STROKE_LABEL, STROKES, type Point } from '../domain/types'
 import type { Summary } from '../domain/stats'
-import { CloseIcon, TrashIcon } from './Icons'
+import { CloseIcon } from './Icons'
 import { ErrorLetter, MarkChip, StrokeTag } from './marks'
 import { formatTime } from '../lib/format'
 
@@ -93,25 +93,30 @@ export function Tally({ s }: { s: Summary }) {
 }
 
 // ---------- point list ----------
-export function PointList({ points, onDelete }: { points: Point[]; onDelete: (id: string) => void }) {
+export function PointList({ points, onOpen }: { points: Point[]; onOpen: (point: Point, index: number) => void }) {
   if (!points.length) return <p className="muted">No points logged yet.</p>
   const rows = [...points].reverse()
   return (
     <ul className="point-list">
-      {rows.map((p, i) => (
-        <li key={p.id}>
-          <span className="n">{points.length - i}</span>
-          <div className="desc">
-            <MarkChip stroke={p.stroke} error={p.error_type} forced={p.forced} />
-            <small>
-              {describeZone(zoneFor(p.x, p.y))} · {formatTime(p.created_at)}
-            </small>
-          </div>
-          <button type="button" className="icon-btn" aria-label="Delete point" onClick={() => onDelete(p.id)}>
-            <TrashIcon />
-          </button>
-        </li>
-      ))}
+      {rows.map((p, i) => {
+        const index = points.length - i
+        return (
+          <li key={p.id} className="row-btn">
+            <button type="button" className="row-open" onClick={() => onOpen(p, index)}>
+              <span className="n">{index}</span>
+              <span className="desc">
+                <MarkChip stroke={p.stroke} error={p.error_type} forced={p.forced} />
+                <small>
+                  {describeZone(zoneFor(p.x, p.y))} · {formatTime(p.created_at)}
+                </small>
+              </span>
+              <span className="chev" aria-hidden="true">
+                ›
+              </span>
+            </button>
+          </li>
+        )
+      })}
     </ul>
   )
 }
