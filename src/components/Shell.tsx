@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react'
 import { NavLink } from 'react-router'
-import { ChartIcon, LogoIcon, SessionsIcon, SettingsIcon } from './Icons'
+import { ChartIcon, DashboardIcon, LogoIcon, SessionsIcon, SettingsIcon } from './Icons'
 import { SyncBadge } from './Bits'
 
 const TABS = [
   { to: '/', label: 'Sessions', Icon: SessionsIcon },
+  { to: '/dashboard', label: 'Dashboard', Icon: DashboardIcon },
   { to: '/stats', label: 'Stats', Icon: ChartIcon },
   { to: '/settings', label: 'Settings', Icon: SettingsIcon },
 ]

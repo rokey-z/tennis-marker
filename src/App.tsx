@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router'
+import { DashboardPage } from './pages/DashboardPage'
 import { RecordPage } from './pages/RecordPage'
 import { SessionsPage } from './pages/SessionsPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -9,6 +10,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<SessionsPage />} />
       <Route path="/session/:id" element={<RecordPage />} />
+      <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/stats" element={<StatsPage />} />
       <Route path="/settings" element={<SettingsPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -45,6 +45,14 @@ export const ChartIcon = () => (
     <path d="M7 15l4-5 4 3 5-7" />
   </svg>
 )
+export const DashboardIcon = () => (
+  <svg {...base}>
+    <rect x="3" y="3" width="8" height="10" rx="1.5" />
+    <rect x="13" y="3" width="8" height="6" rx="1.5" />
+    <rect x="13" y="11" width="8" height="10" rx="1.5" />
+    <rect x="3" y="15" width="8" height="6" rx="1.5" />
+  </svg>
+)
 export const SessionsIcon = () => (
   <svg {...base}>
     <rect x="3" y="4" width="18" height="16" rx="2" />

@@ -15,10 +15,16 @@ as a home-screen app, records offline.
 3. **Undo** removes the last point; the **list** button lets you delete any point.
 4. **Near end / Far end** flips the court 180° so you can tap what you physically see when she's on
    the far side. Data is always stored from *her* point of view (net at top, deuce side right).
-5. **Stats** shows the 3×3 zone heatmap (Ad side | Middle | Deuce side × Net | Mid-court |
-   Baseline), stroke/error breakdowns, the FH/BH × long/net/wide matrix, per-session counts, and
-   CSV / JSON export.
-6. Tap the session title to rename it, set the date/type, add notes, or delete it.
+5. **Dashboard** is the analysis view: KPI tiles with sparklines and a trend delta, auto-generated
+   "what stands out" insights, an **errors-per-session** chart over time (stack by stroke / error
+   type / forced, 3-session average, click a column to drill in, table view), a **session
+   timeline** (point-by-point strip with quiet-gap markers, when-in-the-session buckets, longest
+   run, thirds), error mix by stroke, match vs practice, the zone heatmap, and a chronological
+   **timeline** of every session. Filters (date range, match/practice) scope the whole page.
+6. **Stats** is the court explorer: the 3×3 zone heatmap with every point drawn (Ad side | Middle |
+   Deuce side × Net | Mid-court | Baseline), filters, the FH/BH × long/net/wide matrix, per-session
+   counts, and CSV / JSON export.
+7. Tap the session title to rename it, set the date/type, add notes, or delete it.
 
 Tip: install it (iPhone: Share → *Add to Home Screen*; Android/desktop Chrome: *Install app*).
 Installed apps open full-screen and keep local data longer.
@@ -52,10 +58,10 @@ develop against your Supabase project; leave them empty for local-only mode.
 Layout:
 
 ```
-src/domain/   types, court geometry + zones, stats aggregation, CSV/JSON export   (pure, tested)
+src/domain/   types, court geometry + zones, stats aggregation, analytics (trend/timeline/insights), CSV/JSON export   (pure, tested)
 src/data/     localRepo (persistence + merge), store (state + actions), syncEngine, supabaseClient, auth
-src/components/  Court (SVG, tap→feet, flip, markers, heat), ShotSheet, Shell, small bits
-src/pages/    Sessions, Record, Stats, Settings
+src/components/  Court (SVG, tap→feet, flip, markers, heat), ShotSheet, Shell, charts (stacked columns, sparkline, sequence strip, share bars), small bits
+src/pages/    Sessions, Record, Dashboard, Stats, Settings
 supabase/migrations/0001_init.sql   tables + RLS policies
 .github/workflows/deploy.yml        test → build → GitHub Pages
 ```
