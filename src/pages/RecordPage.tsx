@@ -172,7 +172,7 @@ export function RecordPage() {
           {statsMode ? (
             <Court flipped={flipped} points={shownPoints} heat={statsSummary.byZone} heatTotal={statsSummary.total} showZones />
           ) : (
-            <Court flipped={flipped} onTap={onTap} disabled={!!pending} points={points} pending={pending} showZones />
+            <Court flipped={flipped} onTap={onTap} disabled={!!pending} points={points} emphasizeLast pending={pending} showZones />
           )}
           {pending && !statsMode && (
             <ShotPopover anchor={pending.at} containerRef={courtRef} where={where} forced={forced} onForcedChange={setForced} onPick={pick} onCancel={cancel} />

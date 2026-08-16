@@ -48,6 +48,8 @@ export interface CourtProps {
   /** Ignore input (e.g. while the shot sheet is open). */
   disabled?: boolean
   points?: Point[]
+  /** Recording view: the newest mark stays full size, earlier ones shrink and fade back. */
+  emphasizeLast?: boolean
   pending?: { x: number; y: number } | null
   showZones?: boolean
   /** zoneId → count; draws a heat overlay with labels. */
@@ -56,7 +58,7 @@ export interface CourtProps {
   className?: string
 }
 
-export function Court({ flipped = false, onTap, disabled = false, points, pending, showZones = false, heat, heatTotal = 0, className }: CourtProps) {
+export function Court({ flipped = false, onTap, disabled = false, points, emphasizeLast = false, pending, showZones = false, heat, heatTotal = 0, className }: CourtProps) {
   const gRef = useRef<SVGGElement>(null)
   const down = useRef<{ id: number; x: number; y: number; t: number } | null>(null)
   const interactive = !!onTap
@@ -87,6 +89,11 @@ export function Court({ flipped = false, onTap, disabled = false, points, pendin
     const c = toCourt(e.clientX, e.clientY)
     if (c) onTap?.(c.x, c.y, { clientX: e.clientX, clientY: e.clientY })
   }
+
+  const newestId = useMemo(() => {
+    if (!emphasizeLast || !points?.length) return null
+    return points.reduce((newest, p) => (!newest || p.created_at > newest.created_at ? p : newest), null as Point | null)?.id ?? null
+  }, [emphasizeLast, points])
 
   const flipTransform = flipped ? `rotate(180 ${PIVOT.x} ${PIVOT.y})` : undefined
   const pendingZone = pending ? zoneId(zoneFor(pending.x, pending.y)) : null
@@ -192,7 +199,7 @@ export function Court({ flipped = false, onTap, disabled = false, points, pendin
         {points && points.length > 0 && (
           <g pointerEvents="none">
             {points.map((p) => (
-              <Marker key={p.id} p={p} flipped={flipped} />
+              <Marker key={p.id} p={p} flipped={flipped} dim={newestId !== null && p.id !== newestId} />
             ))}
           </g>
         )}
@@ -230,22 +237,23 @@ function clampRect(r: { x: number; y: number; width: number; height: number }) {
   return { x, y, width: Math.min(DRAW_MAX_X, r.x + r.width) - x, height: Math.min(DRAW_MAX_Y, r.y + r.height) - y }
 }
 
-function Marker({ p: pt, flipped }: { p: Point; flipped: boolean }) {
+function Marker({ p: pt, flipped, dim = false }: { p: Point; flipped: boolean; dim?: boolean }) {
   const p = { ...pt, x: drawX(pt.x), y: drawY(pt.y) }
   const stroke = isStroke(p.stroke) ? p.stroke : 'fh'
   const error = isErrorType(p.error_type) ? p.error_type : 'long'
   const color = `var(--${stroke})`
   const ink = `var(--${stroke}-ink)`
-  const r = 1.3
+  // earlier marks step back so the point just logged is the one you see
+  const r = dim ? 0.95 : 1.35
   return (
-    <g transform={flipped ? `rotate(180 ${p.x} ${p.y})` : undefined}>
+    <g transform={flipped ? `rotate(180 ${p.x} ${p.y})` : undefined} opacity={dim ? 0.55 : 1}>
       <title>{markLabel(stroke, error, p.forced)}</title>
       {/* colour carries the stroke; a dark outline marks a forced error */}
-      <circle cx={p.x} cy={p.y} r={r} fill={color} stroke={p.forced ? 'var(--mark-outline)' : 'none'} strokeWidth={p.forced ? 0.36 : 0} />
+      <circle cx={p.x} cy={p.y} r={r} fill={color} stroke={p.forced ? 'var(--mark-outline)' : 'none'} strokeWidth={p.forced ? (dim ? 0.28 : 0.36) : 0} />
       <text
         x={p.x}
-        y={p.y + 0.52}
-        fontSize={1.5}
+        y={p.y + (dim ? 0.38 : 0.54)}
+        fontSize={dim ? 1.1 : 1.55}
         fontWeight={800}
         textAnchor="middle"
         fill={ink}
