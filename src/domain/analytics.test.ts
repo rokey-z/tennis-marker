@@ -47,6 +47,7 @@ function pt(over: Partial<Point> = {}): Point {
     y: 40,
     stroke: 'fh',
     error_type: 'long',
+    outcome: 'error',
     forced: false,
     created_at: T(0),
     updated_at: T(0),

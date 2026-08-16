@@ -88,6 +88,17 @@ export function Tally({ s }: { s: Summary }) {
           </span>
         </>
       )}
+      {s.winners > 0 && (
+        <>
+          <span className="sep" />
+          <span className="t-item" title={`Winners: ${s.winners}`}>
+            <span className="ml-win" aria-hidden="true">
+              ★
+            </span>
+            {s.winners}
+          </span>
+        </>
+      )}
     </div>
   )
 }
@@ -105,7 +116,7 @@ export function PointList({ points, onOpen, onDelete }: { points: Point[]; onOpe
             <button type="button" className="row-open" onClick={() => onOpen(p, index)}>
               <span className="n">{index}</span>
               <span className="desc">
-                <MarkChip stroke={p.stroke} error={p.error_type} forced={p.forced} />
+                <MarkChip stroke={p.stroke} error={p.error_type} forced={p.forced} outcome={p.outcome} />
                 <small>
                   {describeZone(zoneFor(p.x, p.y))} · {formatTime(p.created_at)}
                 </small>

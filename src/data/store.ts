@@ -43,7 +43,7 @@ export interface Store {
   deleteSession(id: string): void
   addPoint(input: NewPoint): Point
   /** Correct a logged point (wrong stroke, wrong error, forced) without moving it. */
-  updatePoint(id: string, patch: Partial<Pick<Point, 'stroke' | 'error_type' | 'forced'>>): void
+  updatePoint(id: string, patch: Partial<Pick<Point, 'stroke' | 'error_type' | 'forced' | 'outcome'>>): void
   deletePoint(id: string): void
   /** Bring back a soft-deleted point (undo of a delete). */
   restorePoint(id: string): void
@@ -240,8 +240,9 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
         x: roundFeet(input.x),
         y: roundFeet(input.y),
         stroke: input.stroke,
-        error_type: input.error_type,
-        forced: !!input.forced,
+        error_type: input.outcome === 'winner' ? '' : input.error_type,
+        outcome: input.outcome ?? 'error',
+        forced: input.outcome === 'winner' ? false : !!input.forced,
         created_at: t,
         updated_at: t,
         deleted_at: null,

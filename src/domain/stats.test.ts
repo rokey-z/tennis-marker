@@ -32,6 +32,7 @@ function point(over: Partial<Point> = {}): Point {
     y: 40,
     stroke: 'fh',
     error_type: 'long',
+    outcome: 'error',
     forced: false,
     created_at: t0,
     updated_at: t0,
@@ -78,6 +79,32 @@ describe('summarize', () => {
     expect(s.matrix.fh).toEqual({ long: 1, net: 1, wide: 0 })
     expect(s.matrix.bh).toEqual({ long: 1, net: 0, wide: 1 })
     expect(s.byStrokeForced).toEqual({ fh: 0, bh: 1 })
+  })
+
+  it('counts winners apart from errors', () => {
+    const s = summarize([
+      point({ stroke: 'fh', error_type: 'long' }),
+      point({ stroke: 'bh', error_type: 'net', forced: true }),
+      point({ stroke: 'fh', error_type: '', outcome: 'winner' }),
+      point({ stroke: 'bh', error_type: '', outcome: 'winner' }),
+      point({ stroke: 'fh', error_type: '', outcome: 'winner', deleted_at: t0 }),
+    ])
+    expect(s.total).toBe(2) // errors only
+    expect(s.byStroke).toEqual({ fh: 1, bh: 1 })
+    expect(s.byError).toEqual({ long: 1, net: 1, wide: 0 })
+    expect(s.winners).toBe(2)
+    expect(s.winnersByStroke).toEqual({ fh: 1, bh: 1 })
+    // a winner never lands in the error breakdowns
+    expect(s.matrix.fh).toEqual({ long: 1, net: 0, wide: 0 })
+    expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(2)
+  })
+
+  it('filters by outcome', () => {
+    const pts = [point({ error_type: 'long' }), point({ error_type: '', outcome: 'winner' })]
+    expect(filterPoints(pts, { outcome: 'winner' })).toHaveLength(1)
+    expect(filterPoints(pts, { outcome: 'error' })).toHaveLength(1)
+    expect(filterPoints(pts, { outcome: 'all' })).toHaveLength(2)
+    expect(filterPoints(pts)).toHaveLength(2)
   })
 
   it('handles empty input', () => {

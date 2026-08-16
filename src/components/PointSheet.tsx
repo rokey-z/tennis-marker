@@ -9,14 +9,19 @@ export interface PointSheetProps {
   point: Point
   /** 1-based position in the session, as shown in the log */
   index: number
-  onChange: (patch: Partial<Pick<Point, 'stroke' | 'error_type' | 'forced'>>) => void
+  onChange: (patch: Partial<Pick<Point, 'stroke' | 'error_type' | 'forced' | 'outcome'>>) => void
   onDelete: () => void
   onClose: () => void
 }
 
 export function PointSheet({ point, index, onChange, onDelete, onClose }: PointSheetProps) {
+  const winner = point.outcome === 'winner'
   const pick = (stroke: Stroke, error: ErrorType) => {
-    onChange({ stroke, error_type: error })
+    onChange({ stroke, error_type: error, outcome: 'error' })
+    onClose()
+  }
+  const pickWinner = (stroke: Stroke) => {
+    onChange({ stroke, error_type: '', outcome: 'winner', forced: false })
     onClose()
   }
 
@@ -24,26 +29,30 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
     <Modal title={`Point ${index}`} onClose={onClose}>
       <div className="point-sheet">
         <div className="ps-head">
-          <MarkDot stroke={point.stroke} error={point.error_type} forced={point.forced} size={34} />
+          <MarkDot stroke={point.stroke} error={point.error_type} forced={point.forced} outcome={point.outcome} size={34} />
           <div className="grow">
-            <div className="ps-now">{markLabel(point.stroke, point.error_type, point.forced)}</div>
+            <div className="ps-now">{markLabel(point.stroke, point.error_type, point.forced, point.outcome)}</div>
             <div className="ps-meta">
               {describeZone(zoneFor(point.x, point.y))} · {formatTime(point.created_at)}
             </div>
           </div>
-          <button
-            type="button"
-            className={`forced-toggle${point.forced ? ' on' : ''}`}
-            aria-pressed={point.forced}
-            onClick={() => onChange({ forced: !point.forced })}
-            title="Mark as a forced error"
-          >
-            Forced
-          </button>
+          {!winner && (
+            <button
+              type="button"
+              className={`forced-toggle${point.forced ? ' on' : ''}`}
+              aria-pressed={point.forced}
+              onClick={() => onChange({ forced: !point.forced })}
+              title="Mark as a forced error"
+            >
+              Forced
+            </button>
+          )}
         </div>
 
         <div className="section-title">Change it to</div>
-        <ShotGrid current={{ stroke: point.stroke, error: point.error_type }} forced={point.forced} onPick={pick} />
+        <ShotGrid current={{ stroke: point.stroke, error: point.error_type, outcome: point.outcome }} forced={point.forced} onPick={pick} onPickWinner={pickWinner} />
+        <div className="section-title">or</div>
+        <ShotGrid winner current={{ stroke: point.stroke, error: point.error_type, outcome: point.outcome }} onPick={pick} onPickWinner={pickWinner} />
 
         <button type="button" className="btn danger block ps-delete" onClick={onDelete}>
           <TrashIcon /> Delete this point

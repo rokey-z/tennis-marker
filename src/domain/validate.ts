@@ -1,7 +1,7 @@
 import { clampToView, roundFeet } from './court'
 import { isValidIso, YMD_RE } from '../lib/format'
 import { cleanOpponent } from './session'
-import { isErrorType, isSessionKind, isStroke, type Point, type Session } from './types'
+import { isErrorType, isOutcome, isSessionKind, isStroke, type Point, type Session } from './types'
 
 const str = (v: unknown): string | null => (typeof v === 'string' && v.length > 0 ? v : null)
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : null)
@@ -40,7 +40,10 @@ export function sanitizePoint(raw: unknown): Point | null {
   const y = num(r.y)
   const created = isoOrNull(r.created_at)
   if (!id || !session_id || x === null || y === null || !created) return null
-  if (!isStroke(r.stroke) || !isErrorType(r.error_type)) return null
+  if (!isStroke(r.stroke)) return null
+  const outcome = isOutcome(r.outcome) ? r.outcome : 'error'
+  // winners have no error type; errors must name one
+  if (outcome === 'error' && !isErrorType(r.error_type)) return null
   const c = clampToView(x, y)
   return {
     id,
@@ -49,8 +52,9 @@ export function sanitizePoint(raw: unknown): Point | null {
     x: roundFeet(c.x),
     y: roundFeet(c.y),
     stroke: r.stroke,
-    error_type: r.error_type,
-    forced: r.forced === true || r.forced === 'true' || r.forced === 1,
+    error_type: outcome === 'winner' ? '' : (r.error_type as Point['error_type']),
+    outcome,
+    forced: outcome === 'error' && (r.forced === true || r.forced === 'true' || r.forced === 1),
     created_at: created,
     updated_at: isoOrNull(r.updated_at) ?? created,
     deleted_at: isoOrNull(r.deleted_at),

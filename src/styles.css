@@ -24,6 +24,8 @@
   --bh-text: #1b3a9c;
   /* forced errors carry a dark outline; unforced carry none */
   --mark-outline: #14181d;
+  /* winners: a point she won, kept visually apart from the error marks */
+  --win: #0f9d58;
   /* chart-only series (error type / forced), validated against the white card surface */
   --chart-total: #2a78d6;
   --err-long: #2a78d6;
@@ -2019,4 +2021,38 @@ span
 }
 .sg-btn.sel {
   border-color: var(--mark-outline);
+}
+
+/* ---------- winners ---------- */
+.winner-toggle {
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 2px solid var(--win);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--win);
+  background: var(--surface);
+  white-space: nowrap;
+}
+.winner-toggle.on {
+  background: var(--win);
+  border-color: var(--win);
+  color: #fff;
+}
+.dot.winner {
+  border-radius: 6px;
+  transform: rotate(45deg);
+  box-shadow: inset 0 0 0 2px var(--win);
+}
+.dot.winner > * {
+  transform: rotate(-45deg);
+}
+.mark-win {
+  color: var(--win);
+  font-size: var(--fs-tag);
+}
+.mark-legend .ml-win {
+  color: var(--win);
+  font-weight: 800;
 }

@@ -57,7 +57,7 @@ export function loadState(storage: StorageLike): RepoState {
     const parsed = JSON.parse(raw) as Partial<RepoState>
     return {
       sessions: isRecord(parsed.sessions) ? upgradeSessions(parsed.sessions as Record<string, Session>) : {},
-      points: isRecord(parsed.points) ? (parsed.points as Record<string, Point>) : {},
+      points: isRecord(parsed.points) ? upgradePoints(parsed.points as Record<string, Point>) : {},
       dirty: {
         sessions: Array.isArray(parsed.dirty?.sessions) ? uniq(parsed.dirty!.sessions) : [],
         points: Array.isArray(parsed.dirty?.points) ? uniq(parsed.dirty!.points) : [],
@@ -87,6 +87,16 @@ function upgradeSessions(sessions: Record<string, Session>): Record<string, Sess
     if (typeof s?.opponent === 'string' && typeof s?.venue === 'string') continue
     if (out === sessions) out = { ...sessions }
     out[id] = { ...s, opponent: typeof s?.opponent === 'string' ? s.opponent : '', venue: typeof s?.venue === 'string' ? s.venue : '' }
+  }
+  return out
+}
+
+function upgradePoints(points: Record<string, Point>): Record<string, Point> {
+  let out = points
+  for (const [id, p] of Object.entries(points)) {
+    if (typeof p?.outcome === 'string') continue
+    if (out === points) out = { ...points }
+    out[id] = { ...p, outcome: 'error' }
   }
   return out
 }

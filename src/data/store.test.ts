@@ -74,6 +74,18 @@ describe('store', () => {
     store.updatePoint('nope', { forced: true })
   })
 
+  it('records a winner, which carries no error type and is never forced', () => {
+    const store = createStore(memoryStorage(), { ...clock(), newId: ids() })
+    const s = store.createSession()
+    const w = store.addPoint({ session_id: s.id, x: 5, y: 30, stroke: 'bh', error_type: 'long', forced: true, outcome: 'winner' })
+    expect(w).toMatchObject({ outcome: 'winner', error_type: '', forced: false })
+    const e = store.addPoint({ session_id: s.id, x: 5, y: 30, stroke: 'fh', error_type: 'net', forced: true })
+    expect(e).toMatchObject({ outcome: 'error', error_type: 'net', forced: true })
+    // an error can be corrected into a winner and back
+    store.updatePoint(e.id, { outcome: 'winner', error_type: '', forced: false })
+    expect(store.getState().points[e.id]).toMatchObject({ outcome: 'winner', error_type: '' })
+  })
+
   it('deleting a session soft-deletes its points and hides them from all-points', () => {
     const store = createStore(memoryStorage(), { ...clock(), newId: ids() })
     const a = store.createSession()

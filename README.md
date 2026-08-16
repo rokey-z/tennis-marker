@@ -10,9 +10,12 @@ as a home-screen app, records offline.
 ## How to use it courtside
 
 1. **Sessions → Practice / Match** creates a session and opens the court.
-2. **Tap the court** where she lost the point → a small menu pops up right at your finger → tap
+2. **Tap the court** where the point ended → a small menu pops up right at your finger → tap
    **FH/BH × Long/Net/Wide**. That's 2 taps per point. Toggle **Forced** on the menu only when
    needed (it resets each point). Tap anywhere else on the court to cancel.
+   Tap **★ Winner** on the menu to record a point she *won* instead: the grid switches to one
+   button per stroke, and the mark is drawn as a green-ringed diamond. Winners are counted apart
+   from errors everywhere — they never land in the error breakdowns or the heat map.
 3. **Undo** removes the last point; the **Log** panel at the bottom lists every point (newest first)
    and lets you delete any of them.
 4. **Near end / Far end** flips the court 180° so you can tap what you physically see when she's on
@@ -88,7 +91,8 @@ The build is fully functional without this; do it when you want phone ↔ deskto
 
 1. **Create a Supabase project** at https://supabase.com/dashboard (free tier is fine).
 2. **Create the tables:** Dashboard → *SQL Editor* → paste `supabase/migrations/0001_init.sql` → Run,
-   then do the same with `supabase/migrations/0002_session_fields.sql` (adds `opponent` and `venue`).
+   then the same for `supabase/migrations/0002_session_fields.sql` (adds `opponent` and `venue`)
+   and `supabase/migrations/0003_winners.sql` (adds `outcome`, so winners sync).
    (Or with the CLI: `supabase link` then `supabase db push`.) If a migration is missing, the app
    still syncs everything else — it drops the unknown columns and warns in the console — and picks
    the fields up automatically once you run it.

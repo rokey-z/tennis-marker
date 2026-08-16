@@ -1,9 +1,12 @@
 export type Stroke = 'fh' | 'bh'
 export type ErrorType = 'long' | 'net' | 'wide'
 export type SessionKind = 'match' | 'practice'
+/** How the point ended: she made an error, or she hit a winner. */
+export type Outcome = 'error' | 'winner'
 
 export const STROKES: Stroke[] = ['fh', 'bh']
 export const ERROR_TYPES: ErrorType[] = ['long', 'net', 'wide']
+export const OUTCOMES: Outcome[] = ['error', 'winner']
 
 export const STROKE_LABEL: Record<Stroke, string> = { fh: 'Forehand', bh: 'Backhand' }
 export const STROKE_SHORT: Record<Stroke, string> = { fh: 'FH', bh: 'BH' }
@@ -13,6 +16,7 @@ export const KIND_LABEL: Record<SessionKind, string> = { match: 'Match', practic
 
 export const isStroke = (v: unknown): v is Stroke => v === 'fh' || v === 'bh'
 export const isErrorType = (v: unknown): v is ErrorType => v === 'long' || v === 'net' || v === 'wide'
+export const isOutcome = (v: unknown): v is Outcome => v === 'error' || v === 'winner'
 export const isSessionKind = (v: unknown): v is SessionKind => v === 'match' || v === 'practice'
 
 /** A match or practice; groups points. Timestamps are ISO strings, dates are YYYY-MM-DD. */
@@ -45,11 +49,14 @@ export interface Point {
   x: number
   y: number
   stroke: Stroke
-  error_type: ErrorType
+  /** How it ended; '' for winners, which have no error type. */
+  error_type: ErrorType | ''
+  outcome: Outcome
+  /** Only meaningful for errors. */
   forced: boolean
   created_at: string
   updated_at: string
   deleted_at: string | null
 }
 
-export type NewPoint = Pick<Point, 'session_id' | 'x' | 'y' | 'stroke' | 'error_type' | 'forced'>
+export type NewPoint = Pick<Point, 'session_id' | 'x' | 'y' | 'stroke' | 'error_type' | 'forced'> & { outcome?: Outcome }

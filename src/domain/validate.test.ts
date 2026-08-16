@@ -17,6 +17,15 @@ describe('sanitizePoint', () => {
     expect(sanitizePoint({ ...good, id: '' })).toBeNull()
     expect(sanitizePoint(null)).toBeNull()
   })
+  it('accepts winners without an error type, and defaults the outcome', () => {
+    const w = sanitizePoint({ ...good, outcome: 'winner', error_type: '', forced: true })
+    expect(w).toMatchObject({ outcome: 'winner', error_type: '', forced: false })
+    expect(sanitizePoint(good)?.outcome).toBe('error')
+    // an error still needs a valid type
+    expect(sanitizePoint({ ...good, error_type: '' })).toBeNull()
+    expect(sanitizePoint({ ...good, outcome: 'nonsense' })?.outcome).toBe('error')
+  })
+
   it('clamps coordinates into the court view', () => {
     expect(sanitizePoint({ ...good, x: 999, y: -5 })).toMatchObject({ x: 24, y: 0 })
   })

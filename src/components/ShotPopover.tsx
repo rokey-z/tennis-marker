@@ -12,7 +12,11 @@ export interface ShotPopoverProps {
   where: string
   forced: boolean
   onForcedChange: (forced: boolean) => void
+  /** Winner mode: the grid offers one button per stroke instead of the error types. */
+  winner: boolean
+  onWinnerChange: (winner: boolean) => void
   onPick: (stroke: Stroke, error: ErrorType) => void
+  onPickWinner: (stroke: Stroke) => void
   onCancel: () => void
 }
 
@@ -24,7 +28,7 @@ const EDGE = 6
  * Compact chooser anchored at the tap: two rows (FH / BH) × Long / Net / Wide, plus a Forced toggle.
  * Placed below the tap when there is room, otherwise above; clamped inside the container.
  */
-export function ShotPopover({ anchor, containerRef, where, forced, onForcedChange, onPick, onCancel }: ShotPopoverProps) {
+export function ShotPopover({ anchor, containerRef, where, forced, onForcedChange, winner, onWinnerChange, onPick, onPickWinner, onCancel }: ShotPopoverProps) {
   const ref = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState<{ left: number; top: number; placement: 'below' | 'above' } | null>(null)
 
@@ -55,7 +59,7 @@ export function ShotPopover({ anchor, containerRef, where, forced, onForcedChang
       top = Math.max(EDGE, Math.min(c.height - h - EDGE, placement === 'below' ? y + OFFSET : y - OFFSET - h))
     }
     setPos({ left, top, placement })
-  }, [anchor.clientX, anchor.clientY, containerRef])
+  }, [anchor.clientX, anchor.clientY, containerRef, winner])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -79,14 +83,28 @@ export function ShotPopover({ anchor, containerRef, where, forced, onForcedChang
       >
         <div className="pop-head">
           <div className="where">{where}</div>
-          <button type="button" className={`forced-toggle${forced ? ' on' : ''}`} aria-pressed={forced} onClick={() => onForcedChange(!forced)} title="Mark as a forced error">
-            Forced
+          {!winner && (
+            <button type="button" className={`forced-toggle${forced ? ' on' : ''}`} aria-pressed={forced} onClick={() => onForcedChange(!forced)} title="Mark as a forced error">
+              Forced
+            </button>
+          )}
+          <button
+            type="button"
+            className={`winner-toggle${winner ? ' on' : ''}`}
+            aria-pressed={winner}
+            onClick={() => {
+              onWinnerChange(!winner)
+              if (!winner) onForcedChange(false)
+            }}
+            title="She hit a winner here"
+          >
+            ★ Winner
           </button>
           <button type="button" className="pop-close" aria-label="Cancel" onClick={onCancel}>
             <CloseIcon />
           </button>
         </div>
-        <ShotGrid forced={forced} onPick={onPick} />
+        <ShotGrid forced={forced} winner={winner} onPick={onPick} onPickWinner={onPickWinner} />
       </div>
     </>
   )

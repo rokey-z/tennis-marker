@@ -248,9 +248,23 @@ function Marker({ p: pt, flipped, dim = false }: { p: Point; flipped: boolean; d
   const r = dim ? 0.95 : 1.4
   return (
     <g transform={flipped ? `rotate(180 ${p.x} ${p.y})` : undefined} opacity={dim ? 0.78 : 1}>
-      <title>{markLabel(stroke, error, p.forced)}</title>
-      {/* colour carries the stroke; a dark outline marks a forced error */}
-      <circle cx={p.x} cy={p.y} r={r} fill={color} stroke={p.forced ? 'var(--mark-outline)' : 'none'} strokeWidth={p.forced ? (dim ? 0.28 : 0.36) : 0} />
+      <title>{markLabel(stroke, error, p.forced, p.outcome)}</title>
+      {/* colour carries the stroke; a dark outline marks a forced error, a diamond marks a winner */}
+      {p.outcome === 'winner' ? (
+        <rect
+          x={p.x - r * 0.82}
+          y={p.y - r * 0.82}
+          width={r * 1.64}
+          height={r * 1.64}
+          rx={0.22}
+          fill={color}
+          stroke="var(--win)"
+          strokeWidth={dim ? 0.3 : 0.4}
+          transform={`rotate(45 ${p.x} ${p.y})`}
+        />
+      ) : (
+        <circle cx={p.x} cy={p.y} r={r} fill={color} stroke={p.forced ? 'var(--mark-outline)' : 'none'} strokeWidth={p.forced ? (dim ? 0.28 : 0.36) : 0} />
+      )}
       <text
         x={p.x}
         y={p.y + (dim ? 0.38 : 0.54)}
@@ -260,7 +274,7 @@ function Marker({ p: pt, flipped, dim = false }: { p: Point; flipped: boolean; d
         fill={ink}
         fontFamily="var(--font)"
       >
-        {ERROR_LETTER[error]}
+        {p.outcome === 'winner' ? '★' : ERROR_LETTER[error]}
       </text>
     </g>
   )

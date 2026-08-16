@@ -44,6 +44,7 @@ function pt(over: Partial<Point> = {}): Point {
     y: 40,
     stroke: 'fh',
     error_type: 'long',
+    outcome: 'error',
     forced: false,
     created_at: t1,
     updated_at: t1,
@@ -70,6 +71,13 @@ describe('load/save', () => {
     expect(loaded.sessions.s1.opponent).toBe('')
     expect(loaded.sessions.s1.venue).toBe('')
     expect(loaded.sessions.s1.title).toBe('Practice 2026-08-01')
+  })
+
+  it('defaults the outcome on points written before winners existed', () => {
+    const st = memoryStorage()
+    const legacy = { id: 'p1', session_id: 's1', x: 1, y: 2, stroke: 'fh', error_type: 'long', forced: false, created_at: t1, updated_at: t1, deleted_at: null }
+    st.setItem(STORAGE_KEY, JSON.stringify({ sessions: {}, points: { p1: legacy }, dirty: { sessions: [], points: [] }, meta: {} }))
+    expect(loadState(st).points.p1.outcome).toBe('error')
   })
 
   it('round-trips and dedupes dirty ids', () => {

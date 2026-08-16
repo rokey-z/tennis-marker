@@ -11,7 +11,7 @@ import { store, useAppState } from '../data/app'
 import { livePointsForSession } from '../data/store'
 import { describeZone, zoneFor } from '../domain/court'
 import { opponentRowsWithRoster, sessionLabel, venueRows } from '../domain/session'
-import { MarkLegend } from '../components/marks'
+import { MarkLegend, markLabel } from '../components/marks'
 import { PointSheet } from '../components/PointSheet'
 import { OpponentPicker } from '../components/OpponentPicker'
 import { VenuePicker } from '../components/VenuePicker'
@@ -38,6 +38,7 @@ export function RecordPage() {
   const [pending, setPending] = useState<{ x: number; y: number; at: { clientX: number; clientY: number } } | null>(null)
   const courtRef = useRef<HTMLDivElement>(null)
   const [forced, setForced] = useState(false)
+  const [winner, setWinner] = useState(false)
   const [toast, setToast] = useState<ToastState | null>(null)
   const [logOpen, setLogOpen] = useState(() => localStorage.getItem(LOG_KEY) !== '0')
   const [view, setView] = useState<'court' | 'stats'>('court')
@@ -59,14 +60,15 @@ export function RecordPage() {
   const onTap = useCallback((x: number, y: number, at: { clientX: number; clientY: number }) => {
     if (performance.now() < ignoreUntil.current) return
     setForced(false)
+    setWinner(false)
     setPending({ x, y, at })
   }, [])
 
   const cancel = useCallback(() => setPending(null), [])
 
-  const pick = (stroke: Stroke, error: ErrorType) => {
+  const logPoint = (stroke: Stroke, error: ErrorType | '', outcome: 'error' | 'winner') => {
     if (!pending) return
-    const p = store.addPoint({ session_id: id, x: pending.x, y: pending.y, stroke, error_type: error, forced })
+    const p = store.addPoint({ session_id: id, x: pending.x, y: pending.y, stroke, error_type: error, forced: outcome === 'error' && forced, outcome })
     setPending(null)
     ignoreUntil.current = performance.now() + AFTER_SAVE_IGNORE_MS
     try {
@@ -76,15 +78,21 @@ export function RecordPage() {
     }
     setToast({
       id: Date.now(),
-      text: `${STROKE_SHORT[stroke]} ${ERROR_LABEL[error].toLowerCase()} · ${forced ? 'forced' : 'unforced'} · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`,
+      text:
+        outcome === 'winner'
+          ? `${STROKE_SHORT[stroke]} winner · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
+          : `${STROKE_SHORT[stroke]} ${ERROR_LABEL[error as ErrorType].toLowerCase()} · ${forced ? 'forced' : 'unforced'} · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`,
       actionLabel: 'Undo',
       onAction: () => store.deletePoint(p.id),
     })
   }
 
+  const pick = (stroke: Stroke, error: ErrorType) => logPoint(stroke, error, 'error')
+  const pickWinner = (stroke: Stroke) => logPoint(stroke, '', 'winner')
+
   const undo = () => {
     const p = store.undoLastPoint(id)
-    if (p) setToast({ id: Date.now(), text: `Removed ${STROKE_SHORT[p.stroke]} ${ERROR_LABEL[p.error_type].toLowerCase()}` })
+    if (p) setToast({ id: Date.now(), text: `Removed ${markLabel(p.stroke, p.error_type, p.forced, p.outcome)}` })
   }
 
   const dismissToast = useCallback(() => setToast(null), [])
@@ -93,7 +101,7 @@ export function RecordPage() {
     store.deletePoint(p.id)
     setToast({
       id: Date.now(),
-      text: `Removed ${STROKE_SHORT[p.stroke]} ${ERROR_LABEL[p.error_type].toLowerCase()}`,
+      text: `Removed ${markLabel(p.stroke, p.error_type, p.forced, p.outcome)}`,
       actionLabel: 'Undo',
       onAction: () => store.restorePoint(p.id),
     })
@@ -175,7 +183,18 @@ export function RecordPage() {
             <Court flipped={flipped} onTap={onTap} disabled={!!pending} points={points} emphasizeLast pending={pending} showZones />
           )}
           {pending && !statsMode && (
-            <ShotPopover anchor={pending.at} containerRef={courtRef} where={where} forced={forced} onForcedChange={setForced} onPick={pick} onCancel={cancel} />
+            <ShotPopover
+            anchor={pending.at}
+            containerRef={courtRef}
+            where={where}
+            forced={forced}
+            onForcedChange={setForced}
+            winner={winner}
+            onWinnerChange={setWinner}
+            onPick={pick}
+            onPickWinner={pickWinner}
+            onCancel={cancel}
+          />
           )}
         </div>
       </div>

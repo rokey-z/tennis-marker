@@ -23,21 +23,21 @@ export function createSupabase(): SupabaseClient | null {
 
 const PAGE = 1000
 
-/** Columns added after 0001; dropped from the payload if the project hasn't applied 0002 yet. */
+/** Columns added after 0001; dropped from the payload until the matching migration is applied. */
 const OPTIONAL_SESSION_COLUMNS = ['opponent', 'venue'] as const
+const OPTIONAL_POINT_COLUMNS = ['outcome'] as const
 const missingColumns = new Set<string>()
 
-function stripMissing(s: Session): Record<string, unknown> {
-  if (!missingColumns.size) return s as unknown as Record<string, unknown>
-  const out: Record<string, unknown> = { ...s }
+function stripMissing(row: Session | Point): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...row }
   for (const c of missingColumns) delete out[c]
   return out
 }
 
 /** PostgREST reports an unknown column as PGRST204 (schema cache) or Postgres 42703. */
-function missingColumnFrom(e: { message: string; code?: string }): string | null {
+function missingColumnFrom(e: { message: string; code?: string }, columns: readonly string[]): string | null {
   if (e.code !== 'PGRST204' && e.code !== '42703' && !/column|schema cache/i.test(e.message)) return null
-  return OPTIONAL_SESSION_COLUMNS.find((c) => new RegExp(`\\b${c}\\b`, 'i').test(e.message)) ?? null
+  return columns.find((c) => new RegExp(`\\b${c}\\b`, 'i').test(e.message)) ?? null
 }
 
 /** Canonical ISO (…Z, ms precision) so string comparison of timestamps is meaningful. */
@@ -69,8 +69,9 @@ function normalizePoint(r: Record<string, unknown>): Point {
     x: Number(r.x),
     y: Number(r.y),
     stroke: r.stroke === 'bh' ? 'bh' : 'fh',
-    error_type: r.error_type === 'net' ? 'net' : r.error_type === 'wide' ? 'wide' : 'long',
-    forced: Boolean(r.forced),
+    error_type: r.outcome === 'winner' ? '' : r.error_type === 'net' ? 'net' : r.error_type === 'wide' ? 'wide' : 'long',
+    outcome: r.outcome === 'winner' ? 'winner' : 'error',
+    forced: r.outcome === 'winner' ? false : Boolean(r.forced),
     created_at: toIso(r.created_at),
     updated_at: toIso(r.updated_at),
     deleted_at: r.deleted_at ? toIso(r.deleted_at) : null,
@@ -105,7 +106,7 @@ export function createSupabaseRemote(client: SupabaseClient): Remote {
       for (let attempt = 0; attempt <= OPTIONAL_SESSION_COLUMNS.length; attempt++) {
         const { error, status } = await client.from('sessions').upsert(rows.map(stripMissing), { onConflict: 'id' })
         if (!error) return { error: null }
-        const missing = missingColumnFrom(error)
+        const missing = missingColumnFrom(error, OPTIONAL_SESSION_COLUMNS)
         if (!missing || missingColumns.has(missing)) return { error: asRemoteError(error, status) }
         missingColumns.add(missing)
         console.warn(`Supabase: sessions.${missing} column missing — run supabase/migrations/0002_session_fields.sql`)
@@ -113,8 +114,15 @@ export function createSupabaseRemote(client: SupabaseClient): Remote {
       return { error: null }
     },
     async upsertPoints(rows) {
-      const { error, status } = await client.from('points').upsert(rows, { onConflict: 'id' })
-      return { error: asRemoteError(error, status) }
+      for (let attempt = 0; attempt <= OPTIONAL_POINT_COLUMNS.length; attempt++) {
+        const { error, status } = await client.from('points').upsert(rows.map(stripMissing), { onConflict: 'id' })
+        if (!error) return { error: null }
+        const missing = missingColumnFrom(error, OPTIONAL_POINT_COLUMNS)
+        if (!missing || missingColumns.has(missing)) return { error: asRemoteError(error, status) }
+        missingColumns.add(missing)
+        console.warn(`Supabase: points.${missing} column missing — run supabase/migrations/0003_winners.sql`)
+      }
+      return { error: null }
     },
     async fetchAll() {
       const s = await fetchTable('sessions', normalizeSession)

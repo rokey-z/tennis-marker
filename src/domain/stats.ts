@@ -1,6 +1,6 @@
 import { zoneFor, zoneId } from './court'
-import type { ErrorType, Point, Session, Stroke } from './types'
-import { ERROR_TYPES, STROKES } from './types'
+import type { ErrorType, Outcome, Point, Session, Stroke } from './types'
+import { STROKES, isErrorType } from './types'
 
 export type ForcedFilter = 'all' | 'forced' | 'unforced'
 
@@ -9,9 +9,11 @@ export interface Filters {
   stroke?: Stroke | 'all'
   error?: ErrorType | 'all'
   forced?: ForcedFilter
+  /** 'error' (the default view), 'winner', or 'all' */
+  outcome?: Outcome | 'all'
 }
 
-export const DEFAULT_FILTERS: Required<Filters> = { sessionId: 'all', stroke: 'all', error: 'all', forced: 'all' }
+export const DEFAULT_FILTERS: Required<Filters> = { sessionId: 'all', stroke: 'all', error: 'all', forced: 'all', outcome: 'all' }
 
 /** Live (non-deleted) points, optionally narrowed by filters. */
 export function filterPoints(points: Iterable<Point>, f: Filters = {}): Point[] {
@@ -23,6 +25,7 @@ export function filterPoints(points: Iterable<Point>, f: Filters = {}): Point[] 
     if (f.error && f.error !== 'all' && p.error_type !== f.error) continue
     if (f.forced === 'forced' && !p.forced) continue
     if (f.forced === 'unforced' && p.forced) continue
+    if (f.outcome && f.outcome !== 'all' && (p.outcome ?? 'error') !== f.outcome) continue
     out.push(p)
   }
   return out
@@ -39,6 +42,9 @@ export interface Summary {
   matrix: Record<Stroke, Record<ErrorType, number>>
   /** forced errors per stroke (unforced = byStroke[s] - byStrokeForced[s]) */
   byStrokeForced: Record<Stroke, number>
+  /** winners are counted apart — they are not errors */
+  winners: number
+  winnersByStroke: Record<Stroke, number>
 }
 
 export function summarize(points: Iterable<Point>): Summary {
@@ -51,21 +57,28 @@ export function summarize(points: Iterable<Point>): Summary {
     maxZone: 0,
     matrix: { fh: { long: 0, net: 0, wide: 0 }, bh: { long: 0, net: 0, wide: 0 } },
     byStrokeForced: { fh: 0, bh: 0 },
+    winners: 0,
+    winnersByStroke: { fh: 0, bh: 0 },
   }
   for (const p of points) {
     if (p.deleted_at) continue
+    if ((p.outcome ?? 'error') === 'winner') {
+      s.winners++
+      if (STROKES.includes(p.stroke)) s.winnersByStroke[p.stroke]++
+      continue
+    }
     s.total++
     if (STROKES.includes(p.stroke)) {
       s.byStroke[p.stroke]++
       if (p.forced) s.byStrokeForced[p.stroke]++
     }
-    if (ERROR_TYPES.includes(p.error_type)) s.byError[p.error_type]++
+    if (isErrorType(p.error_type)) s.byError[p.error_type]++
     if (p.forced) s.byForced.forced++
     else s.byForced.unforced++
     const id = zoneId(zoneFor(p.x, p.y))
     s.byZone[id] = (s.byZone[id] ?? 0) + 1
     if (s.byZone[id] > s.maxZone) s.maxZone = s.byZone[id]
-    if (STROKES.includes(p.stroke) && ERROR_TYPES.includes(p.error_type)) s.matrix[p.stroke][p.error_type]++
+    if (STROKES.includes(p.stroke) && isErrorType(p.error_type)) s.matrix[p.stroke][p.error_type]++
   }
   return s
 }
