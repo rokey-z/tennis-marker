@@ -3,7 +3,6 @@ import { DashboardPage } from './pages/DashboardPage'
 import { RecordPage } from './pages/RecordPage'
 import { SessionsPage } from './pages/SessionsPage'
 import { SettingsPage } from './pages/SettingsPage'
-import { StatsPage } from './pages/StatsPage'
 
 export default function App() {
   return (
@@ -11,7 +10,7 @@ export default function App() {
       <Route path="/" element={<SessionsPage />} />
       <Route path="/session/:id" element={<RecordPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
-      <Route path="/stats" element={<StatsPage />} />
+      <Route path="/stats" element={<Navigate to="/dashboard" replace />} />
       <Route path="/settings" element={<SettingsPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

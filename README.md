@@ -2,7 +2,7 @@
 
 A courtside recorder for *where* and *how* a player loses points. Tap the half court where she
 was when the point ended, then tap one of six buttons (forehand / backhand × long / net / wide),
-optionally flag it as forced. Patterns show up live on the court and in the Stats heatmap.
+optionally flag it as forced. Patterns show up live on the court, in the in-place Stats view, and on the Dashboard.
 
 **Live app:** https://rokey-z.github.io/tennis-marker/ — works on phone and desktop, installable
 as a home-screen app, records offline.
@@ -23,9 +23,10 @@ as a home-screen app, records offline.
    timeline** (point-by-point strip with quiet-gap markers, when-in-the-session buckets, longest
    run, thirds), error mix by stroke, match vs practice, the zone heatmap, and a chronological
    **timeline** of every session. Filters (date range, match/practice) scope the whole page.
-6. **Stats** is the court explorer: the 3×3 zone heatmap with every point drawn (Ad side | Middle |
-   Deuce side × Net | Mid-court | Baseline), filters, the FH/BH × long/net/wide matrix, per-session
-   counts, and CSV / JSON export.
+6. **Stats** (button on the record screen) flips the same court into the 3×3 zone heatmap with every
+   point drawn (Ad side | Middle | Deuce side × Net | Mid-court | Baseline), with stroke / error /
+   forced filters, and shows the tiles, "where the ball went" bars, the FH/BH × long/net/wide matrix
+   and CSV / JSON export below — no page change. Tap **Court** to go back to recording.
 7. Tap the session title to rename it, set the date/type, add notes, or delete it.
 
 Tip: install it (iPhone: Share → *Add to Home Screen*; Android/desktop Chrome: *Install app*).
@@ -63,7 +64,7 @@ Layout:
 src/domain/   types, court geometry + zones, stats aggregation, analytics (trend/timeline/insights), CSV/JSON export   (pure, tested)
 src/data/     localRepo (persistence + merge), store (state + actions), syncEngine, supabaseClient, auth
 src/components/  Court (SVG, tap→feet, flip, markers, heat), ShotSheet, Shell, charts (stacked columns, sparkline, sequence strip, share bars), small bits
-src/pages/    Sessions, Record, Dashboard, Stats, Settings
+src/pages/    Sessions, Record (court + in-place stats), Dashboard, Settings
 supabase/migrations/0001_init.sql   tables + RLS policies
 .github/workflows/deploy.yml        test → build → GitHub Pages
 ```

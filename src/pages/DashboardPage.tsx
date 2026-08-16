@@ -397,7 +397,7 @@ export function DashboardPage() {
                   <Court heat={summary.byZone} heatTotal={summary.total} showZones />
                 </div>
                 <div className="kbd-hint" style={{ textAlign: 'center', marginTop: 4 }}>
-                  Errors per zone · <Link to="/stats">see every point on the Stats page</Link>
+                  Errors per zone · open a session and tap <strong>Stats</strong> to see every point
                 </div>
                 {zonesSorted.length > 0 && (
                   <ol className="zone-list">

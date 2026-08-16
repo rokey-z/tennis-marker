@@ -4,17 +4,21 @@ import { Modal, PointList, SyncBadge, Tally, Toast, type ToastState } from '../c
 import { useIsDesktop } from '../components/hooks'
 import { formatDate } from '../lib/format'
 import { Court } from '../components/Court'
+import { StatsFilters, StatsPanel, type StatsFilterState } from '../components/StatsPanel'
 import { BackIcon, ChartIcon, FlipIcon, ListIcon, UndoIcon } from '../components/Icons'
 import { ShotPopover } from '../components/ShotPopover'
 import { store, useAppState } from '../data/app'
 import { livePointsForSession } from '../data/store'
 import { describeZone, zoneFor } from '../domain/court'
-import { summarize } from '../domain/stats'
+import { filterPoints, summarize } from '../domain/stats'
+import { pointsToCsv, safeFilename, toExportBundle } from '../domain/export'
+import { downloadText } from '../lib/format'
 import { ERROR_LABEL, KIND_LABEL, STROKE_SHORT, type ErrorType, type Session, type Stroke } from '../domain/types'
 
 const LOG_KEY = 'tennis-marker.logOpen'
 const FLIP_KEY = 'tennis-marker.flip'
 const AFTER_SAVE_IGNORE_MS = 300
+const DEFAULT_STATS_FILTERS: StatsFilterState = { stroke: 'all', error: 'all', forced: 'all' }
 
 export function RecordPage() {
   const { id = '' } = useParams()
@@ -31,6 +35,11 @@ export function RecordPage() {
   const [forced, setForced] = useState(false)
   const [toast, setToast] = useState<ToastState | null>(null)
   const [logOpen, setLogOpen] = useState(() => localStorage.getItem(LOG_KEY) !== '0')
+  const [view, setView] = useState<'court' | 'stats'>('court')
+  const [filters, setFilters] = useState<StatsFilterState>(DEFAULT_STATS_FILTERS)
+  const statsMode = view === 'stats'
+  const shownPoints = useMemo(() => (statsMode ? filterPoints(points, filters) : points), [statsMode, points, filters])
+  const statsSummary = useMemo(() => summarize(shownPoints), [shownPoints])
   const [showDetails, setShowDetails] = useState(false)
   const ignoreUntil = useRef(0)
 
@@ -74,6 +83,14 @@ export function RecordPage() {
 
   const dismissToast = useCallback(() => setToast(null), [])
 
+  const exportCsv = () => {
+    downloadText(safeFilename(`tennis-${session?.title ?? 'session'}`, 'csv'), pointsToCsv(shownPoints, state.sessions), 'text/csv;charset=utf-8')
+  }
+  const exportJson = () => {
+    const bundle = toExportBundle(Object.values(state.sessions), Object.values(state.points))
+    downloadText(safeFilename('tennis-marker-backup', 'json'), JSON.stringify(bundle, null, 2), 'application/json')
+  }
+
   if (!session || session.deleted_at) {
     return (
       <div className="shell">
@@ -94,14 +111,14 @@ export function RecordPage() {
       <button type="button" className="btn" onClick={undo} disabled={points.length === 0}>
         <UndoIcon /> Undo
       </button>
-      <button type="button" className="btn" onClick={() => nav(`/stats?session=${id}`)}>
-        <ChartIcon /> Stats
+      <button type="button" className={`btn${statsMode ? ' primary' : ''}`} onClick={() => setView((v) => (v === 'stats' ? 'court' : 'stats'))} aria-pressed={statsMode}>
+        <ChartIcon /> {statsMode ? 'Court' : 'Stats'}
       </button>
     </div>
   )
 
   return (
-    <div className="record">
+    <div className={`record${statsMode ? ' stats' : ''}`}>
       <header className="record-head">
         <Link to="/" className="icon-btn" aria-label="Back to sessions">
           <BackIcon />
@@ -118,25 +135,45 @@ export function RecordPage() {
         <SyncBadge compact />
       </header>
 
-      <div className="record-court" ref={courtRef}>
-        <Court flipped={flipped} onTap={onTap} disabled={!!pending} points={points} pending={pending} showZones />
-        {pending && (
-          <ShotPopover anchor={pending.at} containerRef={courtRef} where={where} forced={forced} onForcedChange={setForced} onPick={pick} onCancel={cancel} />
-        )}
+      <div className="record-court">
+        {statsMode && <StatsFilters value={filters} onChange={setFilters} />}
+        <div className="court-box" ref={courtRef}>
+          {statsMode ? (
+            <Court flipped={flipped} points={shownPoints} heat={statsSummary.byZone} heatTotal={statsSummary.total} showZones />
+          ) : (
+            <Court flipped={flipped} onTap={onTap} disabled={!!pending} points={points} pending={pending} showZones />
+          )}
+          {pending && !statsMode && (
+            <ShotPopover anchor={pending.at} containerRef={courtRef} where={where} forced={forced} onForcedChange={setForced} onPick={pick} onCancel={cancel} />
+          )}
+        </div>
       </div>
 
       {isDesktop ? (
         <aside className="record-side">
-          <div className="card">
-            <Tally s={summary} />
-          </div>
-          <div className="record-hint">Click the court where she lost the point, then pick FH/BH × Long/Net/Wide right there.</div>
+          {!statsMode && (
+            <div className="card">
+              <Tally s={summary} />
+            </div>
+          )}
+          {!statsMode && <div className="record-hint">Click the court where she lost the point, then pick FH/BH × Long/Net/Wide right there.</div>}
           {actions}
-          <div className="card side-list">
-            <div className="section-title">Points</div>
-            <PointList points={points} onDelete={(pid) => store.deletePoint(pid)} />
-          </div>
+          {statsMode ? (
+            <StatsPanel summary={statsSummary} count={shownPoints.length} onExportCsv={exportCsv} onExportJson={exportJson} />
+          ) : (
+            <div className="card side-list">
+              <div className="section-title">Points</div>
+              <PointList points={points} onDelete={(pid) => store.deletePoint(pid)} />
+            </div>
+          )}
         </aside>
+      ) : statsMode ? (
+        <>
+          <div className="record-bottom">{actions}</div>
+          <section className="record-stats" aria-label="Session stats">
+            <StatsPanel summary={statsSummary} count={shownPoints.length} onExportCsv={exportCsv} onExportJson={exportJson} />
+          </section>
+        </>
       ) : (
         <>
           <div className="record-bottom">

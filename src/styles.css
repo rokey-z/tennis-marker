@@ -546,9 +546,17 @@ textarea.input {
   flex: 1;
   min-height: 0;
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 2px 2px;
+}
+.court-box {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2px 2px;
   container-type: size;
 }
 .court-svg {
@@ -565,7 +573,7 @@ textarea.input {
   -webkit-touch-callout: none;
 }
 @supports (width: 1cqh) {
-  .record-court .court-svg {
+  .court-box .court-svg {
     width: min(100%, calc(100cqh * 42 / 52.5));
   }
 }
@@ -622,6 +630,53 @@ textarea.input {
   min-height: 50px;
 }
 
+/* stats mode on the record screen */
+.stats-filters {
+  flex: 0 0 auto;
+  width: 100%;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 4px 6px 6px;
+}
+.stats-filters::-webkit-scrollbar {
+  display: none;
+}
+.stats-filters .chip-group {
+  flex-wrap: nowrap;
+}
+.stats-filters .chip-group + .chip-group {
+  border-left: 1px solid var(--line);
+  padding-left: 6px;
+}
+.stats-filters .chip {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+@media (max-width: 899px) {
+  .record.stats .record-court {
+    flex: 0 0 auto;
+    height: 50dvh;
+  }
+}
+.record-stats {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 10px calc(10px + env(safe-area-inset-bottom));
+}
+.record-stats .tiles {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.record-stats .tile .value {
+  font-size: 22px;
+}
+
 /* bottom log (mobile) */
 .record-log {
   flex: 0 0 auto;
@@ -671,9 +726,6 @@ textarea.input {
 }
 
 /* ---------- shot popover (anchored at the tap) ---------- */
-.record-court {
-  position: relative;
-}
 .pop-backdrop {
   position: absolute;
   inset: 0;
