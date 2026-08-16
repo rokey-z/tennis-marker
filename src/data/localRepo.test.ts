@@ -78,7 +78,7 @@ describe('load/save', () => {
       ...emptyState(),
       sessions: { s1: sess() },
       dirty: { sessions: ['s1', 's1'], points: [] },
-      meta: { ownerId: 'u1', lastPullAt: t1 },
+      meta: { ownerId: 'u1', lastPullAt: t1, roster: [] },
     }
     saveState(st, s)
     expect(loadState(st)).toEqual({ ...s, dirty: { sessions: ['s1'], points: [] } })

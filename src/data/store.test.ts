@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { STORAGE_KEY, memoryStorage } from './localRepo'
 import { allLivePoints, createStore, livePointsForSession, liveSessions, pendingCount, todayLocalISO } from './store'
-import { opponentRows, sessionLabel } from '../domain/session'
+import { opponentRows, opponentRowsWithRoster, sessionLabel } from '../domain/session'
 
 function clock(start = Date.UTC(2026, 7, 15, 10, 0, 0)) {
   let t = start
@@ -156,6 +156,43 @@ describe('store', () => {
     expect(liveSessions(store.getState())).toHaveLength(3)
     expect(opponentRows(Object.values(store.getState().sessions))).toEqual([])
     expect(store.renameOpponent('nobody', 'x')).toBe(0)
+  })
+
+  it('keeps a device-local roster of opponents not played yet', () => {
+    const storage = memoryStorage()
+    const store = createStore(storage, { ...clock(), newId: ids() })
+    expect(store.addRosterOpponent('  Nina  ')).toBe(true)
+    expect(store.addRosterOpponent('nina')).toBe(false) // already there, case-insensitively
+    expect(store.addRosterOpponent('   ')).toBe(false)
+    expect(store.getState().meta.roster).toEqual(['Nina'])
+    expect(opponentRowsWithRoster(Object.values(store.getState().sessions), store.getState().meta.roster)).toEqual([
+      { name: 'Nina', key: 'nina', sessions: 0, matches: 0, lastDate: '' },
+    ])
+
+    // survives a reload, and an opponent already used in a session is not duplicated
+    const reloaded = createStore(storage, { ...clock(), newId: ids() })
+    expect(reloaded.getState().meta.roster).toEqual(['Nina'])
+    reloaded.createSession({ kind: 'match', opponent: 'Emma' })
+    expect(reloaded.addRosterOpponent('emma')).toBe(false)
+
+    // once she plays Nina the roster entry gives way to the real session row
+    reloaded.createSession({ kind: 'match', opponent: 'Nina' })
+    const rows = opponentRowsWithRoster(Object.values(reloaded.getState().sessions), reloaded.getState().meta.roster)
+    expect(rows.filter((r) => r.key === 'nina')).toHaveLength(1)
+    expect(rows.find((r) => r.key === 'nina')?.sessions).toBe(1)
+
+    // removing an unused name drops it from the roster
+    const solo = createStore(memoryStorage(), { ...clock(), newId: ids() })
+    solo.addRosterOpponent('Ghost')
+    expect(solo.clearOpponent('Ghost')).toBe(0)
+    expect(solo.getState().meta.roster).toEqual([])
+  })
+
+  it('renames an unused roster name without touching sessions', () => {
+    const store = createStore(memoryStorage(), { ...clock(), newId: ids() })
+    store.addRosterOpponent('Nina')
+    expect(store.renameOpponent('Nina', 'Nina Patel')).toBe(0)
+    expect(store.getState().meta.roster).toEqual(['Nina Patel'])
   })
 
   it('formats local dates', () => {

@@ -10,7 +10,7 @@ import { ShotPopover } from '../components/ShotPopover'
 import { store, useAppState } from '../data/app'
 import { livePointsForSession } from '../data/store'
 import { describeZone, zoneFor } from '../domain/court'
-import { opponentRows, sessionLabel, venueRows } from '../domain/session'
+import { opponentRowsWithRoster, sessionLabel, venueRows } from '../domain/session'
 import { OpponentPicker } from '../components/OpponentPicker'
 import { VenuePicker } from '../components/VenuePicker'
 import { filterPoints, summarize } from '../domain/stats'
@@ -223,7 +223,7 @@ function SessionDetails({ session, onClose, onDeleted }: { session: Session; onC
   const [kind, setKind] = useState(session.kind)
   const [notes, setNotes] = useState(session.notes)
   const [confirm, setConfirm] = useState(false)
-  const known = useMemo(() => opponentRows(Object.values(state.sessions)), [state.sessions])
+  const known = useMemo(() => opponentRowsWithRoster(Object.values(state.sessions), state.meta.roster), [state.sessions, state.meta.roster])
   const venues = useMemo(() => venueRows(Object.values(state.sessions)), [state.sessions])
 
   const save = () => {

@@ -18,6 +18,8 @@ export interface RepoState {
     /** user id rows are created for; null in local-only mode / signed out */
     ownerId: string | null
     lastPullAt: string | null
+    /** opponents added by hand before they appear in any session (this device only) */
+    roster: string[]
   }
 }
 
@@ -28,7 +30,7 @@ export function emptyState(): RepoState {
     sessions: {},
     points: {},
     dirty: { sessions: [], points: [] },
-    meta: { ownerId: null, lastPullAt: null },
+    meta: { ownerId: null, lastPullAt: null, roster: [] },
   }
 }
 
@@ -63,6 +65,7 @@ export function loadState(storage: StorageLike): RepoState {
       meta: {
         ownerId: typeof parsed.meta?.ownerId === 'string' ? parsed.meta.ownerId : null,
         lastPullAt: typeof parsed.meta?.lastPullAt === 'string' ? parsed.meta.lastPullAt : null,
+        roster: Array.isArray(parsed.meta?.roster) ? uniq(parsed.meta!.roster) : [],
       },
     }
   } catch {

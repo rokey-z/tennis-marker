@@ -565,7 +565,7 @@ textarea.input {
   max-width: 100%;
   max-height: 100%;
   height: auto;
-  aspect-ratio: 42 / 52.5;
+  aspect-ratio: 37.5 / 46.5;
   border-radius: 10px;
   touch-action: manipulation;
   user-select: none;
@@ -574,12 +574,14 @@ textarea.input {
 }
 /* phones: edge to edge — the court is always full width; the log below takes what's left */
 @media (max-width: 899px) {
+  /* the court takes the full width; leftover height goes to the log, not to empty bands */
   .record:not(.stats) .record-court {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
     min-height: 0;
   }
   .record:not(.stats) .court-box {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
+    min-height: 0;
     container-type: normal; /* size containment would zero the auto height */
   }
   .record:not(.stats) .court-svg {
@@ -587,7 +589,7 @@ textarea.input {
   }
   .record:not(.stats) .court-box .court-svg {
     width: 100%;
-    max-height: 62dvh; /* short phones: cap so the tally/undo row stays on screen */
+    max-height: 100%; /* only letterboxes on very short screens, so the tally/undo row always fits */
   }
   .record-log.open {
     flex: 1 1 0;
@@ -598,11 +600,11 @@ textarea.input {
 }
 @supports (width: 1cqh) {
   .record.stats .court-box .court-svg {
-    width: min(100%, calc(100cqh * 42 / 52.5));
+    width: min(100%, calc(100cqh * 37.5 / 46.5));
   }
   @media (min-width: 900px) {
     .court-box .court-svg {
-      width: min(100%, calc(100cqh * 42 / 52.5));
+      width: min(100%, calc(100cqh * 37.5 / 46.5));
     }
   }
 }
@@ -1806,4 +1808,8 @@ span.seq-dot {
   white-space: pre-wrap;
   word-break: break-word;
   color: var(--muted);
+}
+
+.add-row {
+  margin-bottom: 10px;
 }

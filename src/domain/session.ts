@@ -83,3 +83,19 @@ export function tagRows(sessions: Iterable<Session>, pick: (s: Session) => strin
 export const opponentRows = (sessions: Iterable<Session>): TagRow[] => tagRows(sessions, (s) => s.opponent)
 /** Places she has played (newest first). */
 export const venueRows = (sessions: Iterable<Session>): TagRow[] => tagRows(sessions, (s) => s.venue)
+
+/** Opponent list for pickers and management: everyone from the sessions, plus names added by hand. */
+export function opponentRowsWithRoster(sessions: Iterable<Session>, roster: Iterable<string> = []): TagRow[] {
+  const rows = opponentRows(sessions)
+  const seen = new Set(rows.map((r) => r.key))
+  const extra: TagRow[] = []
+  for (const raw of roster) {
+    const name = cleanOpponent(raw)
+    const key = opponentKey(name)
+    if (!name || seen.has(key)) continue
+    seen.add(key)
+    extra.push({ name, key, sessions: 0, matches: 0, lastDate: '' })
+  }
+  // names not used yet sit after the ones she has actually played
+  return [...rows, ...extra.sort((a, b) => a.name.localeCompare(b.name))]
+}

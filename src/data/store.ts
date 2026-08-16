@@ -33,6 +33,8 @@ export interface Store {
   reload(): void
   createSession(input?: Partial<Pick<Session, 'opponent' | 'venue' | 'date' | 'kind' | 'notes'>>): Session
   updateSession(id: string, patch: Partial<Pick<Session, 'opponent' | 'venue' | 'date' | 'kind' | 'notes'>>): void
+  /** Add an opponent before she has played them (device-local until used in a session). Returns false if blank/duplicate. */
+  addRosterOpponent(name: string): boolean
   /** Rename an opponent across every session that uses it (case-insensitive match). Returns sessions changed. */
   renameOpponent(from: string, to: string): number
   /** Clear an opponent from its sessions (the sessions themselves are kept). Returns sessions changed. */
@@ -88,6 +90,12 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
   }
 
   const iso = () => now().toISOString()
+
+  function setRoster(fn: (roster: string[]) => string[]): void {
+    const next = fn(state.meta.roster)
+    if (next.length === state.meta.roster.length && next.every((v, i) => v === state.meta.roster[i])) return
+    set({ ...state, meta: { ...state.meta, roster: next } })
+  }
 
   function bulkSetOpponent(key: string, opponent: string): number {
     const t = iso()
@@ -170,15 +178,33 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
       if (patch.venue !== undefined) next.venue = cleanOpponent(patch.venue)
       set(markDirty({ ...state, sessions: { ...state.sessions, [id]: next } }, 'sessions', [id]))
     },
+    addRosterOpponent(name) {
+      const clean = cleanOpponent(name)
+      if (!clean) return false
+      const key = opponentKey(clean)
+      const known = new Set([...state.meta.roster.map(opponentKey), ...Object.values(state.sessions).filter((s) => !s.deleted_at).map((s) => opponentKey(s.opponent))])
+      if (known.has(key)) return false
+      set({ ...state, meta: { ...state.meta, roster: [...state.meta.roster, clean] } })
+      return true
+    },
     renameOpponent(from, to) {
       const key = opponentKey(from)
       const name = cleanOpponent(to)
       if (!key || !name) return 0
-      return bulkSetOpponent(key, name)
+      const changed = bulkSetOpponent(key, name)
+      setRoster((r) => {
+        const others = r.filter((x) => opponentKey(x) !== key)
+        // keep it in the roster only while it is still unused by any session
+        return others.some((x) => opponentKey(x) === opponentKey(name)) || changed > 0 ? others : [...others, name]
+      })
+      return changed
     },
     clearOpponent(name) {
       const key = opponentKey(name)
-      return key ? bulkSetOpponent(key, '') : 0
+      if (!key) return 0
+      const changed = bulkSetOpponent(key, '')
+      setRoster((r) => r.filter((x) => opponentKey(x) !== key))
+      return changed
     },
     deleteSession(id) {
       const s = state.sessions[id]
@@ -291,7 +317,7 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
       set(dropRows(state, foreignRowIds(state, state.meta.ownerId)))
     },
     clearAll() {
-      set({ ...emptyState(), meta: { ownerId: state.meta.ownerId, lastPullAt: null } })
+      set({ ...emptyState(), meta: { ownerId: state.meta.ownerId, lastPullAt: null, roster: state.meta.roster } })
     },
   }
   return store

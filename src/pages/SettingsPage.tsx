@@ -5,7 +5,7 @@ import { Shell } from '../components/Shell'
 import { auth, isCloudConfigured, store, sync, useAppState, useAuthUser, useSyncStatus } from '../data/app'
 import { pendingCount } from '../data/store'
 import { parseExportBundle, safeFilename, toExportBundle } from '../domain/export'
-import { cleanOpponent, opponentRows, type OpponentRow } from '../domain/session'
+import { cleanOpponent, opponentRowsWithRoster, type OpponentRow } from '../domain/session'
 
 declare const __APP_VERSION__: string
 
@@ -219,10 +219,20 @@ export function SettingsPage() {
 
 function Opponents() {
   const state = useAppState()
-  const rows = useMemo(() => opponentRows(Object.values(state.sessions)), [state.sessions])
+  const rows = useMemo(() => opponentRowsWithRoster(Object.values(state.sessions), state.meta.roster), [state.sessions, state.meta.roster])
   const [editing, setEditing] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const [note, setNote] = useState<string | null>(null)
+  const [newName, setNewName] = useState('')
+
+  const add = (e: FormEvent) => {
+    e.preventDefault()
+    const name = cleanOpponent(newName)
+    if (!name) return
+    const ok = store.addRosterOpponent(name)
+    setNewName('')
+    setNote(ok ? `Added ${name}.` : `${name} is already on the list.`)
+  }
 
   const startEdit = (o: OpponentRow) => {
     setEditing(o.key)
@@ -238,7 +248,8 @@ function Opponents() {
     setNote(merged ? `Merged into ${name} (${n} session${n === 1 ? '' : 's'}).` : `Renamed to ${name} (${n} session${n === 1 ? '' : 's'}).`)
   }
   const remove = (o: OpponentRow) => {
-    if (!confirm(`Remove "${o.name}" from ${o.sessions} session${o.sessions === 1 ? '' : 's'}? The sessions and points are kept.`)) return
+    const q = o.sessions === 0 ? `Remove "${o.name}" from the list?` : `Remove "${o.name}" from ${o.sessions} session${o.sessions === 1 ? '' : 's'}? The sessions and points are kept.`
+    if (!confirm(q)) return
     const n = store.clearOpponent(o.name)
     setNote(`Cleared ${o.name} from ${n} session${n === 1 ? '' : 's'}.`)
   }
@@ -246,8 +257,14 @@ function Opponents() {
   return (
     <section className="card">
       <div className="section-title">Opponents</div>
+      <form className="row add-row" onSubmit={add}>
+        <input className="input grow" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Add an opponent…" autoComplete="off" autoCapitalize="words" enterKeyHint="done" />
+        <button type="submit" className="btn primary" disabled={!cleanOpponent(newName)}>
+          Add
+        </button>
+      </form>
       {rows.length === 0 ? (
-        <p className="muted">No opponents yet — add one when you start a match, or in the session sheet.</p>
+        <p className="muted">No opponents yet — add one above, or set one when you start a match.</p>
       ) : (
         <ul className="opponent-list">
           {rows.map((o) => (
@@ -276,8 +293,14 @@ function Opponents() {
                   <div className="grow">
                     <div className="o-name">{o.name}</div>
                     <div className="o-sub muted">
-                      {o.sessions} session{o.sessions === 1 ? '' : 's'}
-                      {o.matches > 0 ? ` · ${o.matches} match${o.matches === 1 ? '' : 'es'}` : ''} · last {formatDate(o.lastDate)}
+                      {o.sessions === 0 ? (
+                        'Not used yet · this device'
+                      ) : (
+                        <>
+                          {o.sessions} session{o.sessions === 1 ? '' : 's'}
+                          {o.matches > 0 ? ` · ${o.matches} match${o.matches === 1 ? '' : 'es'}` : ''} · last {formatDate(o.lastDate)}
+                        </>
+                      )}
                     </div>
                   </div>
                   <button type="button" className="btn sm ghost" onClick={() => startEdit(o)}>
@@ -295,6 +318,7 @@ function Opponents() {
       {note && <div className="notice ok" style={{ marginTop: 10 }}>{note}</div>}
       <p className="kbd-hint" style={{ marginTop: 10 }}>
         Renaming updates every session with that opponent; renaming onto an existing name merges them.
+        Names added here stay on this device until you record a session with them.
       </p>
     </section>
   )
