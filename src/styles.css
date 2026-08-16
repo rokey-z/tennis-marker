@@ -1865,9 +1865,23 @@ span
   background: var(--bh);
   color: var(--bh-ink);
 }
-.glyph {
+.letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: var(--fs-tag);
+  font-weight: 800;
   flex-shrink: 0;
-  display: block;
+}
+.dot {
+  font-weight: 800;
+  font-family: var(--font);
+  line-height: 1;
 }
 .mark {
   display: inline-flex;
@@ -1876,9 +1890,6 @@ span
   min-width: 0;
 }
 .mark-sign {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
   font-size: var(--fs-mark);
   font-weight: 700;
 }

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { ERROR_LABEL, ERROR_TYPES, STROKE_LABEL, type ErrorType, type Stroke } from '../domain/types'
-import { ErrorGlyph, StrokeTag, markLabel } from './marks'
+import { StrokeTag, markLabel } from './marks'
 import { CloseIcon } from './Icons'
 
 export interface ShotPopoverProps {
@@ -105,10 +105,7 @@ function PopRowPair({ err, onPick }: { err: ErrorType; onPick: (s: Stroke, e: Er
       {COLUMNS.map((stroke) => (
         <button key={stroke} type="button" className={`pop-btn ${stroke}`} onClick={() => onPick(stroke, err)} aria-label={`${STROKE_LABEL[stroke]} ${ERROR_LABEL[err]}`} title={markLabel(stroke, err, false)}>
           <StrokeTag stroke={stroke} />
-          <span className="pop-err">
-            <ErrorGlyph type={err} size={14} />
-            {ERROR_LABEL[err]}
-          </span>
+          <span className="pop-err">{ERROR_LABEL[err]}</span>
         </button>
       ))}
     </>

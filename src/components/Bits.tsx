@@ -5,7 +5,7 @@ import { describeZone, zoneFor } from '../domain/court'
 import { ERROR_LABEL, ERROR_TYPES, STROKE_LABEL, STROKES, type Point } from '../domain/types'
 import type { Summary } from '../domain/stats'
 import { CloseIcon, TrashIcon } from './Icons'
-import { ErrorGlyph, MarkChip, StrokeTag } from './marks'
+import { ErrorLetter, MarkChip, StrokeTag } from './marks'
 import { formatTime } from '../lib/format'
 
 // ---------- chip (filter toggle) ----------
@@ -75,7 +75,7 @@ export function Tally({ s }: { s: Summary }) {
       <span className="sep" />
       {ERROR_TYPES.map((e) => (
         <span key={e} className="t-item" title={`${ERROR_LABEL[e]}: ${s.byError[e]}`}>
-          <ErrorGlyph type={e} size={12} />
+          <ErrorLetter type={e} />
           {s.byError[e]}
         </span>
       ))}

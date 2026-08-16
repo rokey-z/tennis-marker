@@ -12,7 +12,7 @@ import {
   zoneRect,
 } from '../domain/court'
 import { isErrorType, isStroke, type Point } from '../domain/types'
-import { errorShapePath, markLabel } from './marks'
+import { ERROR_LETTER, markLabel } from './marks'
 
 /** Extra headroom above the net line so the net band is visible (presentational only). */
 const NET_BAND = 1.5
@@ -267,7 +267,17 @@ function Marker({ p: pt, flipped }: { p: Point; flipped: boolean }) {
       {/* white ring: keeps overlapping marks separable on a busy court */}
       <circle cx={p.x} cy={p.y} r={r} fill={p.forced ? 'var(--surface)' : color} stroke="var(--surface)" strokeWidth={0.28} />
       {p.forced && <circle cx={p.x} cy={p.y} r={r - 0.2} fill="none" stroke={color} strokeWidth={0.4} />}
-      <path d={errorShapePath(error, r * 0.46)} transform={`translate(${p.x} ${p.y})`} fill={p.forced ? color : ink} />
+      <text
+        x={p.x}
+        y={p.y + 0.52}
+        fontSize={1.5}
+        fontWeight={800}
+        textAnchor="middle"
+        fill={p.forced ? color : ink}
+        fontFamily="var(--font)"
+      >
+        {ERROR_LETTER[error]}
+      </text>
     </g>
   )
 }

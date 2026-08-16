@@ -4,7 +4,7 @@ import { ERROR_LABEL, ERROR_TYPES, STROKE_LABEL, STROKE_SHORT, STROKES, isErrorT
  * One sign system, used identically when adding, editing and viewing a point:
  *
  *   colour  = stroke        forehand = amber, backhand = ink
- *   shape   = error type    ▲ long (over the line) · ▬ net · ▶ wide (out to the side)
+ *   letter  = error type    L long · N net · W wide — the word's own initial
  *   fill    = forced        solid = unforced (the common case), outlined ring = forced
  *
  * Colours live in CSS (--fh / --bh) so marks, tags and chart bars are literally the same value.
@@ -12,29 +12,20 @@ import { ERROR_LABEL, ERROR_TYPES, STROKE_LABEL, STROKE_SHORT, STROKES, isErrorT
  * every kind of colour blindness (separation ΔE ≈ 43–49, far above the ΔE 8 floor).
  */
 
-/** Shape centred on 0,0 in whatever units the caller draws in — one definition for DOM and court SVG. */
-export function errorShapePath(type: ErrorType, s: number): string {
-  switch (type) {
-    case 'long': // triangle up: past the far line
-      return `M0 ${-s} L ${s * 0.92} ${s * 0.64} L ${-s * 0.92} ${s * 0.64} Z`
-    case 'wide': // triangle right: out to the side
-      return `M ${s} 0 L ${-s * 0.64} ${-s * 0.92} L ${-s * 0.64} ${s * 0.92} Z`
-    case 'net': // bar: the net itself
-      return `M ${-s} ${-s * 0.36} H ${s} V ${s * 0.36} H ${-s} Z`
-  }
-}
+/** The icon for an error type is its initial — the short form of the word it stands for. */
+export const ERROR_LETTER: Record<ErrorType, string> = { long: 'L', net: 'N', wide: 'W' }
 
 /** Plain-language name of a mark, for tooltips and screen readers. */
 export function markLabel(stroke: Stroke, error: ErrorType, forced: boolean): string {
   return `${STROKE_LABEL[stroke]} ${ERROR_LABEL[error].toLowerCase()}, ${forced ? 'forced' : 'unforced'}`
 }
 
-export function ErrorGlyph({ type, size = 13 }: { type: ErrorType; size?: number }) {
-  const h = size / 2
+/** Compact form of an error type: the letter that appears inside the court marks. */
+export function ErrorLetter({ type, className = '' }: { type: ErrorType; className?: string }) {
   return (
-    <svg className="glyph" width={size} height={size} viewBox={`${-h} ${-h} ${size} ${size}`} aria-hidden="true" focusable="false">
-      <path d={errorShapePath(type, h * 0.82)} fill="currentColor" />
-    </svg>
+    <span className={`letter ${className}`.trim()} title={ERROR_LABEL[type]}>
+      {ERROR_LETTER[type]}
+    </span>
   )
 }
 
@@ -54,10 +45,7 @@ export function MarkChip({ stroke, error, forced, word = true }: { stroke: Strok
   return (
     <span className={`mark ${safeStroke}${forced ? ' forced' : ''}`} title={markLabel(safeStroke, safeError, forced)}>
       <StrokeTag stroke={safeStroke} />
-      <span className="mark-sign">
-        <ErrorGlyph type={safeError} />
-        {word && <span className="mark-word">{ERROR_LABEL[safeError]}</span>}
-      </span>
+      <span className="mark-sign">{word ? ERROR_LABEL[safeError] : ERROR_LETTER[safeError]}</span>
       {forced && <span className="mark-forced">forced</span>}
     </span>
   )
@@ -65,12 +53,13 @@ export function MarkChip({ stroke, error, forced, word = true }: { stroke: Strok
 
 /** Round mark used on the court and in the point-by-point strip (DOM version). */
 export function MarkDot({ stroke, error, forced, size = 26, title }: { stroke: Stroke; error: ErrorType; forced: boolean; size?: number; title?: string }) {
-  const h = size / 2
   return (
-    <span className={`dot ${stroke}${forced ? ' forced' : ''}`} style={{ width: size, height: size }} title={title ?? markLabel(stroke, error, forced)}>
-      <svg width={size} height={size} viewBox={`${-h} ${-h} ${size} ${size}`} aria-hidden="true" focusable="false">
-        <path d={errorShapePath(error, h * 0.46)} fill="currentColor" />
-      </svg>
+    <span
+      className={`dot ${stroke}${forced ? ' forced' : ''}`}
+      style={{ width: size, height: size, fontSize: Math.round(size * 0.52) }}
+      title={title ?? markLabel(stroke, error, forced)}
+    >
+      {ERROR_LETTER[error]}
     </span>
   )
 }
@@ -90,7 +79,7 @@ export function MarkLegend({ className = '' }: { className?: string }) {
       <span className="ml-group">
         {ERROR_TYPES.map((e) => (
           <span key={e} className="ml-item">
-            <ErrorGlyph type={e} />
+            <ErrorLetter type={e} />
             {ERROR_LABEL[e]}
           </span>
         ))}
