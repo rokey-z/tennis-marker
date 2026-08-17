@@ -11,7 +11,7 @@ const TABS = [
 
 export function Shell({ title, actions, children }: { title: string; actions?: ReactNode; children: ReactNode }) {
   return (
-    <div className="shell">
+    <div className="shell page-in">
       <header className="app-head">
         <h1 className="brand">
           <LogoIcon />

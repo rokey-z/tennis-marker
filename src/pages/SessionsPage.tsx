@@ -14,7 +14,8 @@ export function SessionsPage() {
   const state = useAppState()
   const player = usePlayer()
   const nav = useNavigate()
-  const rows = useMemo(() => perSessionCounts(liveSessions(state), Object.values(state.points)), [state])
+  // oldest first, so the newest session sits at the bottom — next to the thumb, next to the buttons
+  const rows = useMemo(() => perSessionCounts(liveSessions(state), Object.values(state.points)).reverse(), [state])
 
   const create = (kind: SessionKind) => {
     const s = store.createSession({ kind })
@@ -63,7 +64,7 @@ export function SessionsPage() {
                   </div>
                   <div className="count">
                     {count}
-                    <small>{count === 1 ? 'error' : 'errors'}</small>
+                    <small>{session.mode === 'placement' ? (count === 1 ? 'ball' : 'balls') : count === 1 ? 'mark' : 'marks'}</small>
                   </div>
                 </Link>
               </li>

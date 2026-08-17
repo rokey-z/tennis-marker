@@ -1944,6 +1944,29 @@ span
   background: var(--surface-2);
 }
 
+/* ---------- page transition ---------- */
+/*
+ * One short fade on arrival: enough to show the page changed, too short to wait for. Opacity only —
+ * a transform here would make the page the containing block for the fixed sheets inside it, which
+ * lands a half-open point sheet in the wrong place if you tap during the animation.
+ */
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.page-in {
+  animation: page-in 170ms cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-in {
+    animation: none;
+  }
+}
+
 .log-note {
   margin: 8px 2px 2px;
   font-size: var(--fs-meta);

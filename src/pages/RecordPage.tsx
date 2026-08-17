@@ -182,7 +182,7 @@ export function RecordPage() {
   )
 
   return (
-    <div className={`record${statsMode ? ' stats' : ''}`}>
+    <div key={id} className={`record page-in${statsMode ? ' stats' : ''}`}>
       <header className="record-head">
         <Link to="/" className="icon-btn" aria-label="Back to sessions">
           <BackIcon />
