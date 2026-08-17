@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { useSyncStatus } from '../data/app'
-import { describeMark } from '../domain/court'
+import { describeMark, isOut } from '../domain/court'
 import { ERROR_LABEL, ERROR_TYPES, STROKE_LABEL, STROKES, type Point } from '../domain/types'
 import type { Summary } from '../domain/stats'
 import { CloseIcon, TrashIcon } from './Icons'
@@ -92,10 +92,18 @@ export function Tally({ s }: { s: Summary }) {
       {s.placements > 0 && (
         <>
           <span className="sep" />
-          <span className="t-item" title={`Placements: ${s.placements}`}>
+          <span className="t-item" title={`Balls placed: ${s.placements}`}>
             <span className="ml-place" aria-hidden="true" />
             {s.placements}
           </span>
+          {s.placementsOut > 0 && (
+            <span className="t-item" title={`Landed out: ${s.placementsOut}`}>
+              <span className="ml-out" aria-hidden="true">
+                ✕
+              </span>
+              {s.placementsOut}
+            </span>
+          )}
         </>
       )}
       {s.winners > 0 && (
@@ -126,7 +134,7 @@ export function PointList({ points, onOpen, onDelete }: { points: Point[]; onOpe
             <button type="button" className="row-open" onClick={() => onOpen(p, index)}>
               <span className="n">{index}</span>
               <span className="desc">
-                <MarkChip stroke={p.stroke} error={p.error_type} forced={p.forced} outcome={p.outcome} />
+                <MarkChip stroke={p.stroke} error={p.error_type} forced={p.forced} outcome={p.outcome} out={(p.outcome ?? 'error') === 'placement' && isOut(p.x, p.y)} />
                 <small>
                   {describeMark(p.x, p.y, p.outcome ?? 'error')} · {formatTime(p.created_at)}
                 </small>

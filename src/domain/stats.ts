@@ -1,4 +1,4 @@
-import { zoneFor, zoneId } from './court'
+import { isOut, zoneFor, zoneId } from './court'
 import type { ErrorType, Outcome, Point, Session, Stroke } from './types'
 import { isErrorType, isStroke } from './types'
 
@@ -50,6 +50,8 @@ export interface Summary {
   /** winners and placements are counted apart — neither is an error */
   winners: number
   placements: number
+  /** placements that landed outside the singles lines */
+  placementsOut: number
   placementsByStroke: Record<Stroke, number>
 }
 
@@ -66,6 +68,7 @@ export function summarize(points: Iterable<Point>): Summary {
     lost: 0,
     winners: 0,
     placements: 0,
+    placementsOut: 0,
     placementsByStroke: { fh: 0, bh: 0 },
   }
   for (const p of points) {
@@ -81,6 +84,7 @@ export function summarize(points: Iterable<Point>): Summary {
     }
     if (outcome === 'placement') {
       s.placements++
+      if (isOut(p.x, p.y)) s.placementsOut++
       if (isStroke(p.stroke)) s.placementsByStroke[p.stroke]++
       continue
     }

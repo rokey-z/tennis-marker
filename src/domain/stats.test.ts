@@ -102,6 +102,16 @@ describe('summarize', () => {
     expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(4)
   })
 
+  it('counts the placements that landed out', () => {
+    const s = summarize([
+      point({ stroke: 'fh', error_type: '', outcome: 'placement', x: 5, y: 30 }),
+      point({ stroke: 'fh', error_type: '', outcome: 'placement', x: 16, y: 30 }),
+      point({ stroke: 'bh', error_type: '', outcome: 'placement', x: 0, y: 44 }),
+    ])
+    expect(s.placements).toBe(3)
+    expect(s.placementsOut).toBe(2)
+  })
+
   it('counts placements apart from errors and winners', () => {
     const s = summarize([
       point({ error_type: 'long' }),

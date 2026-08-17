@@ -1,4 +1,4 @@
-import { describeMark } from '../domain/court'
+import { describeMark, isOut } from '../domain/court'
 import type { ErrorType, Point, Stroke } from '../domain/types'
 import { formatTime } from '../lib/format'
 import { Modal } from './Bits'
@@ -16,8 +16,11 @@ export interface PointSheetProps {
 
 export function PointSheet({ point, index, onChange, onDelete, onClose }: PointSheetProps) {
   const winner = point.outcome === 'winner'
+  const placement = point.outcome === 'placement'
+  const out = placement && isOut(point.x, point.y)
+  // a placement lives on the far half: the only thing to correct is which stroke played it
   const pick = (stroke: Stroke, error: ErrorType) => {
-    onChange({ stroke, error_type: error, outcome: 'error' })
+    onChange(placement ? { stroke } : { stroke, error_type: error, outcome: 'error' })
     onClose()
   }
   // a winner is the opponent's shot: it keeps only the position
@@ -30,14 +33,14 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
     <Modal title={`Point ${index}`} onClose={onClose}>
       <div className="point-sheet">
         <div className="ps-head">
-          <MarkDot stroke={point.stroke} error={point.error_type} forced={point.forced} outcome={point.outcome} size={34} />
+          <MarkDot stroke={point.stroke} error={point.error_type} forced={point.forced} outcome={point.outcome} out={out} size={34} />
           <div className="grow">
-            <div className="ps-now">{markLabel(point.stroke, point.error_type, point.forced, point.outcome)}</div>
+            <div className="ps-now">{markLabel(point.stroke, point.error_type, point.forced, point.outcome, out)}</div>
             <div className="ps-meta">
               {describeMark(point.x, point.y, point.outcome)} · {formatTime(point.created_at)}
             </div>
           </div>
-          {!winner && (
+          {!winner && !placement && (
             <button
               type="button"
               className={`forced-toggle${point.forced ? ' on' : ''}`}
@@ -50,9 +53,9 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
           )}
         </div>
 
-        <div className="section-title">Change it to</div>
-        <ShotGrid current={{ stroke: point.stroke, error: point.error_type, outcome: point.outcome }} forced={point.forced} onPick={pick} />
-        {!winner && (
+        <div className="section-title">{placement ? 'Change the stroke' : 'Change it to'}</div>
+        <ShotGrid current={{ stroke: point.stroke, error: point.error_type, outcome: point.outcome }} forced={point.forced} strokeOnly={placement} onPick={pick} />
+        {!winner && !placement && (
           <>
             <div className="section-title">or</div>
             <button type="button" className="winner-toggle block" onClick={makeWinner} title="The opponent hit a winner here">

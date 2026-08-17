@@ -70,8 +70,17 @@ export function describeZone(z: Zone): string {
  */
 export const DEPTH_LABEL: Record<ZoneRow, string> = { net: 'Short', mid: 'Mid', baseline: 'Deep' }
 
+/**
+ * Whether a ball landed outside the singles court — the umpire's "out" call. Singles lines are the
+ * ones that count for her matches, so a ball in the doubles alley is out.
+ */
+export function isOut(x: number, y: number): boolean {
+  return Math.abs(x) > COURT.singlesHalfWidth || y > COURT.halfLength
+}
+
 export function describeLanding(x: number, y: number): string {
   const z = zoneFor(x, y)
+  // the out call rides on the mark itself (see components/marks), so this stays pure position
   return `${DEPTH_LABEL[z.row]} · ${ZONE_COL_LABEL[z.col].toLowerCase()}`
 }
 

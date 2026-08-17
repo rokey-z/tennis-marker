@@ -7,6 +7,7 @@ import {
   clampToView,
   describeLanding,
   describeMark,
+  isOut,
   describeZone,
   flipPoint,
   isInsideView,
@@ -91,6 +92,17 @@ describe('landing vocabulary', () => {
     expect(describeMark(-10, 38, 'error')).toBe('Baseline · ad side')
     expect(describeMark(-10, 38, 'winner')).toBe('Baseline · ad side')
     expect(describeMark(-10, 38, 'placement')).toBe('Deep · ad side')
+  })
+
+  it('calls a ball out past the singles lines or the baseline', () => {
+    expect(isOut(13.5, 20)).toBe(false)
+    expect(isOut(13.6, 20)).toBe(true) // the doubles alley is out in singles
+    expect(isOut(-16, 30)).toBe(true)
+    expect(isOut(0, 39)).toBe(false)
+    expect(isOut(0, 39.1)).toBe(true) // long
+    // the description stays pure position; the out call is carried by the mark itself
+    expect(describeLanding(16, 30)).toBe('Mid · deuce side')
+    expect(describeMark(16, 30, 'error')).toBe('Mid-court · deuce side')
   })
 })
 

@@ -1898,6 +1898,22 @@ span
 .dot.forced {
   box-shadow: inset 0 0 0 2px var(--mark-outline);
 }
+/* a ball called out is hollow — the same colour, but never a solid mark */
+.dot.fh.out,
+.dot.bh.out {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px currentColor;
+}
+.dot.fh.out {
+  color: var(--fh);
+}
+.dot.bh.out {
+  color: var(--bh);
+}
+.ml-out {
+  font-weight: 800;
+  color: var(--muted);
+}
 .seq-hit {
   display: inline-flex;
   padding: 0;

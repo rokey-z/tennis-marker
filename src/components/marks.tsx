@@ -20,10 +20,10 @@ import { ERROR_LABEL, ERROR_TYPES, STROKE_LABEL, STROKE_SHORT, STROKES, isErrorT
 export const ERROR_LETTER: Record<ErrorType, string> = { long: 'L', net: 'N', wide: 'W' }
 
 /** Plain-language name of a mark, for tooltips and screen readers. */
-export function markLabel(stroke: Stroke | '', error: ErrorType | '', forced: boolean, outcome: Outcome = 'error'): string {
+export function markLabel(stroke: Stroke | '', error: ErrorType | '', forced: boolean, outcome: Outcome = 'error', out = false): string {
   if (outcome === 'winner') return 'Opponent winner'
   if (!isStroke(stroke)) return 'Point'
-  if (outcome === 'placement') return `${STROKE_LABEL[stroke]} — where the ball landed`
+  if (outcome === 'placement') return out ? `${STROKE_LABEL[stroke]} — landed out` : `${STROKE_LABEL[stroke]} — where the ball landed`
   const err = isErrorType(error) ? ERROR_LABEL[error].toLowerCase() : 'error'
   return `${STROKE_LABEL[stroke]} ${err}, ${forced ? 'forced' : 'unforced'}`
 }
@@ -47,7 +47,7 @@ export function StrokeTag({ stroke }: { stroke: Stroke }) {
 }
 
 /** The full sign: stroke tag + error shape + word (+ forced). Same component in the log and the sheet. */
-export function MarkChip({ stroke, error, forced, outcome = 'error', word = true }: { stroke: Stroke | ''; error: ErrorType | ''; forced: boolean; outcome?: Outcome; word?: boolean }) {
+export function MarkChip({ stroke, error, forced, outcome = 'error', out = false, word = true }: { stroke: Stroke | ''; error: ErrorType | ''; forced: boolean; outcome?: Outcome; out?: boolean; word?: boolean }) {
   // a winner is the opponent's shot: no stroke tag, no forced flag, nothing to attribute to her
   if (outcome === 'winner') {
     return (
@@ -60,24 +60,24 @@ export function MarkChip({ stroke, error, forced, outcome = 'error', word = true
   const safeStroke = isStroke(stroke) ? stroke : 'fh'
   const safeError = isErrorType(error) ? error : 'long'
   return (
-    <span className={`mark ${safeStroke}${forced ? ' forced' : ''}`} title={markLabel(safeStroke, error, forced, outcome)}>
+    <span className={`mark ${safeStroke}${forced ? ' forced' : ''}`} title={markLabel(safeStroke, error, forced, outcome, out)}>
       <StrokeTag stroke={safeStroke} />
-      <span className="mark-sign">{outcome === 'placement' ? 'Placement' : word ? ERROR_LABEL[safeError] : ERROR_LETTER[safeError]}</span>
+      <span className="mark-sign">{outcome === 'placement' ? (out ? 'Out' : 'In') : word ? ERROR_LABEL[safeError] : ERROR_LETTER[safeError]}</span>
       {forced && <span className="mark-forced">forced</span>}
     </span>
   )
 }
 
 /** Round mark used on the court and in the point-by-point strip (DOM version). */
-export function MarkDot({ stroke, error, forced, outcome = 'error', size = 26, title }: { stroke: Stroke | ''; error: ErrorType | ''; forced: boolean; outcome?: Outcome; size?: number; title?: string }) {
+export function MarkDot({ stroke, error, forced, outcome = 'error', out = false, size = 26, title }: { stroke: Stroke | ''; error: ErrorType | ''; forced: boolean; outcome?: Outcome; out?: boolean; size?: number; title?: string }) {
   const winner = outcome === 'winner'
   return (
     <span
-      className={`dot ${isStroke(stroke) ? stroke : 'none'}${forced && !winner ? ' forced' : ''}${winner ? ' winner' : ''}`}
+      className={`dot ${isStroke(stroke) ? stroke : 'none'}${forced && !winner ? ' forced' : ''}${winner ? ' winner' : ''}${out ? ' out' : ''}`}
       style={{ width: size, height: size, fontSize: Math.round(size * (winner ? 0.46 : 0.52)) }}
-      title={title ?? markLabel(stroke, error, forced, outcome)}
+      title={title ?? markLabel(stroke, error, forced, outcome, out)}
     >
-      {winner ? '★' : isErrorType(error) ? ERROR_LETTER[error] : '·'}
+      {winner ? '★' : outcome === 'placement' ? (out ? '✕' : '') : isErrorType(error) ? ERROR_LETTER[error] : '·'}
     </span>
   )
 }

@@ -7,6 +7,7 @@ import {
   ZONE_ROWS,
   ZONE_ROW_SPLITS,
   clampToView,
+  isOut,
   zoneFor,
   zoneId,
   zoneRect,
@@ -41,6 +42,21 @@ const drawY = (y: number) => Math.min(DRAW_MAX_Y - 1.4, Math.max(VB_MIN_Y + 1.4,
 const DRAG_PX = 12
 /** Horizontal travel that turns a placement drag into a stroke choice: left = backhand, right = forehand. */
 const STROKE_DRAG_PX = 26
+
+/**
+ * Text drawn inside the court group inherits the half's flip, which turns it upside down or
+ * mirrored. This cancels it about the text's own anchor, so the words read normally where they are.
+ * The three cases are the three shapes flipTransform can take:
+ *   end flip alone   → a 180° rotation
+ *   far half alone   → a mirror across the net
+ *   both together    → the two cancel into a mirror across the center line
+ */
+function uprightAt(x: number, y: number, flipped: boolean, mirrored: boolean): string | undefined {
+  if (flipped && mirrored) return `translate(${2 * x} 0) scale(-1 1)`
+  if (mirrored) return `translate(0 ${2 * y}) scale(1 -1)`
+  if (flipped) return `rotate(180 ${x} ${y})`
+  return undefined
+}
 
 interface DragState {
   /** where the ball landed, in court feet */
@@ -193,7 +209,7 @@ export function Court({ flipped = false, onTap, disabled = false, points, emphas
 
         {/* whose half this is — dimmed, behind every mark, and always upright */}
         {sideLabel && (
-          <g transform={flipTransform ? `${flipTransform}` : undefined} pointerEvents="none">
+          <g transform={uprightAt(0, VB_MIN_Y + 4.6, flipped, half === 'opposite')} pointerEvents="none">
             <text
               x={0}
               y={VB_MIN_Y + 4.6}
@@ -244,7 +260,7 @@ export function Court({ flipped = false, onTap, disabled = false, points, emphas
             />
             <circle cx={drag.start.x} cy={drag.start.y} r={1.5} fill="none" stroke="#ffffff" strokeWidth={0.4} />
             {Math.abs(drag.dx) >= STROKE_DRAG_PX && (
-              <g transform={flipped ? `rotate(180 ${drag.cur.x} ${drag.start.y})` : undefined}>
+              <g transform={uprightAt(drag.cur.x, drag.start.y, flipped, half === 'opposite')}>
                 <circle cx={drag.cur.x} cy={drag.start.y} r={2.4} fill={`var(--${drag.dx < 0 ? 'bh' : 'fh'})`} />
                 <text
                   x={drag.cur.x}
@@ -361,13 +377,30 @@ function Marker({ p: pt, flipped, dim = false }: { p: Point; flipped: boolean; d
   // earlier marks step back so the point just logged is the one you see; they stay solid enough
   // that a backhand blue still reads against the blue court
   const r = dim ? 0.95 : 1.4
+  // placements only: a ball past the singles lines was called out
+  const out = p.outcome === 'placement' && isOut(pt.x, pt.y)
+  const a = r * 0.9
   return (
     <g transform={flipped ? `rotate(180 ${p.x} ${p.y})` : undefined} opacity={dim ? 0.78 : 1}>
-      <title>{markLabel(p.outcome === 'winner' ? '' : stroke, error, p.forced, p.outcome)}</title>
+      <title>{markLabel(p.outcome === 'winner' ? '' : stroke, error, p.forced, p.outcome, out)}</title>
       {/* colour carries her stroke; a dark outline marks a forced error. A winner is the opponent's
           shot, so it is a green diamond with no stroke colour at all. */}
       {p.outcome === 'placement' ? (
-        <circle cx={p.x} cy={p.y} r={r * 0.82} fill={color} stroke="#ffffff" strokeWidth={dim ? 0.18 : 0.26} />
+        out ? (
+          // the umpire's call: a ball outside the singles lines is a cross, never a solid dot
+          <g strokeLinecap="round">
+            <g stroke="#ffffff" strokeWidth={dim ? 0.75 : 1} opacity={0.85}>
+              <line x1={p.x - a} y1={p.y - a} x2={p.x + a} y2={p.y + a} />
+              <line x1={p.x - a} y1={p.y + a} x2={p.x + a} y2={p.y - a} />
+            </g>
+            <g stroke={color} strokeWidth={dim ? 0.4 : 0.55}>
+              <line x1={p.x - a} y1={p.y - a} x2={p.x + a} y2={p.y + a} />
+              <line x1={p.x - a} y1={p.y + a} x2={p.x + a} y2={p.y - a} />
+            </g>
+          </g>
+        ) : (
+          <circle cx={p.x} cy={p.y} r={r * 0.82} fill={color} stroke="#ffffff" strokeWidth={dim ? 0.18 : 0.26} />
+        )
       ) : p.outcome === 'winner' ? (
         <rect
           x={p.x - r * 0.82}
