@@ -10,7 +10,7 @@ import { ShotPopover } from '../components/ShotPopover'
 import { store, useAppState } from '../data/app'
 import { livePointsForSession } from '../data/store'
 import { describeMark, describeZone, zoneFor } from '../domain/court'
-import { capitalise } from '../domain/session'
+import { capitalise, cleanOpponent } from '../domain/session'
 import { opponentRowsWithRoster, sessionLabel, venueRows } from '../domain/session'
 import { MarkLegend, markLabel } from '../components/marks'
 import { PointSheet } from '../components/PointSheet'
@@ -34,7 +34,9 @@ export function RecordPage() {
   const session = state.sessions[id]
   const placementMode = session?.mode === 'placement'
   const player = usePlayer()
-  const sideLabel = placementMode ? 'Opponent side' : `${capitalise(player.possessive)} side`
+  // name whose half is on screen: hers when recording her errors, her opponent's when placing balls
+  const opponentName = cleanOpponent(session?.opponent)
+  const sideLabel = placementMode ? `${opponentName ? `${opponentName}’s` : 'Opponent’s'} side` : `${capitalise(player.possessive)} side`
   const allPoints = useMemo(() => livePointsForSession(state, id), [state, id])
   // each mode shows its own marks: they live in different halves of the court
   const points = useMemo(

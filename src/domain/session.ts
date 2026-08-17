@@ -100,8 +100,10 @@ export function opponentRowsWithRoster(sessions: Iterable<Session>, roster: Iter
   return [...rows, ...extra.sort((a, b) => a.name.localeCompare(b.name))]
 }
 
-/** Build-time default so every device names the player without being configured. */
-const CONFIGURED_NAME = (import.meta.env?.VITE_PLAYER_NAME ?? '') as string
+/** Who the app is for, unless a device or a build says otherwise. */
+const DEFAULT_NAME = 'Lily'
+/** Build-time override so a different family can name their own player. */
+const CONFIGURED_NAME = (import.meta.env?.VITE_PLAYER_NAME ?? DEFAULT_NAME) as string
 
 export interface PlayerWords {
   /** "Lily" — or '' when nobody has been named */
