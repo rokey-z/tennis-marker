@@ -41,6 +41,8 @@ export interface SessionStat {
   wide: number
   forced: number
   unforced: number
+  /** her errors + the opponent's winners: every point she lost */
+  lost: number
   /** kept apart from the error counts above */
   winners: number
   placements: number
@@ -110,6 +112,7 @@ export function sessionStats(sessions: Session[], points: Iterable<Point>): Sess
       wide: 0,
       forced: 0,
       unforced: 0,
+      lost: 0,
       winners: 0,
       placements: 0,
       firstAt: pts[0]?.created_at ?? null,
@@ -135,6 +138,7 @@ export function sessionStats(sessions: Session[], points: Iterable<Point>): Sess
       const z = zoneId(zoneFor(p.x, p.y))
       row.byZone[z] = (row.byZone[z] ?? 0) + 1
     }
+    row.lost = row.total + row.winners
     rows.push(row)
   }
   return rows.sort((a, b) => {

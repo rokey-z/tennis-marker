@@ -82,19 +82,20 @@ describe('summarize', () => {
     expect(s.byStrokeForced).toEqual({ fh: 0, bh: 1 })
   })
 
-  it('counts winners apart from errors', () => {
+  it('counts winners apart from errors — they are the opponent’s, so they carry no stroke', () => {
     const s = summarize([
       point({ stroke: 'fh', error_type: 'long' }),
       point({ stroke: 'bh', error_type: 'net', forced: true }),
-      point({ stroke: 'fh', error_type: '', outcome: 'winner' }),
-      point({ stroke: 'bh', error_type: '', outcome: 'winner' }),
-      point({ stroke: 'fh', error_type: '', outcome: 'winner', deleted_at: t0 }),
+      point({ stroke: '', error_type: '', outcome: 'winner' }),
+      point({ stroke: '', error_type: '', outcome: 'winner' }),
+      point({ stroke: '', error_type: '', outcome: 'winner', deleted_at: t0 }),
     ])
     expect(s.total).toBe(2) // errors only
     expect(s.byStroke).toEqual({ fh: 1, bh: 1 })
     expect(s.byError).toEqual({ long: 1, net: 1, wide: 0 })
     expect(s.winners).toBe(2)
-    expect(s.winnersByStroke).toEqual({ fh: 1, bh: 1 })
+    // a winner is still a point she lost, so it counts in the headline — but not in the breakdowns
+    expect(s.lost).toBe(4)
     // a winner never lands in the error breakdowns
     expect(s.matrix.fh).toEqual({ long: 1, net: 0, wide: 0 })
     expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(2)
@@ -105,9 +106,10 @@ describe('summarize', () => {
       point({ error_type: 'long' }),
       point({ stroke: 'bh', error_type: '', outcome: 'placement' }),
       point({ stroke: 'fh', error_type: '', outcome: 'placement' }),
-      point({ stroke: 'fh', error_type: '', outcome: 'winner' }),
+      point({ stroke: '', error_type: '', outcome: 'winner' }),
     ])
     expect(s.total).toBe(1)
+    expect(s.lost).toBe(2) // placements are not points lost; the winner is
     expect(s.placements).toBe(2)
     expect(s.placementsByStroke).toEqual({ fh: 1, bh: 1 })
     expect(s.winners).toBe(1)

@@ -47,7 +47,6 @@ export function RecordPage() {
   const [pending, setPending] = useState<{ x: number; y: number; at: { clientX: number; clientY: number } } | null>(null)
   const courtRef = useRef<HTMLDivElement>(null)
   const [forced, setForced] = useState(false)
-  const [winner, setWinner] = useState(false)
   const [toast, setToast] = useState<ToastState | null>(null)
   const [logOpen, setLogOpen] = useState(() => localStorage.getItem(LOG_KEY) !== '0')
   const [view, setView] = useState<'court' | 'stats'>('court')
@@ -73,13 +72,12 @@ export function RecordPage() {
   const onTap = useCallback((x: number, y: number, at: { clientX: number; clientY: number }) => {
     if (performance.now() < ignoreUntil.current) return
     setForced(false)
-    setWinner(false)
     setPending({ x, y, at })
   }, [])
 
   const cancel = useCallback(() => setPending(null), [])
 
-  const logPoint = (stroke: Stroke, error: ErrorType | '', outcome: Outcome) => {
+  const logPoint = (stroke: Stroke | '', error: ErrorType | '', outcome: Outcome) => {
     if (!pending) return
     const p = store.addPoint({ session_id: id, x: pending.x, y: pending.y, stroke, error_type: error, forced: outcome === 'error' && forced, outcome })
     setPending(null)
@@ -93,17 +91,18 @@ export function RecordPage() {
       id: Date.now(),
       text:
         outcome === 'placement'
-          ? `${STROKE_SHORT[stroke]} landed ${describeMark(p.x, p.y, 'placement').toLowerCase()}`
+          ? `${STROKE_SHORT[stroke as Stroke]} landed ${describeMark(p.x, p.y, 'placement').toLowerCase()}`
           : outcome === 'winner'
-          ? `${STROKE_SHORT[stroke]} winner · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
-          : `${STROKE_SHORT[stroke]} ${ERROR_LABEL[error as ErrorType].toLowerCase()} · ${forced ? 'forced' : 'unforced'} · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`,
+          ? `Opponent winner · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
+          : `${STROKE_SHORT[stroke as Stroke]} ${ERROR_LABEL[error as ErrorType].toLowerCase()} · ${forced ? 'forced' : 'unforced'} · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`,
       actionLabel: 'Undo',
       onAction: () => store.deletePoint(p.id),
     })
   }
 
   const pick = (stroke: Stroke, error: ErrorType) => logPoint(stroke, error, placementMode ? 'placement' : 'error')
-  const pickWinner = (stroke: Stroke) => logPoint(stroke, '', 'winner')
+  /** The opponent hit a winner past her: one tap, nothing of hers to attribute. */
+  const logWinner = () => logPoint('', '', 'winner')
 
   /** Placement mode: one motion — press where the ball landed, drag left for BH or right for FH. */
   const onStrokeDrag = useCallback(
@@ -236,11 +235,9 @@ export function RecordPage() {
             where={where}
             forced={forced}
             onForcedChange={setForced}
-            winner={winner}
-            onWinnerChange={setWinner}
             strokeOnly={placementMode}
             onPick={pick}
-            onPickWinner={pickWinner}
+            onWinner={logWinner}
             player={player}
             onCancel={cancel}
           />

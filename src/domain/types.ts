@@ -67,7 +67,8 @@ export interface Point {
   session_id: string
   x: number
   y: number
-  stroke: Stroke
+  /** Her stroke; '' for an opponent winner, which is nobody's stroke of hers. */
+  stroke: Stroke | ''
   /** How it ended; '' for winners, which have no error type. */
   error_type: ErrorType | ''
   outcome: Outcome

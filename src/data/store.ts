@@ -246,7 +246,7 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
         session_id: input.session_id,
         x: roundFeet(input.x),
         y: roundFeet(input.y),
-        stroke: input.stroke,
+        stroke: input.outcome === 'winner' ? '' : input.stroke,
         error_type: input.outcome === 'winner' ? '' : input.error_type,
         outcome: input.outcome ?? 'error',
         forced: input.outcome === 'winner' ? false : !!input.forced,

@@ -62,8 +62,9 @@ export function SyncBadge({ compact = false }: { compact?: boolean }) {
 export function Tally({ s }: { s: Summary }) {
   return (
     <div className="tally" aria-live="polite">
-      <span className="total">
-        {s.total} {s.total === 1 ? 'error' : 'errors'}
+      {/* every mark is a point she lost: her errors plus the opponent's winners */}
+      <span className="total" title={`${s.total} errors · ${s.winners} opponent winners`}>
+        {s.lost} {s.lost === 1 ? 'point lost' : 'points lost'}
       </span>
       <span className="sep" />
       {STROKES.map((k) => (
@@ -100,7 +101,7 @@ export function Tally({ s }: { s: Summary }) {
       {s.winners > 0 && (
         <>
           <span className="sep" />
-          <span className="t-item" title={`Winners: ${s.winners}`}>
+          <span className="t-item" title={`Opponent winners: ${s.winners}`}>
             <span className="ml-win" aria-hidden="true">
               ★
             </span>

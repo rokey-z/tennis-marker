@@ -1,6 +1,6 @@
 import { zoneFor, zoneId } from './court'
 import type { ErrorType, Outcome, Point, Session, Stroke } from './types'
-import { STROKES, isErrorType } from './types'
+import { isErrorType, isStroke } from './types'
 
 export type ForcedFilter = 'all' | 'forced' | 'unforced'
 
@@ -42,9 +42,13 @@ export interface Summary {
   matrix: Record<Stroke, Record<ErrorType, number>>
   /** forced errors per stroke (unforced = byStroke[s] - byStrokeForced[s]) */
   byStrokeForced: Record<Stroke, number>
+  /**
+   * Points she lost: her errors plus the winners the opponent hit past her. The breakdowns below
+   * stay on `total` (errors only), since a winner has no stroke or error type to break down.
+   */
+  lost: number
   /** winners and placements are counted apart — neither is an error */
   winners: number
-  winnersByStroke: Record<Stroke, number>
   placements: number
   placementsByStroke: Record<Stroke, number>
 }
@@ -59,8 +63,8 @@ export function summarize(points: Iterable<Point>): Summary {
     maxZone: 0,
     matrix: { fh: { long: 0, net: 0, wide: 0 }, bh: { long: 0, net: 0, wide: 0 } },
     byStrokeForced: { fh: 0, bh: 0 },
+    lost: 0,
     winners: 0,
-    winnersByStroke: { fh: 0, bh: 0 },
     placements: 0,
     placementsByStroke: { fh: 0, bh: 0 },
   }
@@ -68,17 +72,19 @@ export function summarize(points: Iterable<Point>): Summary {
     if (p.deleted_at) continue
     const outcome = p.outcome ?? 'error'
     if (outcome === 'winner') {
+      // the opponent's shot — it has a position and nothing else, but the point is still lost
       s.winners++
-      if (STROKES.includes(p.stroke)) s.winnersByStroke[p.stroke]++
+      s.lost++
       continue
     }
     if (outcome === 'placement') {
       s.placements++
-      if (STROKES.includes(p.stroke)) s.placementsByStroke[p.stroke]++
+      if (isStroke(p.stroke)) s.placementsByStroke[p.stroke]++
       continue
     }
     s.total++
-    if (STROKES.includes(p.stroke)) {
+    s.lost++
+    if (isStroke(p.stroke)) {
       s.byStroke[p.stroke]++
       if (p.forced) s.byStrokeForced[p.stroke]++
     }
@@ -88,7 +94,7 @@ export function summarize(points: Iterable<Point>): Summary {
     const id = zoneId(zoneFor(p.x, p.y))
     s.byZone[id] = (s.byZone[id] ?? 0) + 1
     if (s.byZone[id] > s.maxZone) s.maxZone = s.byZone[id]
-    if (STROKES.includes(p.stroke) && isErrorType(p.error_type)) s.matrix[p.stroke][p.error_type]++
+    if (isStroke(p.stroke) && isErrorType(p.error_type)) s.matrix[p.stroke][p.error_type]++
   }
   return s
 }

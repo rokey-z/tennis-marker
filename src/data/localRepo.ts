@@ -102,9 +102,13 @@ function upgradeSessions(sessions: Record<string, Session>): Record<string, Sess
 function upgradePoints(points: Record<string, Point>): Record<string, Point> {
   let out = points
   for (const [id, p] of Object.entries(points)) {
-    if (typeof p?.outcome === 'string') continue
+    // rows from before winners existed are errors; winners recorded before they became the
+    // opponent's shot still carry one of her strokes — drop it, there is nothing to attribute
+    const needsOutcome = typeof p?.outcome !== 'string'
+    const staleStroke = p?.outcome === 'winner' && p.stroke !== ''
+    if (!needsOutcome && !staleStroke) continue
     if (out === points) out = { ...points }
-    out[id] = { ...p, outcome: 'error' }
+    out[id] = { ...p, outcome: needsOutcome ? 'error' : p.outcome, stroke: staleStroke ? '' : p.stroke }
   }
   return out
 }

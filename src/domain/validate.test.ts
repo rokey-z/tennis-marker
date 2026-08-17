@@ -17,9 +17,13 @@ describe('sanitizePoint', () => {
     expect(sanitizePoint({ ...good, id: '' })).toBeNull()
     expect(sanitizePoint(null)).toBeNull()
   })
-  it('accepts winners without an error type, and defaults the outcome', () => {
-    const w = sanitizePoint({ ...good, outcome: 'winner', error_type: '', forced: true })
-    expect(w).toMatchObject({ outcome: 'winner', error_type: '', forced: false })
+  it('accepts winners without a stroke or an error type, and defaults the outcome', () => {
+    const w = sanitizePoint({ ...good, outcome: 'winner', stroke: '', error_type: '', forced: true })
+    expect(w).toMatchObject({ outcome: 'winner', stroke: '', error_type: '', forced: false })
+    // a winner is the opponent's shot: a stroke on an old row is dropped, not kept
+    expect(sanitizePoint({ ...good, outcome: 'winner', stroke: 'fh', error_type: '' })).toMatchObject({ stroke: '' })
+    // but an error still has to name one
+    expect(sanitizePoint({ ...good, stroke: '', error_type: 'long' })).toBeNull()
     expect(sanitizePoint(good)?.outcome).toBe('error')
     // an error still needs a valid type
     expect(sanitizePoint({ ...good, error_type: '' })).toBeNull()

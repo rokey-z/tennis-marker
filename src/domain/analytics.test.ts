@@ -109,7 +109,7 @@ describe('sessionStats outcomes', () => {
       pt({ session_id: 's1', error_type: '', outcome: 'placement', stroke: 'fh' }),
     ]
     const row = sessionStats([sess()], points)[0]
-    expect(row).toMatchObject({ total: 2, fh: 1, bh: 1, long: 1, net: 1, forced: 1, unforced: 1, winners: 1, placements: 2 })
+    expect(row).toMatchObject({ total: 2, fh: 1, bh: 1, long: 1, net: 1, forced: 1, unforced: 1, winners: 1, lost: 3, placements: 2 })
     expect(Object.values(row.byZone).reduce((a, b) => a + b, 0)).toBe(2)
   })
 })

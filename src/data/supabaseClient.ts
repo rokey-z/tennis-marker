@@ -69,7 +69,7 @@ function normalizePoint(r: Record<string, unknown>): Point {
     session_id: String(r.session_id),
     x: Number(r.x),
     y: Number(r.y),
-    stroke: r.stroke === 'bh' ? 'bh' : 'fh',
+    stroke: r.outcome === 'winner' ? '' : r.stroke === 'bh' ? 'bh' : 'fh',
     error_type: r.outcome === 'winner' ? '' : r.error_type === 'net' ? 'net' : r.error_type === 'wide' ? 'wide' : 'long',
     outcome: r.outcome === 'winner' ? 'winner' : 'error',
     forced: r.outcome === 'winner' ? false : Boolean(r.forced),

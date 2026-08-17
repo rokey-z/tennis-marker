@@ -20,8 +20,9 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
     onChange({ stroke, error_type: error, outcome: 'error' })
     onClose()
   }
-  const pickWinner = (stroke: Stroke) => {
-    onChange({ stroke, error_type: '', outcome: 'winner', forced: false })
+  // a winner is the opponent's shot: it keeps only the position
+  const makeWinner = () => {
+    onChange({ stroke: '', error_type: '', outcome: 'winner', forced: false })
     onClose()
   }
 
@@ -50,9 +51,15 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
         </div>
 
         <div className="section-title">Change it to</div>
-        <ShotGrid current={{ stroke: point.stroke, error: point.error_type, outcome: point.outcome }} forced={point.forced} onPick={pick} onPickWinner={pickWinner} />
-        <div className="section-title">or</div>
-        <ShotGrid winner current={{ stroke: point.stroke, error: point.error_type, outcome: point.outcome }} onPick={pick} onPickWinner={pickWinner} />
+        <ShotGrid current={{ stroke: point.stroke, error: point.error_type, outcome: point.outcome }} forced={point.forced} onPick={pick} />
+        {!winner && (
+          <>
+            <div className="section-title">or</div>
+            <button type="button" className="winner-toggle block" onClick={makeWinner} title="The opponent hit a winner here">
+              ★ Opponent winner
+            </button>
+          </>
+        )}
 
         <button type="button" className="btn danger block ps-delete" onClick={onDelete}>
           <TrashIcon /> Delete this point

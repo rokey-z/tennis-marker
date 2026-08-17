@@ -363,8 +363,9 @@ function Marker({ p: pt, flipped, dim = false }: { p: Point; flipped: boolean; d
   const r = dim ? 0.95 : 1.4
   return (
     <g transform={flipped ? `rotate(180 ${p.x} ${p.y})` : undefined} opacity={dim ? 0.78 : 1}>
-      <title>{markLabel(stroke, error, p.forced, p.outcome)}</title>
-      {/* colour carries the stroke; a dark outline marks a forced error, a diamond marks a winner */}
+      <title>{markLabel(p.outcome === 'winner' ? '' : stroke, error, p.forced, p.outcome)}</title>
+      {/* colour carries her stroke; a dark outline marks a forced error. A winner is the opponent's
+          shot, so it is a green diamond with no stroke colour at all. */}
       {p.outcome === 'placement' ? (
         <circle cx={p.x} cy={p.y} r={r * 0.82} fill={color} stroke="#ffffff" strokeWidth={dim ? 0.18 : 0.26} />
       ) : p.outcome === 'winner' ? (
@@ -374,9 +375,9 @@ function Marker({ p: pt, flipped, dim = false }: { p: Point; flipped: boolean; d
           width={r * 1.64}
           height={r * 1.64}
           rx={0.22}
-          fill={color}
-          stroke="var(--win)"
-          strokeWidth={dim ? 0.3 : 0.4}
+          fill="var(--win)"
+          stroke="var(--mark-outline)"
+          strokeWidth={dim ? 0.24 : 0.32}
           transform={`rotate(45 ${p.x} ${p.y})`}
         />
       ) : (
@@ -389,7 +390,7 @@ function Marker({ p: pt, flipped, dim = false }: { p: Point; flipped: boolean; d
         fontSize={dim ? 1.1 : 1.55}
         fontWeight={800}
         textAnchor="middle"
-        fill={ink}
+        fill={p.outcome === 'winner' ? 'var(--win-ink)' : ink}
         fontFamily="var(--font)"
       >
         {p.outcome === 'winner' ? '★' : ERROR_LETTER[error]}

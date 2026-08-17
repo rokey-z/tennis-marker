@@ -183,7 +183,12 @@ export function DashboardPage() {
             {/* KPI row */}
             <div className="kpi-grid">
               <Kpi label="Sessions" value={stats.length} sub={`${withPoints.length} with errors logged`} />
-              <Kpi label="Errors" value={summary.total} sub={`${summary.byForced.unforced} unforced · ${summary.byForced.forced} forced`} spark={spark((s) => s.total)} />
+              <Kpi
+                label="Points lost"
+                value={summary.lost}
+                sub={summary.winners > 0 ? `${summary.total} errors · ${summary.winners} opponent winners` : `${summary.byForced.unforced} unforced · ${summary.byForced.forced} forced`}
+                spark={spark((s) => s.lost)}
+              />
               <Kpi
                 label="Errors per session"
                 value={perSession ? perSession.toFixed(1) : '—'}
