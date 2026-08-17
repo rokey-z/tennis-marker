@@ -124,7 +124,10 @@ export function sessionStats(sessions: Session[], points: Iterable<Point>): Sess
     for (const p of pts) {
       const outcome = p.outcome ?? 'error'
       if (outcome === 'winner') {
+        // she was standing somewhere when the opponent hit past her: it belongs on the zone map
         row.winners++
+        const wz = zoneId(zoneFor(p.x, p.y))
+        row.byZone[wz] = (row.byZone[wz] ?? 0) + 1
         continue
       }
       if (outcome === 'placement') {

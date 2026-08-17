@@ -96,9 +96,10 @@ describe('summarize', () => {
     expect(s.winners).toBe(2)
     // a winner is still a point she lost, so it counts in the headline — but not in the breakdowns
     expect(s.lost).toBe(4)
-    // a winner never lands in the error breakdowns
+    // a winner never lands in the error breakdowns, but it is still a spot on her half
     expect(s.matrix.fh).toEqual({ long: 1, net: 0, wide: 0 })
-    expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(2)
+    expect(s.byStroke).toEqual({ fh: 1, bh: 1 })
+    expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(4)
   })
 
   it('counts placements apart from errors and winners', () => {
@@ -113,8 +114,8 @@ describe('summarize', () => {
     expect(s.placements).toBe(2)
     expect(s.placementsByStroke).toEqual({ fh: 1, bh: 1 })
     expect(s.winners).toBe(1)
-    // placements never enter the error views
-    expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(1)
+    // placements never enter the error views; the error and the winner both mark her half
+    expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(2)
     expect(s.byStroke).toEqual({ fh: 1, bh: 0 })
   })
 

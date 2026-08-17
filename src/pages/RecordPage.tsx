@@ -213,7 +213,7 @@ export function RecordPage() {
         {statsMode && <StatsFilters value={filters} onChange={setFilters} />}
         <div className="court-box" ref={courtRef}>
           {statsMode ? (
-            <Court flipped={flipped} points={shownPoints} half={placementMode ? 'opposite' : 'own'} sideLabel={sideLabel} heat={statsSummary.byZone} heatTotal={statsSummary.total} showZones />
+            <Court flipped={flipped} points={shownPoints} half={placementMode ? 'opposite' : 'own'} sideLabel={sideLabel} heat={statsSummary.byZone} heatTotal={statsSummary.lost} showZones />
           ) : (
             <Court
               flipped={flipped}

@@ -110,7 +110,8 @@ describe('sessionStats outcomes', () => {
     ]
     const row = sessionStats([sess()], points)[0]
     expect(row).toMatchObject({ total: 2, fh: 1, bh: 1, long: 1, net: 1, forced: 1, unforced: 1, winners: 1, lost: 3, placements: 2 })
-    expect(Object.values(row.byZone).reduce((a, b) => a + b, 0)).toBe(2)
+    // the zone map is where she lost points from: 2 errors + 1 winner, placements excluded
+    expect(Object.values(row.byZone).reduce((a, b) => a + b, 0)).toBe(3)
   })
 })
 

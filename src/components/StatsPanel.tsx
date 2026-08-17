@@ -66,7 +66,7 @@ export function StatsPanel({ summary, count, onExportCsv, onExportJson }: StatsP
           <div className="label">Points lost</div>
           <div className="value">
             {summary.lost}
-            {summary.winners > 0 && <small>{summary.total} her errors</small>}
+            {summary.winners > 0 && <small>{summary.total} errors</small>}
           </div>
         </div>
         <div className="tile">

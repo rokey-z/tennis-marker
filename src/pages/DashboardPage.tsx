@@ -394,10 +394,10 @@ export function DashboardPage() {
               <div className="card">
                 <div className="section-title">Where on the court</div>
                 <div className="stats-court" style={{ maxWidth: 360 }}>
-                  <Court heat={summary.byZone} heatTotal={summary.total} showZones />
+                  <Court heat={summary.byZone} heatTotal={summary.lost} showZones />
                 </div>
                 <div className="kbd-hint" style={{ textAlign: 'center', marginTop: 4 }}>
-                  Errors per zone · open a session and tap <strong>Stats</strong> to see every point
+                  Points lost per zone · open a session and tap <strong>Stats</strong> to see every point
                 </div>
                 {zonesSorted.length > 0 && (
                   <ol className="zone-list">
@@ -406,7 +406,7 @@ export function DashboardPage() {
                         <span className="rank">{i + 1}.</span>
                         <span className="grow">{describeZone(zoneFromId(zid))}</span>
                         <strong>{n}</strong>
-                        <span className="muted"> · {pct(n, summary.total)}%</span>
+                        <span className="muted"> · {pct(n, summary.lost)}%</span>
                       </li>
                     ))}
                   </ol>

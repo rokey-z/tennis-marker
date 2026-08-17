@@ -72,9 +72,11 @@ export function summarize(points: Iterable<Point>): Summary {
     if (p.deleted_at) continue
     const outcome = p.outcome ?? 'error'
     if (outcome === 'winner') {
-      // the opponent's shot — it has a position and nothing else, but the point is still lost
+      // the opponent's shot — nothing of hers to break down, but she was standing somewhere and
+      // she lost the point, so it counts in the total and on the zone map
       s.winners++
       s.lost++
+      countZone(s, p)
       continue
     }
     if (outcome === 'placement') {
@@ -91,12 +93,16 @@ export function summarize(points: Iterable<Point>): Summary {
     if (isErrorType(p.error_type)) s.byError[p.error_type]++
     if (p.forced) s.byForced.forced++
     else s.byForced.unforced++
-    const id = zoneId(zoneFor(p.x, p.y))
-    s.byZone[id] = (s.byZone[id] ?? 0) + 1
-    if (s.byZone[id] > s.maxZone) s.maxZone = s.byZone[id]
+    countZone(s, p)
     if (isStroke(p.stroke) && isErrorType(p.error_type)) s.matrix[p.stroke][p.error_type]++
   }
   return s
+}
+
+function countZone(s: Summary, p: Point): void {
+  const id = zoneId(zoneFor(p.x, p.y))
+  s.byZone[id] = (s.byZone[id] ?? 0) + 1
+  if (s.byZone[id] > s.maxZone) s.maxZone = s.byZone[id]
 }
 
 export function pct(part: number, total: number): number {
