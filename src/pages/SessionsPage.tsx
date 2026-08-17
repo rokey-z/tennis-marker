@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { formatDate } from '../lib/format'
-import { PlusIcon } from '../components/Icons'
+import { ErrorsModeIcon, PlacementModeIcon, PlusIcon } from '../components/Icons'
 import { Shell } from '../components/Shell'
 import { usePlayer } from '../components/hooks'
 import { store, useAppState } from '../data/app'
@@ -48,6 +48,9 @@ export function SessionsPage() {
             {rows.map(({ session, count, fh, bh }) => (
               <li key={session.id}>
                 <Link to={`/session/${session.id}`} className="session-card">
+                  <span className={`s-mode ${session.mode}`} title={`${MODE_LABEL[session.mode]} session`} aria-hidden="true">
+                    {session.mode === 'placement' ? <PlacementModeIcon /> : <ErrorsModeIcon />}
+                  </span>
                   <div className="grow">
                     <div className="title">{sessionLabel(session)}</div>
                     <div className="sub">

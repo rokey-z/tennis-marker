@@ -450,6 +450,26 @@ textarea.input {
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
+/* what the session records, at a glance: her half marked, or a ball landing on the far half */
+.s-mode {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--surface-2);
+  color: var(--text);
+}
+.s-mode.placement {
+  background: var(--bh-soft);
+  color: var(--bh-text);
+}
+.s-mode svg {
+  width: 24px;
+  height: 24px;
+}
 .session-card:active {
   background: var(--surface-2);
 }

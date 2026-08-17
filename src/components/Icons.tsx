@@ -109,3 +109,28 @@ export const LogoIcon = () => (
     <circle cx="44" cy="44" r="6" fill="#ffb020" />
   </svg>
 )
+
+/**
+ * What a session records, drawn as the same court twice: the net across the middle, and the mark on
+ * the half that session is about — her half below it for errors, the far half above it for landings.
+ */
+const courtFrame = (
+  <>
+    <rect x="4" y="3.5" width="16" height="17" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
+    <path d="M4 12h16" stroke="currentColor" strokeWidth="1.5" />
+  </>
+)
+export const ErrorsModeIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" fill="none">
+    <rect x="4.75" y="12" width="14.5" height="8.5" fill="currentColor" opacity="0.16" />
+    {courtFrame}
+    <circle cx="12" cy="16.4" r="2.5" fill="currentColor" />
+  </svg>
+)
+export const PlacementModeIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" fill="none">
+    <rect x="4.75" y="4.25" width="14.5" height="7.75" fill="currentColor" opacity="0.16" />
+    {courtFrame}
+    <circle cx="12" cy="7.8" r="2.5" fill="currentColor" />
+  </svg>
+)
