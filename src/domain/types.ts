@@ -19,6 +19,7 @@ export const STROKE_SHORT: Record<Stroke, string> = { fh: 'FH', bh: 'BH' }
 export const ERROR_LABEL: Record<ErrorType, string> = { long: 'Long', net: 'Net', wide: 'Wide' }
 export const SESSION_KINDS: SessionKind[] = ['match', 'practice']
 export const KIND_LABEL: Record<SessionKind, string> = { match: 'Match', practice: 'Practice' }
+export const KIND_PLURAL: Record<SessionKind, string> = { match: 'Matches', practice: 'Practices' }
 export const SESSION_MODES: SessionMode[] = ['errors', 'placement']
 export const MODE_LABEL: Record<SessionMode, string> = { errors: 'Errors', placement: 'Placement' }
 export const MODE_HINT: Record<SessionMode, string> = {

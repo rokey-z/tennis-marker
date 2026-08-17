@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { formatDate } from '../lib/format'
 import { ErrorsModeIcon, PlacementModeIcon, PlusIcon } from '../components/Icons'
@@ -8,14 +8,19 @@ import { store, useAppState } from '../data/app'
 import { liveSessions } from '../data/store'
 import { sessionLabel } from '../domain/session'
 import { perSessionCounts } from '../domain/stats'
-import { KIND_LABEL, MODE_LABEL, type SessionKind } from '../domain/types'
+import { KIND_LABEL, KIND_PLURAL, MODE_LABEL, SESSION_KINDS, type SessionKind } from '../domain/types'
+
+type KindFilter = SessionKind | 'all'
 
 export function SessionsPage() {
   const state = useAppState()
   const player = usePlayer()
   const nav = useNavigate()
+  const [kind, setKind] = useState<KindFilter>('all')
   // oldest first, so the newest session sits at the bottom — next to the thumb, next to the buttons
-  const rows = useMemo(() => perSessionCounts(liveSessions(state), Object.values(state.points)).reverse(), [state])
+  const all = useMemo(() => perSessionCounts(liveSessions(state), Object.values(state.points)).reverse(), [state])
+  const rows = useMemo(() => (kind === 'all' ? all : all.filter((r) => r.session.kind === kind)), [all, kind])
+  const countFor = (k: KindFilter) => (k === 'all' ? all.length : all.filter((r) => r.session.kind === k).length)
 
   const create = (kind: SessionKind) => {
     const s = store.createSession({ kind })
@@ -34,16 +39,28 @@ export function SessionsPage() {
         </button>
       </div>
 
-      {rows.length === 0 ? (
+      {all.length === 0 ? (
         <div className="empty">
           <strong>No sessions yet</strong>
           Start a practice or match, then tap the court where {player.subject} loses each point.
         </div>
       ) : (
         <>
-          <div className="section-title" style={{ marginTop: 18 }}>
-            Sessions
+          {/* matches and practices are read differently, so they get their own lists */}
+          <div className="list-tabs" role="group" aria-label="Which sessions to show">
+            {(['all', ...SESSION_KINDS] as KindFilter[]).map((k) => (
+              <button key={k} type="button" className={kind === k ? 'on' : ''} aria-pressed={kind === k} onClick={() => setKind(k)}>
+                {k === 'all' ? 'All' : KIND_PLURAL[k]}
+                <small>{countFor(k)}</small>
+              </button>
+            ))}
           </div>
+          {rows.length === 0 ? (
+            <div className="empty">
+              <strong>No {KIND_PLURAL[kind as SessionKind].toLowerCase()} yet</strong>
+              Start one with the button above.
+            </div>
+          ) : (
           <ul className="session-list">
             {rows.map(({ session, count, fh, bh }) => (
               <li key={session.id}>
@@ -74,6 +91,7 @@ export function SessionsPage() {
               </li>
             ))}
           </ul>
+          )}
         </>
       )}
     </Shell>
