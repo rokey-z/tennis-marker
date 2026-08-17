@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import type { ErrorType, Stroke } from '../domain/types'
 import { ShotGrid } from './marks'
+import { capitalise, type PlayerWords } from '../domain/session'
 import { CloseIcon } from './Icons'
 
 export interface ShotPopoverProps {
@@ -19,6 +20,8 @@ export interface ShotPopoverProps {
   onPickWinner: (stroke: Stroke) => void
   /** Placement mode fallback for a tap: just the two strokes. */
   strokeOnly?: boolean
+  /** How to name the player in the tooltips. */
+  player: PlayerWords
   onCancel: () => void
 }
 
@@ -30,7 +33,7 @@ const EDGE = 6
  * Compact chooser anchored at the tap: two rows (FH / BH) × Long / Net / Wide, plus a Forced toggle.
  * Placed below the tap when there is room, otherwise above; clamped inside the container.
  */
-export function ShotPopover({ anchor, containerRef, where, forced, onForcedChange, winner, onWinnerChange, onPick, onPickWinner, strokeOnly = false, onCancel }: ShotPopoverProps) {
+export function ShotPopover({ anchor, containerRef, where, forced, onForcedChange, winner, onWinnerChange, onPick, onPickWinner, strokeOnly = false, player, onCancel }: ShotPopoverProps) {
   const ref = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState<{ left: number; top: number; placement: 'below' | 'above' } | null>(null)
 
@@ -96,7 +99,7 @@ export function ShotPopover({ anchor, containerRef, where, forced, onForcedChang
                 onForcedChange(!forced)
                 if (!forced) onWinnerChange(false)
               }}
-              title="She was forced into this error"
+              title={`${capitalise(player.subject)} was forced into this error`}
             >
               Forced
             </button>
@@ -108,7 +111,7 @@ export function ShotPopover({ anchor, containerRef, where, forced, onForcedChang
                 onWinnerChange(!winner)
                 if (!winner) onForcedChange(false)
               }}
-              title="She hit a winner here"
+              title={`${capitalise(player.subject)} hit a winner here`}
             >
               ★ Winner
             </button>

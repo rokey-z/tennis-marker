@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { Modal, PointList, SyncBadge, Tally, Toast, type ToastState } from '../components/Bits'
-import { useIsDesktop } from '../components/hooks'
+import { useIsDesktop, usePlayer } from '../components/hooks'
 import { shortDate } from '../lib/format'
 import { Court } from '../components/Court'
 import { StatsFilters, StatsPanel, type StatsFilterState } from '../components/StatsPanel'
@@ -10,6 +10,7 @@ import { ShotPopover } from '../components/ShotPopover'
 import { store, useAppState } from '../data/app'
 import { livePointsForSession } from '../data/store'
 import { describeMark, describeZone, zoneFor } from '../domain/court'
+import { capitalise } from '../domain/session'
 import { opponentRowsWithRoster, sessionLabel, venueRows } from '../domain/session'
 import { MarkLegend, markLabel } from '../components/marks'
 import { PointSheet } from '../components/PointSheet'
@@ -32,8 +33,8 @@ export function RecordPage() {
   const isDesktop = useIsDesktop()
   const session = state.sessions[id]
   const placementMode = session?.mode === 'placement'
-  const player = state.meta.playerName.trim()
-  const sideLabel = placementMode ? 'Opponent side' : `${player || 'Her'}${player ? '’s' : ''} side`
+  const player = usePlayer()
+  const sideLabel = placementMode ? 'Opponent side' : `${capitalise(player.possessive)} side`
   const allPoints = useMemo(() => livePointsForSession(state, id), [state, id])
   // each mode shows its own marks: they live in different halves of the court
   const points = useMemo(
@@ -201,8 +202,8 @@ export function RecordPage() {
           className={`flip-fab${flipped ? ' on' : ''}`}
           onClick={() => setFlipped((f) => !f)}
           aria-pressed={flipped}
-          aria-label={flipped ? 'She is at the far end — tap to flip back' : 'Flip ends (she is at the far end)'}
-          title={flipped ? 'Far end — tap to flip back' : 'Flip ends (she is at the far end)'}
+          aria-label={flipped ? `${capitalise(player.subject)} is at the far end — tap to flip back` : `Flip ends (${player.subject} is at the far end)`}
+          title={flipped ? 'Far end — tap to flip back' : `Flip ends (${player.subject} is at the far end)`}
         >
           <FlipIcon />
         </button>
@@ -239,6 +240,7 @@ export function RecordPage() {
             strokeOnly={placementMode}
             onPick={pick}
             onPickWinner={pickWinner}
+            player={player}
             onCancel={cancel}
           />
           )}
@@ -252,7 +254,13 @@ export function RecordPage() {
               <Tally s={summary} />
             </div>
           )}
-          {!statsMode && <div className="record-hint">Click the court where she lost the point, then pick FH/BH × Long/Net/Wide right there.</div>}
+          {!statsMode && (
+            <div className="record-hint">
+              {placementMode
+                ? `Click where the ball landed, then pick the stroke ${player.name ? `${player.name} hit it with` : 'she hit it with'}.`
+                : `Click the court where ${player.subject} lost the point, then pick FH/BH × Long/Net/Wide right there.`}
+            </div>
+          )}
           {actions}
           {statsMode ? (
             <StatsPanel summary={statsSummary} count={shownPoints.length} onExportCsv={exportCsv} onExportJson={exportJson} />

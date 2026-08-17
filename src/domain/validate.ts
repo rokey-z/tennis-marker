@@ -3,6 +3,13 @@ import { isValidIso, YMD_RE } from '../lib/format'
 import { cleanOpponent } from './session'
 import { isErrorType, isOutcome, isSessionKind, isSessionMode, isStroke, type Point, type Session } from './types'
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** The cloud stores ids as uuid, so anything else can never be uploaded. */
+export function isUuid(v: unknown): v is string {
+  return typeof v === 'string' && UUID_RE.test(v)
+}
+
 const str = (v: unknown): string | null => (typeof v === 'string' && v.length > 0 ? v : null)
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : null)
 const isoOrNull = (v: unknown): string | null => (v === null || v === undefined || v === '' ? null : isValidIso(v) ? new Date(v).toISOString() : null)

@@ -1,5 +1,6 @@
 import type { Point, Session } from '../domain/types'
 import { pendingCount, type Store } from './store'
+import { isUuid } from '../domain/validate'
 
 export interface RemoteError {
   message: string
@@ -20,6 +21,8 @@ export interface SyncStatus {
   phase: SyncPhase
   /** rows changed locally and not yet confirmed by the server */
   pending: number
+  /** rows that can never be uploaded (an id the cloud cannot store) — they stay on this device */
+  blocked: number
   lastSyncAt: string | null
   error: string | null
 }
@@ -83,6 +86,8 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
   let stopped = true
 
   // status snapshot is cached so useSyncExternalStore gets a stable object between changes
+  /** ids dropped from the outbox because the server can never accept them (e.g. a non-uuid id) */
+  const blockedIds = new Set<string>()
   let statusCache: SyncStatus | null = null
   function invalidate() {
     statusCache = null
@@ -98,7 +103,7 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     else if (!isOnline()) phase = 'offline'
     else if (lastError) phase = 'error'
     else phase = 'idle'
-    return { phase, pending, lastSyncAt, error: lastError }
+    return { phase, pending, blocked: blockedIds.size, lastSyncAt, error: lastError }
   }
 
   function scheduleRetry() {
@@ -130,8 +135,21 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
       const uid = getUserId()
       if (!uid || !isOnline()) return
       const snap = store.getState()
-      const sessions = snap.dirty.sessions.map((id) => snap.sessions[id]).filter((r): r is Session => !!r && r.user_id === uid)
-      const points = snap.dirty.points.map((id) => snap.points[id]).filter((r): r is Point => !!r && r.user_id === uid)
+      const syncable = <T extends { id: string; user_id: string | null }>(r: T | undefined): r is T => !!r && r.user_id === uid && isUuid(r.id)
+      const sessions = snap.dirty.sessions.map((id) => snap.sessions[id]).filter(syncable)
+      const points = snap.dirty.points.map((id) => snap.points[id]).filter(syncable)
+
+      // rows with an id the server cannot store would fail forever and hold up everything behind
+      // them — drop them from the outbox once, keep them on the device, and report the count
+      const stuckSessions = snap.dirty.sessions.filter((id) => snap.sessions[id] && !isUuid(id))
+      const stuckPoints = snap.dirty.points.filter((id) => snap.points[id] && !isUuid(id))
+      if (stuckSessions.length || stuckPoints.length) {
+        for (const id of [...stuckSessions, ...stuckPoints]) blockedIds.add(id)
+        if (stuckSessions.length) store.clearDirty('sessions', stuckSessions.map((id) => [id, snap.sessions[id].updated_at] as [string, string]))
+        if (stuckPoints.length) store.clearDirty('points', stuckPoints.map((id) => [id, snap.points[id].updated_at] as [string, string]))
+        console.warn(`Sync: ${stuckSessions.length + stuckPoints.length} local row(s) have an id the cloud cannot store and will stay on this device`)
+      }
+
       if (!sessions.length && !points.length) return
 
       if (sessions.length) {

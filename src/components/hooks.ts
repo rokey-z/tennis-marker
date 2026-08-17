@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { todayLocalISO } from '../lib/format'
+import { playerWords, type PlayerWords } from '../domain/session'
+import { useAppState } from '../data/app'
 
 export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(() => (typeof window !== 'undefined' ? window.matchMedia(query).matches : false))
@@ -38,4 +40,10 @@ export function useToday(): string {
     }
   }, [])
   return today
+}
+
+/** The player's name (or pronouns) for UI copy. */
+export function usePlayer(): PlayerWords {
+  const state = useAppState()
+  return playerWords(state.meta.playerName)
 }

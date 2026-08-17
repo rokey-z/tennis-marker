@@ -4,7 +4,7 @@ import { compareSessionDesc } from '../domain/stats'
 import type { NewPoint, Point, Session } from '../domain/types'
 import { cleanOpponent, opponentFromLegacyTitle, opponentKey } from '../domain/session'
 import { todayLocalISO } from '../lib/format'
-import { sanitizePoint, sanitizeSession } from '../domain/validate'
+import { isUuid, sanitizePoint, sanitizeSession } from '../domain/validate'
 import {
   adoptOwnerless,
   clearDirty,
@@ -60,6 +60,10 @@ export interface Store {
   dropForeign(): void
   /** Whose errors these are — used for the court label. Device-local. */
   setPlayerName(name: string): void
+  /** Rows with an id the cloud cannot store (hand-seeded or imported junk). */
+  unsyncableCount(): number
+  /** Delete those rows outright — they only exist on this device. Returns how many went. */
+  dropUnsyncable(): number
   /** Wipe everything on this device. */
   clearAll(): void
 }
@@ -341,11 +345,31 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
       if (clean === state.meta.playerName) return
       set({ ...state, meta: { ...state.meta, playerName: clean } })
     },
+    unsyncableCount() {
+      return unsyncableIds(state).sessions.length + unsyncableIds(state).points.length
+    },
+    dropUnsyncable() {
+      const ids = unsyncableIds(state)
+      const n = ids.sessions.length + ids.points.length
+      if (!n) return 0
+      // their points go too, or they would linger with no session
+      const orphaned = Object.values(state.points).filter((p) => ids.sessions.includes(p.session_id)).map((p) => p.id)
+      set(dropRows(state, { sessions: ids.sessions, points: [...new Set([...ids.points, ...orphaned])] }))
+      return n
+    },
     clearAll() {
       set({ ...emptyState(), meta: { ...state.meta, lastPullAt: null } })
     },
   }
   return store
+}
+
+/** Ids that can never reach the cloud, because the server stores ids as uuid. */
+export function unsyncableIds(state: RepoState): { sessions: string[]; points: string[] } {
+  return {
+    sessions: Object.keys(state.sessions).filter((id) => !isUuid(id)),
+    points: Object.keys(state.points).filter((id) => !isUuid(id)),
+  }
 }
 
 // ---------- selectors (pure) ----------

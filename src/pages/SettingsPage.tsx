@@ -2,6 +2,7 @@ import { useMemo, useRef, useState, type FormEvent } from 'react'
 import { downloadText, formatDate, formatTime } from '../lib/format'
 import { DownloadIcon, RefreshIcon } from '../components/Icons'
 import { Shell } from '../components/Shell'
+import { usePlayer } from '../components/hooks'
 import { auth, isCloudConfigured, store, sync, useAppState, useAuthUser, useSyncStatus } from '../data/app'
 import { pendingCount } from '../data/store'
 import { parseExportBundle, safeFilename, toExportBundle } from '../domain/export'
@@ -12,6 +13,7 @@ declare const __APP_VERSION__: string
 
 export function SettingsPage() {
   const state = useAppState()
+  const player = usePlayer()
   const status = useSyncStatus()
   const { user, ready } = useAuthUser()
   const [email, setEmail] = useState('')
@@ -23,6 +25,7 @@ export function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const pending = pendingCount(state)
   const foreign = store.foreignCount()
+  const unsyncable = store.unsyncableCount()
 
   const signIn = async (e: FormEvent) => {
     e.preventDefault()
@@ -85,6 +88,25 @@ export function SettingsPage() {
                 {pending > 0 && <span>· {pending} unsynced</span>}
               </div>
               {status.error && <div className="notice err">{status.error}</div>}
+              {unsyncable > 0 && (
+                <div className="notice">
+                  <strong>{unsyncable}</strong> item{unsyncable === 1 ? '' : 's'} on this device can’t be uploaded — they were created
+                  outside the app and their ids aren’t in the cloud’s format. Everything else syncs normally.
+                  <div className="row wrap" style={{ marginTop: 8 }}>
+                    <button
+                      type="button"
+                      className="btn sm danger"
+                      onClick={() => {
+                        if (!confirm(`Delete ${unsyncable} item${unsyncable === 1 ? '' : 's'} that can’t sync? They only exist on this device.`)) return
+                        setMsg(`Removed ${store.dropUnsyncable()} item(s) that could not sync.`)
+                        void sync.flush()
+                      }}
+                    >
+                      Remove them
+                    </button>
+                  </div>
+                </div>
+              )}
               {foreign > 0 && (
                 <div className="notice">
                   This device has <strong>{foreign}</strong> item{foreign === 1 ? '' : 's'} from a different account.
@@ -200,7 +222,7 @@ export function SettingsPage() {
               <strong>Install it</strong>: on iPhone, Share → “Add to Home Screen”; on Android/desktop Chrome, use “Install app”. Installed apps keep data longer and open full-screen.
             </li>
             <li>
-              <strong>Flip ends</strong> when she plays the far side, so you tap what you see. Data is always stored from her point of view.
+              <strong>Flip ends</strong> when {player.subject} plays the far side, so you tap what you see. Data is always stored from {player.possessive} point of view.
             </li>
             <li>
               <strong>2 taps per point</strong>: tap the court, then one of the six buttons. Toggle “Forced” only when needed.
@@ -231,7 +253,7 @@ function PlayerName() {
     <section className="card">
       <div className="section-title">Player</div>
       <label className="field" style={{ marginBottom: 0 }}>
-        <span>Whose errors these are</span>
+        <span>Player name</span>
         <input
           className="input"
           value={name}
@@ -245,7 +267,7 @@ function PlayerName() {
         />
       </label>
       <p className="kbd-hint" style={{ marginTop: 8 }}>
-        Labels the court so her half and the opponent’s half are never mixed up. Kept on this device.
+        Used throughout the app — the court label, hints and tooltips. Kept on this device.
       </p>
     </section>
   )

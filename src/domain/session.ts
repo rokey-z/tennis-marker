@@ -99,3 +99,23 @@ export function opponentRowsWithRoster(sessions: Iterable<Session>, roster: Iter
   // names not used yet sit after the ones she has actually played
   return [...rows, ...extra.sort((a, b) => a.name.localeCompare(b.name))]
 }
+
+/** Build-time default so every device names the player without being configured. */
+const CONFIGURED_NAME = (import.meta.env?.VITE_PLAYER_NAME ?? '') as string
+
+export interface PlayerWords {
+  /** "Lily" — or '' when nobody has been named */
+  name: string
+  /** "Lily" / "she" — use at the start of a sentence with capitalise() */
+  subject: string
+  /** "Lily’s" / "her" */
+  possessive: string
+}
+
+/** How to refer to the player in copy: her name when there is one, pronouns when there isn't. */
+export function playerWords(stored: string | null | undefined): PlayerWords {
+  const name = cleanOpponent(stored) || cleanOpponent(CONFIGURED_NAME)
+  return name ? { name, subject: name, possessive: `${name}’s` } : { name: '', subject: 'she', possessive: 'her' }
+}
+
+export const capitalise = (s: string): string => (s ? s[0].toUpperCase() + s.slice(1) : s)

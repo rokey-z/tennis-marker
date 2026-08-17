@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import { formatDate } from '../lib/format'
 import { PlusIcon } from '../components/Icons'
 import { Shell } from '../components/Shell'
+import { usePlayer } from '../components/hooks'
 import { store, useAppState } from '../data/app'
 import { liveSessions } from '../data/store'
 import { sessionLabel } from '../domain/session'
@@ -11,6 +12,7 @@ import { KIND_LABEL, MODE_LABEL, type SessionKind } from '../domain/types'
 
 export function SessionsPage() {
   const state = useAppState()
+  const player = usePlayer()
   const nav = useNavigate()
   const rows = useMemo(() => perSessionCounts(liveSessions(state), Object.values(state.points)), [state])
 
@@ -33,7 +35,7 @@ export function SessionsPage() {
       {rows.length === 0 ? (
         <div className="empty">
           <strong>No sessions yet</strong>
-          Start a practice or match, then tap the court where she loses each point.
+          Start a practice or match, then tap the court where {player.subject} loses each point.
         </div>
       ) : (
         <>

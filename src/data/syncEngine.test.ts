@@ -48,7 +48,7 @@ function setup(opts: { uid?: string | null; online?: boolean } = {}) {
   let t = Date.UTC(2026, 7, 15, 10, 0, 0)
   const now = () => new Date((t += 1000))
   let n = 0
-  const store = createStore(memoryStorage(), { now, newId: () => `id${++n}` })
+  const store = createStore(memoryStorage(), { now, newId: () => `0000000${++n}-0000-4000-8000-000000000000`.slice(-36) })
   const fr = fakeRemote()
   const timers: Array<{ fn: () => void; ms: number }> = []
   const ctx = { uid: opts.uid === undefined ? 'u1' : opts.uid, online: opts.online ?? true }
@@ -173,6 +173,36 @@ describe('flush', () => {
     await engine.flush()
     expect(engine.getStatus().error).toMatch(/sign in again/)
     expect(liveSessions(store.getState())).toHaveLength(1)
+  })
+})
+
+describe('rows the server can never take', () => {
+  it('drops a non-uuid row from the outbox instead of blocking everything behind it', async () => {
+    const { store, engine, fr } = setup()
+    const good = store.createSession()
+    // a hand-seeded row, exactly what breaks a real upsert: invalid input syntax for type uuid
+    const raw = store.getState()
+    store.mergeRemote({
+      sessions: [{ ...good, id: 'demo-4', updated_at: '2030-01-01T00:00:00.000Z' }],
+      points: [],
+    })
+    store.updateSession('demo-4', { notes: 'touch it so it is queued' })
+    expect(store.getState().dirty.sessions).toContain('demo-4')
+    expect(raw).toBeTruthy()
+
+    await engine.flush()
+    // the valid session went up, the impossible one was quarantined rather than retried forever
+    expect(fr.db.sessions.has(good.id)).toBe(true)
+    expect(fr.db.sessions.has('demo-4')).toBe(false)
+    expect(store.getState().dirty.sessions).not.toContain('demo-4')
+    expect(engine.getStatus()).toMatchObject({ blocked: 1, error: null })
+    // and it is still on the device, not silently deleted
+    expect(store.getState().sessions['demo-4']).toBeTruthy()
+    expect(store.unsyncableCount()).toBe(1)
+
+    // the user can clear them out
+    expect(store.dropUnsyncable()).toBe(1)
+    expect(store.getState().sessions['demo-4']).toBeUndefined()
   })
 })
 
