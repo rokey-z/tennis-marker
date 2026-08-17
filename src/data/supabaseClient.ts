@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import type { Point, Session } from '../domain/types'
+import { isOutcome, type Outcome, type Point, type Session } from '../domain/types'
 import type { Remote, RemoteError } from './syncEngine'
 
 export const SUPABASE_URL: string | undefined = import.meta.env.VITE_SUPABASE_URL
@@ -62,17 +62,23 @@ function normalizeSession(r: Record<string, unknown>): Session {
   }
 }
 
-function normalizePoint(r: Record<string, unknown>): Point {
+/**
+ * A row as the server has it → a Point. Every outcome the app writes must survive the round trip:
+ * a placement that came back as an error would move the mark to the wrong half of the court.
+ */
+export function normalizePoint(r: Record<string, unknown>): Point {
+  const outcome: Outcome = isOutcome(r.outcome) ? r.outcome : 'error'
   return {
     id: String(r.id),
     user_id: r.user_id === null || r.user_id === undefined ? null : String(r.user_id),
     session_id: String(r.session_id),
     x: Number(r.x),
     y: Number(r.y),
-    stroke: r.outcome === 'winner' ? '' : r.stroke === 'bh' ? 'bh' : 'fh',
-    error_type: r.outcome === 'winner' ? '' : r.error_type === 'net' ? 'net' : r.error_type === 'wide' ? 'wide' : 'long',
-    outcome: r.outcome === 'winner' ? 'winner' : 'error',
-    forced: r.outcome === 'winner' ? false : Boolean(r.forced),
+    // a winner is the opponent's shot: no stroke of hers, no error type, never forced
+    stroke: outcome === 'winner' ? '' : r.stroke === 'bh' ? 'bh' : 'fh',
+    error_type: outcome === 'error' ? (r.error_type === 'net' ? 'net' : r.error_type === 'wide' ? 'wide' : 'long') : '',
+    outcome,
+    forced: outcome === 'error' && Boolean(r.forced),
     created_at: toIso(r.created_at),
     updated_at: toIso(r.updated_at),
     deleted_at: r.deleted_at ? toIso(r.deleted_at) : null,

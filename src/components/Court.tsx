@@ -311,7 +311,7 @@ export function Court({ flipped = false, onTap, disabled = false, points, emphas
               const cy = c.r.y + c.r.height / 2
               const pctLabel = heatTotal > 0 && c.n > 0 ? `${Math.round((c.n / heatTotal) * 100)}%` : ''
               return (
-                <g key={c.id} transform={flipped ? `rotate(180 ${cx} ${cy})` : undefined}>
+                <g key={c.id} transform={uprightAt(cx, cy, flipped, half === 'opposite')}>
                   <text x={cx} y={cy + 0.6} fontSize={3.4} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.7)'}>
                     {c.n}
                   </text>

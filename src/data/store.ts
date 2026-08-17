@@ -48,7 +48,8 @@ export interface Store {
   /** Bring back a soft-deleted point (undo of a delete). */
   restorePoint(id: string): void
   /** Soft-deletes the most recent live point of the session; returns it or null. */
-  undoLastPoint(sessionId: string): Point | null
+  /** Removes the newest live point of the session; `only` narrows it to the marks in view. */
+  undoLastPoint(sessionId: string, only?: (p: Point) => boolean): Point | null
   clearDirty(table: Table, snapshot: Array<[string, string]>): void
   mergeRemote(remote: { sessions: Session[]; points: Point[] }): number
   /** Backup import: adds rows that don't exist yet under the current owner, queued for upload. Returns count added. */
@@ -275,8 +276,15 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
       const t = iso()
       set(markDirty({ ...state, points: { ...state.points, [id]: { ...p, deleted_at: null, updated_at: t } } }, 'points', [id]))
     },
-    undoLastPoint(sessionId) {
-      const last = livePointsForSession(state, sessionId).at(-1) ?? null
+    undoLastPoint(sessionId, only) {
+      const list = livePointsForSession(state, sessionId)
+      let last: Point | null = null
+      for (let i = list.length - 1; i >= 0; i--) {
+        if (!only || only(list[i])) {
+          last = list[i]
+          break
+        }
+      }
       if (last) store.deletePoint(last.id)
       return last
     },

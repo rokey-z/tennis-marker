@@ -86,6 +86,20 @@ describe('store', () => {
     expect(store.getState().points[e.id]).toMatchObject({ outcome: 'winner', stroke: '', error_type: '' })
   })
 
+  it('undo can be narrowed to the marks in view, so a hidden one is never dropped', () => {
+    const store = createStore(memoryStorage(), { ...clock(), newId: ids() })
+    const s = store.createSession()
+    const placement = store.addPoint({ session_id: s.id, x: 4, y: 20, stroke: 'fh', error_type: '', forced: false, outcome: 'placement' })
+    const error = store.addPoint({ session_id: s.id, x: 2, y: 36, stroke: 'bh', error_type: 'long', forced: false })
+    // the session is in placement mode: the newest point is the error, but it is not on screen
+    const undone = store.undoLastPoint(s.id, (p) => p.outcome === 'placement')
+    expect(undone?.id).toBe(placement.id)
+    expect(store.getState().points[error.id].deleted_at).toBeNull()
+    // with no predicate it still takes the newest live point
+    expect(store.undoLastPoint(s.id)?.id).toBe(error.id)
+    expect(store.undoLastPoint(s.id, (p) => p.outcome === 'placement')).toBeNull()
+  })
+
   it('deleting a session soft-deletes its points and hides them from all-points', () => {
     const store = createStore(memoryStorage(), { ...clock(), newId: ids() })
     const a = store.createSession()

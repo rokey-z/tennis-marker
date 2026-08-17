@@ -60,6 +60,14 @@ describe('filterPoints', () => {
     expect(filterPoints(pts, { sessionId: 'all', stroke: 'all', error: 'all', forced: 'all' })).toHaveLength(3)
     expect(filterPoints(pts, { stroke: 'bh', error: 'wide', sessionId: 's1' })).toHaveLength(0)
   })
+
+  it('never calls a winner or a placement "unforced" — forced is a question about her errors', () => {
+    const mixed = [...pts, point({ stroke: '', error_type: '', outcome: 'winner' }), point({ stroke: 'fh', error_type: '', outcome: 'placement' })]
+    expect(filterPoints(mixed)).toHaveLength(5)
+    expect(filterPoints(mixed, { forced: 'unforced' })).toHaveLength(2) // the two unforced errors, nothing else
+    expect(filterPoints(mixed, { forced: 'forced' })).toHaveLength(1)
+    expect(filterPoints(mixed, { outcome: 'winner' })).toHaveLength(1)
+  })
 })
 
 describe('summarize', () => {
@@ -100,6 +108,17 @@ describe('summarize', () => {
     expect(s.matrix.fh).toEqual({ long: 1, net: 0, wide: 0 })
     expect(s.byStroke).toEqual({ fh: 1, bh: 1 })
     expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(4)
+  })
+
+  it('keeps a landing map of its own, separate from the error zones', () => {
+    const s = summarize([
+      point({ stroke: 'fh', error_type: 'long', x: 10, y: 45 }),
+      point({ stroke: 'fh', error_type: '', outcome: 'placement', x: 10, y: 5 }),
+      point({ stroke: 'bh', error_type: '', outcome: 'placement', x: 10, y: 5 }),
+    ])
+    expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(1) // the error only
+    expect(s.placementZones).toEqual({ 'net-deuce': 2 })
+    expect(s.maxPlacementZone).toBe(2)
   })
 
   it('counts the placements that landed out', () => {

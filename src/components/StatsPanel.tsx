@@ -53,12 +53,60 @@ export interface StatsPanelProps {
   summary: Summary
   /** number of points in scope (for the CSV button) */
   count: number
+  /** what the scope records; placement scopes have no errors to break down */
+  mode?: 'errors' | 'placement'
   onExportCsv: () => void
   onExportJson: () => void
 }
 
 /** KPI tiles, "where the ball went", stroke × error matrix, export — for one scope of points. */
-export function StatsPanel({ summary, count, onExportCsv, onExportJson }: StatsPanelProps) {
+export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExportJson }: StatsPanelProps) {
+  const exportRow = (
+    <div className="row wrap">
+      <button type="button" className="btn" onClick={onExportCsv} disabled={count === 0}>
+        <DownloadIcon /> CSV ({count})
+      </button>
+      <button type="button" className="btn" onClick={onExportJson}>
+        <DownloadIcon /> Backup (JSON)
+      </button>
+    </div>
+  )
+  // a placement scope counts balls and where they landed: none of the error breakdowns apply
+  if (mode === 'placement') {
+    const inCourt = summary.placements - summary.placementsOut
+    return (
+      <div className="stack stats-panel">
+        <div className="tiles">
+          <div className="tile">
+            <div className="label">Balls placed</div>
+            <div className="value">{summary.placements}</div>
+          </div>
+          <div className="tile">
+            <div className="label">In</div>
+            <div className="value">
+              {inCourt}
+              <small>{pct(inCourt, summary.placements)}%</small>
+            </div>
+          </div>
+          <div className="tile">
+            <div className="label">Out</div>
+            <div className="value">
+              {summary.placementsOut}
+              <small>{pct(summary.placementsOut, summary.placements)}%</small>
+            </div>
+          </div>
+          <div className="tile">
+            <div className="label">Forehand</div>
+            <div className="value">
+              {summary.placementsByStroke.fh}
+              <small>{pct(summary.placementsByStroke.fh, summary.placements)}%</small>
+            </div>
+          </div>
+        </div>
+        {exportRow}
+      </div>
+    )
+  }
   return (
     <div className="stack stats-panel">
       <div className="tiles">
@@ -136,14 +184,7 @@ export function StatsPanel({ summary, count, onExportCsv, onExportJson }: StatsP
         </table>
       </div>
 
-      <div className="row wrap">
-        <button type="button" className="btn" onClick={onExportCsv} disabled={count === 0}>
-          <DownloadIcon /> CSV ({count})
-        </button>
-        <button type="button" className="btn" onClick={onExportJson}>
-          <DownloadIcon /> Backup (JSON)
-        </button>
-      </div>
+      {exportRow}
       <p className="kbd-hint">Counts, not rates — points won aren’t tracked (yet).</p>
     </div>
   )

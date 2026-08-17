@@ -23,8 +23,12 @@ export function filterPoints(points: Iterable<Point>, f: Filters = {}): Point[] 
     if (f.sessionId && f.sessionId !== 'all' && p.session_id !== f.sessionId) continue
     if (f.stroke && f.stroke !== 'all' && p.stroke !== f.stroke) continue
     if (f.error && f.error !== 'all' && p.error_type !== f.error) continue
-    if (f.forced === 'forced' && !p.forced) continue
-    if (f.forced === 'unforced' && p.forced) continue
+    // forced/unforced is a question about her errors — winners and placements are neither
+    if (f.forced && f.forced !== 'all') {
+      if ((p.outcome ?? 'error') !== 'error') continue
+      if (f.forced === 'forced' && !p.forced) continue
+      if (f.forced === 'unforced' && p.forced) continue
+    }
     if (f.outcome && f.outcome !== 'all' && (p.outcome ?? 'error') !== f.outcome) continue
     out.push(p)
   }
@@ -52,6 +56,9 @@ export interface Summary {
   placements: number
   /** placements that landed outside the singles lines */
   placementsOut: number
+  /** zoneId → count for placements — where the BALL landed, never mixed with the error zones */
+  placementZones: Record<string, number>
+  maxPlacementZone: number
   placementsByStroke: Record<Stroke, number>
 }
 
@@ -69,6 +76,8 @@ export function summarize(points: Iterable<Point>): Summary {
     winners: 0,
     placements: 0,
     placementsOut: 0,
+    placementZones: {},
+    maxPlacementZone: 0,
     placementsByStroke: { fh: 0, bh: 0 },
   }
   for (const p of points) {
@@ -86,6 +95,9 @@ export function summarize(points: Iterable<Point>): Summary {
       s.placements++
       if (isOut(p.x, p.y)) s.placementsOut++
       if (isStroke(p.stroke)) s.placementsByStroke[p.stroke]++
+      const pz = zoneId(zoneFor(p.x, p.y))
+      s.placementZones[pz] = (s.placementZones[pz] ?? 0) + 1
+      if (s.placementZones[pz] > s.maxPlacementZone) s.maxPlacementZone = s.placementZones[pz]
       continue
     }
     s.total++

@@ -131,8 +131,15 @@ export function RecordPage() {
   )
 
   const undo = () => {
-    const p = store.undoLastPoint(id)
-    if (p) setToast({ id: Date.now(), text: `Removed ${markLabel(p.stroke, p.error_type, p.forced, p.outcome)}` })
+    // only the marks this mode shows: a placement session must never quietly drop an error mark
+    const p = store.undoLastPoint(id, (q) => ((q.outcome ?? 'error') === 'placement') === placementMode)
+    if (!p) return
+    setToast({
+      id: Date.now(),
+      text: `Removed ${markLabel(p.stroke, p.error_type, p.forced, p.outcome)}`,
+      actionLabel: 'Undo',
+      onAction: () => store.restorePoint(p.id),
+    })
   }
 
   const dismissToast = useCallback(() => setToast(null), [])
@@ -215,10 +222,18 @@ export function RecordPage() {
       </header>
 
       <div className="record-court">
-        {statsMode && <StatsFilters value={filters} onChange={setFilters} />}
+        {statsMode && !placementMode && <StatsFilters value={filters} onChange={setFilters} />}
         <div className="court-box" ref={courtRef}>
           {statsMode ? (
-            <Court flipped={flipped} points={shownPoints} half={placementMode ? 'opposite' : 'own'} sideLabel={sideLabel} heat={statsSummary.byZone} heatTotal={statsSummary.lost} showZones />
+            <Court
+              flipped={flipped}
+              points={shownPoints}
+              half={placementMode ? 'opposite' : 'own'}
+              sideLabel={sideLabel}
+              heat={placementMode ? statsSummary.placementZones : statsSummary.byZone}
+              heatTotal={placementMode ? statsSummary.placements : statsSummary.lost}
+              showZones
+            />
           ) : (
             <Court
               flipped={flipped}
@@ -266,7 +281,7 @@ export function RecordPage() {
           )}
           {actions}
           {statsMode ? (
-            <StatsPanel summary={statsSummary} count={shownPoints.length} onExportCsv={exportCsv} onExportJson={exportJson} />
+            <StatsPanel summary={statsSummary} count={shownPoints.length} mode={placementMode ? 'placement' : 'errors'} onExportCsv={exportCsv} onExportJson={exportJson} />
           ) : (
             <div className="card side-list">
               <div className="section-title">Points</div>
@@ -278,7 +293,7 @@ export function RecordPage() {
         <>
           <div className="record-bottom">{actions}</div>
           <section className="record-stats" aria-label="Session stats">
-            <StatsPanel summary={statsSummary} count={shownPoints.length} onExportCsv={exportCsv} onExportJson={exportJson} />
+            <StatsPanel summary={statsSummary} count={shownPoints.length} mode={placementMode ? 'placement' : 'errors'} onExportCsv={exportCsv} onExportJson={exportJson} />
           </section>
         </>
       ) : (
