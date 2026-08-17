@@ -143,6 +143,8 @@ export function perSessionCounts(sessions: Iterable<Session>, points: Iterable<P
     if (p.deleted_at) continue
     const row = bySession.get(p.session_id)
     if (!row) continue
+    // count what the session is for: marks of the other mode live in the other half and are hidden
+    if (((p.outcome ?? 'error') === 'placement') !== (row.session.mode === 'placement')) continue
     row.count++
     if (p.stroke === 'fh') row.fh++
     else if (p.stroke === 'bh') row.bh++

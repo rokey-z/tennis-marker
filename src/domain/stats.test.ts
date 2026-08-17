@@ -186,6 +186,21 @@ describe('perSessionCounts', () => {
     expect(rows[1]).toMatchObject({ count: 2, fh: 1, bh: 1 })
   })
 
+  it('counts what the session records, not marks left over from the other mode', () => {
+    const sessions = [session({ id: 'p', mode: 'placement' }), session({ id: 'e', date: '2026-08-01' })]
+    const points = [
+      point({ session_id: 'p', stroke: 'fh', error_type: '', outcome: 'placement' }),
+      point({ session_id: 'p', stroke: 'bh', error_type: '', outcome: 'placement' }),
+      // recorded before the session was switched to Placement: hidden on the court, so not counted
+      point({ session_id: 'p', stroke: 'fh', error_type: 'long' }),
+      point({ session_id: 'e', stroke: 'fh', error_type: 'net' }),
+      point({ session_id: 'e', stroke: 'fh', error_type: '', outcome: 'placement' }),
+    ]
+    const rows = perSessionCounts(sessions, points)
+    expect(rows.find((r) => r.session.id === 'p')).toMatchObject({ count: 2, fh: 1, bh: 1 })
+    expect(rows.find((r) => r.session.id === 'e')).toMatchObject({ count: 1, fh: 1, bh: 0 })
+  })
+
   it('orders same-date sessions by created_at desc', () => {
     const a = session({ id: 'a', created_at: '2026-08-15T09:00:00Z' })
     const b = session({ id: 'b', created_at: '2026-08-15T11:00:00Z' })
