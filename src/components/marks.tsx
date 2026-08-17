@@ -52,7 +52,7 @@ export function MarkChip({ stroke, error, forced, outcome = 'error', out = false
   if (outcome === 'winner') {
     return (
       <span className="mark winner" title="The opponent hit a winner">
-        <span className="mark-win">◆</span>
+        <MarkDot stroke="" error="" forced={false} outcome="winner" size={18} />
         <span className="mark-sign">Opponent winner</span>
       </span>
     )
@@ -61,8 +61,10 @@ export function MarkChip({ stroke, error, forced, outcome = 'error', out = false
   const safeError = isErrorType(error) ? error : 'long'
   return (
     <span className={`mark ${safeStroke}${forced ? ' forced' : ''}`} title={markLabel(safeStroke, error, forced, outcome, out)}>
+      {/* the same sign the court draws: a lettered dot is an error, a plain dot or cross is a landing */}
+      <MarkDot stroke={safeStroke} error={error} forced={forced} outcome={outcome} out={out} size={18} />
       <StrokeTag stroke={safeStroke} />
-      <span className="mark-sign">{outcome === 'placement' ? (out ? 'Out' : 'In') : word ? ERROR_LABEL[safeError] : ERROR_LETTER[safeError]}</span>
+      <span className="mark-sign">{outcome === 'placement' ? (out ? 'Landed out' : 'Landed in') : word ? ERROR_LABEL[safeError] : ERROR_LETTER[safeError]}</span>
       {forced && <span className="mark-forced">forced</span>}
     </span>
   )
@@ -83,7 +85,8 @@ export function MarkDot({ stroke, error, forced, outcome = 'error', out = false,
 }
 
 /** The key to the signs — identical wherever marks are shown. */
-export function MarkLegend({ className = '' }: { className?: string }) {
+export function MarkLegend({ className = '', mode = 'errors' }: { className?: string; mode?: 'errors' | 'placement' }) {
+  const placement = mode === 'placement'
   return (
     <div className={`mark-legend ${className}`.trim()}>
       <span className="ml-group">
@@ -94,26 +97,41 @@ export function MarkLegend({ className = '' }: { className?: string }) {
           </span>
         ))}
       </span>
-      <span className="ml-group">
-        {ERROR_TYPES.map((e) => (
-          <span key={e} className="ml-item">
-            <ErrorLetter type={e} />
-            {ERROR_LABEL[e]}
+      {placement ? (
+        <span className="ml-group">
+          <span className="ml-item">
+            <MarkDot stroke="fh" error="" forced={false} outcome="placement" size={14} />
+            Landed in
           </span>
-        ))}
-      </span>
-      <span className="ml-group">
-        <span className="ml-item">
-          <span className="ml-ring" aria-hidden="true" />
-          Forced
-        </span>
-        <span className="ml-item">
-          <span className="ml-win" aria-hidden="true">
-            ★
+          <span className="ml-item">
+            <MarkDot stroke="fh" error="" forced={false} outcome="placement" out size={14} />
+            Landed out
           </span>
-          Opponent winner
         </span>
-      </span>
+      ) : (
+        <>
+          <span className="ml-group">
+            {ERROR_TYPES.map((e) => (
+              <span key={e} className="ml-item">
+                <ErrorLetter type={e} />
+                {ERROR_LABEL[e]}
+              </span>
+            ))}
+          </span>
+          <span className="ml-group">
+            <span className="ml-item">
+              <span className="ml-ring" aria-hidden="true" />
+              Forced
+            </span>
+            <span className="ml-item">
+              <span className="ml-win" aria-hidden="true">
+                ★
+              </span>
+              Opponent winner
+            </span>
+          </span>
+        </>
+      )}
     </div>
   )
 }

@@ -59,7 +59,35 @@ export function SyncBadge({ compact = false }: { compact?: boolean }) {
 }
 
 // ---------- tally ----------
-export function Tally({ s }: { s: Summary }) {
+export function Tally({ s, mode = 'errors' }: { s: Summary; mode?: 'errors' | 'placement' }) {
+  // placement sessions count balls, not points lost: the two never share a headline
+  if (mode === 'placement') {
+    return (
+      <div className="tally" aria-live="polite">
+        <span className="total">
+          {s.placements} {s.placements === 1 ? 'ball placed' : 'balls placed'}
+        </span>
+        <span className="sep" />
+        {STROKES.map((k) => (
+          <span key={k} className="t-item" title={`${STROKE_LABEL[k]}: ${s.placementsByStroke[k]}`}>
+            <StrokeTag stroke={k} />
+            {s.placementsByStroke[k]}
+          </span>
+        ))}
+        {s.placementsOut > 0 && (
+          <>
+            <span className="sep" />
+            <span className="t-item" title={`Landed out: ${s.placementsOut}`}>
+              <span className="ml-out" aria-hidden="true">
+                ✕
+              </span>
+              {s.placementsOut}
+            </span>
+          </>
+        )}
+      </div>
+    )
+  }
   return (
     <div className="tally" aria-live="polite">
       {/* every mark is a point she lost: her errors plus the opponent's winners */}
@@ -87,23 +115,6 @@ export function Tally({ s }: { s: Summary }) {
             <span className="ml-ring" aria-hidden="true" />
             {s.byForced.forced}
           </span>
-        </>
-      )}
-      {s.placements > 0 && (
-        <>
-          <span className="sep" />
-          <span className="t-item" title={`Balls placed: ${s.placements}`}>
-            <span className="ml-place" aria-hidden="true" />
-            {s.placements}
-          </span>
-          {s.placementsOut > 0 && (
-            <span className="t-item" title={`Landed out: ${s.placementsOut}`}>
-              <span className="ml-out" aria-hidden="true">
-                ✕
-              </span>
-              {s.placementsOut}
-            </span>
-          )}
         </>
       )}
       {s.winners > 0 && (

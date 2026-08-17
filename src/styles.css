@@ -1944,6 +1944,11 @@ span
   background: var(--surface-2);
 }
 
+.log-note {
+  margin: 8px 2px 2px;
+  font-size: var(--fs-meta);
+  color: var(--muted);
+}
 .log-legend {
   padding: 2px 0 8px;
   border-bottom: 1px solid var(--line);

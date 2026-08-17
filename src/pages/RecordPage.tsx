@@ -43,7 +43,10 @@ export function RecordPage() {
     () => allPoints.filter((p) => ((p.outcome ?? 'error') === 'placement') === placementMode),
     [allPoints, placementMode],
   )
-  const summary = useMemo(() => summarize(allPoints), [allPoints])
+  // the tally counts what the court and the log show: the marks of the mode being recorded
+  const summary = useMemo(() => summarize(points), [points])
+  /** marks of the other kind, recorded before the session's mode was switched — hidden here, not lost */
+  const otherMode = allPoints.length - points.length
 
   const [flipped, setFlipped] = useState(() => localStorage.getItem(FLIP_KEY) === '1')
   const [pending, setPending] = useState<{ x: number; y: number; at: { clientX: number; clientY: number } } | null>(null)
@@ -251,7 +254,7 @@ export function RecordPage() {
         <aside className="record-side">
           {!statsMode && (
             <div className="card">
-              <Tally s={summary} />
+              <Tally s={summary} mode={placementMode ? 'placement' : 'errors'} />
             </div>
           )}
           {!statsMode && (
@@ -281,7 +284,7 @@ export function RecordPage() {
       ) : (
         <>
           <div className="record-bottom">
-            <Tally s={summary} />
+            <Tally s={summary} mode={placementMode ? 'placement' : 'errors'} />
             {actions}
           </div>
           <section className={`record-log${logOpen ? ' open' : ''}`} aria-label="Logged points">
@@ -292,8 +295,13 @@ export function RecordPage() {
             </button>
             {logOpen && (
               <div className="log-body">
-                <MarkLegend className="log-legend" />
+                <MarkLegend className="log-legend" mode={placementMode ? 'placement' : 'errors'} />
                 <PointList points={points} onOpen={(p, index) => setOpenPoint({ id: p.id, index })} onDelete={deletePoint} />
+                {otherMode > 0 && (
+                  <p className="log-note">
+                    {otherMode} {otherMode === 1 ? 'mark' : 'marks'} recorded in {placementMode ? MODE_LABEL.errors : MODE_LABEL.placement} mode {otherMode === 1 ? 'is' : 'are'} hidden here — switch this session’s mode to see {otherMode === 1 ? 'it' : 'them'}.
+                  </p>
+                )}
               </div>
             )}
           </section>
