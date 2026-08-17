@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { Modal, PointList, SyncBadge, Tally, Toast, type ToastState } from '../components/Bits'
 import { useIsDesktop, usePlayer } from '../components/hooks'
 import { shortDate } from '../lib/format'
@@ -55,7 +55,8 @@ export function RecordPage() {
   const statsMode = view === 'stats'
   const shownPoints = useMemo(() => (statsMode ? filterPoints(points, filters) : points), [statsMode, points, filters])
   const statsSummary = useMemo(() => summarize(shownPoints), [shownPoints])
-  const [showDetails, setShowDetails] = useState(false)
+  const justCreated = (useLocation().state as { justCreated?: boolean } | null)?.justCreated === true
+  const [showDetails, setShowDetails] = useState(justCreated)
   const [openPoint, setOpenPoint] = useState<{ id: string; index: number } | null>(null)
   const ignoreUntil = useRef(0)
 
@@ -318,6 +319,7 @@ export function RecordPage() {
       {showDetails && (
         <SessionDetails
           session={session}
+          isNew={justCreated}
           onClose={() => setShowDetails(false)}
           onDeleted={() => {
             setShowDetails(false)
@@ -329,7 +331,7 @@ export function RecordPage() {
   )
 }
 
-function SessionDetails({ session, onClose, onDeleted }: { session: Session; onClose: () => void; onDeleted: () => void }) {
+function SessionDetails({ session, isNew = false, onClose, onDeleted }: { session: Session; isNew?: boolean; onClose: () => void; onDeleted: () => void }) {
   const state = useAppState()
   const [mode, setMode] = useState(session.mode)
   const [opponent, setOpponent] = useState(session.opponent ?? '')
@@ -380,7 +382,7 @@ function SessionDetails({ session, onClose, onDeleted }: { session: Session; onC
       </label>
       <div className="row">
         <button type="button" className="btn primary grow" onClick={save}>
-          Save
+          {isNew ? 'Start recording' : 'Save'}
         </button>
         {confirm ? (
           <button

@@ -18,7 +18,8 @@ export function SessionsPage() {
 
   const create = (kind: SessionKind) => {
     const s = store.createSession({ kind })
-    nav(`/session/${s.id}`)
+    // open the details sheet first so opponent, court and mode are set before the first tap
+    nav(`/session/${s.id}`, { state: { justCreated: true } })
   }
 
   return (
