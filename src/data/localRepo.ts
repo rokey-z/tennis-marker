@@ -141,11 +141,17 @@ export function clearDirty(state: RepoState, table: Table, snapshot: Array<[id: 
 
 type Row = { id: string; updated_at: string; deleted_at: string | null }
 
-/** Tombstone wins; otherwise last-write-wins by updated_at (local kept on ties). Returns null if local should stay. */
+/**
+ * Which version of a row to keep: last write wins, with the tombstone winning a tie.
+ *
+ * A delete used to win outright, whatever the timestamps — which quietly broke Undo: restoring a
+ * row that had already been uploaded looked fine until the next pull put the tombstone back. A
+ * restore is a later write than the delete it undoes, so it now wins like any other later write.
+ * Returns null if the local row should stay.
+ */
 export function pickRemote<T extends Row>(local: T | undefined, remote: T): T | null {
   if (!local) return remote
-  if (remote.deleted_at && !local.deleted_at) return remote
-  if (local.deleted_at && !remote.deleted_at) return null
+  if (remote.updated_at === local.updated_at) return remote.deleted_at && !local.deleted_at ? remote : null
   return remote.updated_at > local.updated_at ? remote : null
 }
 

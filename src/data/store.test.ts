@@ -100,6 +100,24 @@ describe('store', () => {
     expect(store.undoLastPoint(s.id, (p) => p.outcome === 'placement')).toBeNull()
   })
 
+  it('restores a deleted session with the points that went down with it', () => {
+    const store = createStore(memoryStorage(), { ...clock(), newId: ids() })
+    const s = store.createSession()
+    const kept = store.addPoint({ session_id: s.id, x: 1, y: 30, stroke: 'fh', error_type: 'long', forced: false })
+    const droppedByHand = store.addPoint({ session_id: s.id, x: 2, y: 31, stroke: 'bh', error_type: 'net', forced: false })
+    store.deletePoint(droppedByHand.id)
+    store.deleteSession(s.id)
+    expect(liveSessions(store.getState())).toHaveLength(0)
+
+    expect(store.deletedSessions().map((x) => x.id)).toEqual([s.id])
+    expect(store.restoreSession(s.id)).toBe(1)
+    expect(liveSessions(store.getState())).toHaveLength(1)
+    expect(store.getState().points[kept.id].deleted_at).toBeNull()
+    // a point deleted before the session was is not resurrected with it
+    expect(store.getState().points[droppedByHand.id].deleted_at).toBeTruthy()
+    expect(store.restoreSession(s.id)).toBe(0)
+  })
+
   it('deleting a session soft-deletes its points and hides them from all-points', () => {
     const store = createStore(memoryStorage(), { ...clock(), newId: ids() })
     const a = store.createSession()

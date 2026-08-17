@@ -112,13 +112,18 @@ describe('dirty tracking', () => {
 })
 
 describe('merge', () => {
-  it('pickRemote: tombstone wins, else LWW, local kept on ties', () => {
+  it('pickRemote: last write wins, the tombstone wins a tie, and a restore is a later write', () => {
     expect(pickRemote(undefined, pt())).toEqual(pt())
     expect(pickRemote(pt(), pt({ deleted_at: t2, updated_at: t2 }))?.deleted_at).toBe(t2)
-    expect(pickRemote(pt({ deleted_at: t1 }), pt({ updated_at: t2 }))).toBeNull()
     expect(pickRemote(pt(), pt({ updated_at: t2, x: 5 }))?.x).toBe(5)
     expect(pickRemote(pt({ updated_at: t2 }), pt({ updated_at: t1, x: 5 }))).toBeNull()
     expect(pickRemote(pt(), pt({ x: 9 }))).toBeNull()
+    // a delete and an edit stamped at the same instant: the delete wins
+    expect(pickRemote(pt({ updated_at: t1 }), pt({ updated_at: t1, deleted_at: t1 }))?.deleted_at).toBe(t1)
+    // an older tombstone must not undo a restore, or Undo would only work until the next pull
+    expect(pickRemote(pt({ updated_at: t2 }), pt({ updated_at: t1, deleted_at: t1 }))).toBeNull()
+    // but a delete that happened after the local edit still applies
+    expect(pickRemote(pt({ updated_at: t1 }), pt({ updated_at: t2, deleted_at: t2 }))?.deleted_at).toBe(t2)
   })
 
   it('mergeRemote applies remote rows and records lastPullAt', () => {

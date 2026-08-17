@@ -7,7 +7,8 @@ import { auth, isCloudConfigured, store, sync, useAppState, useAuthUser, useSync
 import { pendingCount } from '../data/store'
 import { parseExportBundle, safeFilename, toExportBundle } from '../domain/export'
 import { checkForUpdate, reinstallApp } from '../data/appUpdate'
-import { cleanOpponent, opponentRowsWithRoster, type OpponentRow } from '../domain/session'
+import { cleanOpponent, opponentRowsWithRoster, sessionLabel, type OpponentRow } from '../domain/session'
+import { KIND_LABEL, MODE_LABEL } from '../domain/types'
 
 declare const __APP_VERSION__: string
 
@@ -214,6 +215,8 @@ export function SettingsPage() {
             )}
           </div>
         </section>
+
+        <DeletedSessions />
 
         <section className="card">
           <div className="section-title">Tips</div>
@@ -433,4 +436,55 @@ function describeStatus(phase: ReturnType<typeof useSyncStatus>['phase']): strin
     default:
       return 'Local only'
   }
+}
+
+/** How long a deleted session stays offered here, and how many are listed at once. */
+const RESTORE_WINDOW_DAYS = 30
+const RESTORE_LIMIT = 10
+
+/** Deleting a session is soft: this is where it comes back from, until the device is cleared. */
+function DeletedSessions() {
+  const state = useAppState()
+  const [msg, setMsg] = useState('')
+  const rows = useMemo(() => {
+    const cutoff = new Date(Date.now() - RESTORE_WINDOW_DAYS * 86_400_000).toISOString()
+    // only sessions with marks worth getting back — an empty one is quicker to start again
+    return store
+      .deletedSessions()
+      .filter((s) => s.deleted_at! > cutoff && Object.values(state.points).some((p) => p.session_id === s.id && p.deleted_at === s.deleted_at))
+      .slice(0, RESTORE_LIMIT)
+  }, [state])
+  if (rows.length === 0) return null
+  return (
+    <section className="card">
+      <div className="section-title">Recently deleted</div>
+      <ul className="stack">
+        {rows.map((s) => {
+          const marks = Object.values(state.points).filter((p) => p.session_id === s.id && p.deleted_at === s.deleted_at).length
+          return (
+            <li key={s.id} className="row" style={{ alignItems: 'center' }}>
+              <span className="grow">
+                <strong>{sessionLabel(s)}</strong>
+                <br />
+                <small className="muted">
+                  {MODE_LABEL[s.mode]} · {KIND_LABEL[s.kind]} · {formatDate(s.date)} · {marks} {marks === 1 ? 'mark' : 'marks'} · deleted {formatDate(s.deleted_at!.slice(0, 10))}
+                </small>
+              </span>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  const n = store.restoreSession(s.id)
+                  setMsg(`Restored ${sessionLabel(s)} with ${n} ${n === 1 ? 'mark' : 'marks'}.`)
+                }}
+              >
+                Restore
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+      {msg && <div className="notice info">{msg}</div>}
+    </section>
+  )
 }

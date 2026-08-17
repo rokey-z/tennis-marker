@@ -41,6 +41,10 @@ export interface Store {
   clearOpponent(name: string): number
   /** Soft-deletes the session and all its live points. */
   deleteSession(id: string): void
+  /** Brings a deleted session back, with the points that went down with it. Returns points restored. */
+  restoreSession(id: string): number
+  /** Sessions deleted at some point, newest deletion first — the source for an "undo that" list. */
+  deletedSessions(): Session[]
   addPoint(input: NewPoint): Point
   /** Correct a logged point (wrong stroke, wrong error, forced) without moving it. */
   updatePoint(id: string, patch: Partial<Pick<Point, 'stroke' | 'error_type' | 'forced' | 'outcome'>>): void
@@ -238,6 +242,35 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
       next = markDirty(next, 'sessions', [id])
       next = markDirty(next, 'points', dirtyP)
       set(next)
+    },
+    restoreSession(id) {
+      const s = state.sessions[id]
+      if (!s || !s.deleted_at) return 0
+      const deletedWith = s.deleted_at
+      const t = iso()
+      const points = { ...state.points }
+      const dirtyP: string[] = []
+      for (const p of Object.values(points)) {
+        // only the points that went down with the session — ones deleted by hand before it stay deleted
+        if (p.session_id === id && p.deleted_at === deletedWith) {
+          points[p.id] = { ...p, deleted_at: null, updated_at: t }
+          dirtyP.push(p.id)
+        }
+      }
+      let next: RepoState = {
+        ...state,
+        sessions: { ...state.sessions, [id]: { ...s, deleted_at: null, updated_at: t } },
+        points,
+      }
+      next = markDirty(next, 'sessions', [id])
+      next = markDirty(next, 'points', dirtyP)
+      set(next)
+      return dirtyP.length
+    },
+    deletedSessions() {
+      return Object.values(state.sessions)
+        .filter((s) => s.deleted_at)
+        .sort((a, b) => (a.deleted_at! < b.deleted_at! ? 1 : a.deleted_at! > b.deleted_at! ? -1 : 0))
     },
     addPoint(input) {
       const t = iso()
