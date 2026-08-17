@@ -28,8 +28,9 @@ const OFFSET = 16
 const EDGE = 6
 
 /**
- * Compact chooser anchored at the tap: two columns (BH / FH) × Long / Net / Wide, a Forced toggle,
- * and a ★ Winner button that logs the point on its own (an opponent winner has no stroke of hers).
+ * Compact chooser anchored at the tap, top to bottom: the unforced/forced toggle, two columns
+ * (BH / FH) × Long / Net / Wide, and a ★ Winner button that logs the point on its own (an opponent
+ * winner has no stroke of hers, so it needs nothing above it).
  * Placed below the tap when there is room, otherwise above; clamped inside the container.
  */
 export function ShotPopover({ anchor, containerRef, where, forced, onForcedChange, onPick, onWinner, strokeOnly = false, player, onCancel }: ShotPopoverProps) {
@@ -89,22 +90,28 @@ export function ShotPopover({ anchor, containerRef, where, forced, onForcedChang
           <CloseIcon />
         </button>
         {!strokeOnly && (
-          <div className="pop-toggles">
+          // one control, two states — the segment that is filled is the one you are recording
+          <div className="seg-toggle" role="group" aria-label="Forced or unforced">
+            <button type="button" className={forced ? '' : 'on'} aria-pressed={!forced} onClick={() => onForcedChange(false)}>
+              Unforced
+            </button>
             <button
               type="button"
-              className={`forced-toggle${forced ? ' on' : ''}`}
+              className={forced ? 'on' : ''}
               aria-pressed={forced}
-              onClick={() => onForcedChange(!forced)}
+              onClick={() => onForcedChange(true)}
               title={`${capitalise(player.subject)} was forced into this error`}
             >
               Forced
             </button>
-            <button type="button" className="winner-toggle" onClick={onWinner} title={`The opponent hit a winner past ${player.subject === 'she' ? 'her' : player.subject} — logs it right away`}>
-              ★ Winner
-            </button>
           </div>
         )}
         <ShotGrid forced={forced} strokeOnly={strokeOnly} onPick={onPick} />
+        {!strokeOnly && (
+          <button type="button" className="winner-toggle block" onClick={onWinner} title={`The opponent hit a winner past ${player.subject === 'she' ? 'her' : player.subject} — logs it right away`}>
+            ★ Winner
+          </button>
+        )}
       </div>
     </>
   )

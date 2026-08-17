@@ -199,7 +199,7 @@ export function RecordPage() {
               {flipped ? ' · far end' : ''}
               {!session.opponent && session.kind === 'match' ? ' · add opponent' : ''}
             </span>
-            <SyncBadge compact />
+            <SyncBadge compact interactive={false} />
           </span>
         </button>
         <button

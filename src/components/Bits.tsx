@@ -18,7 +18,7 @@ export function Chip({ on, cls, onClick, children }: { on: boolean; cls?: string
 }
 
 // ---------- sync badge ----------
-export function SyncBadge({ compact = false }: { compact?: boolean }) {
+export function SyncBadge({ compact = false, interactive = true }: { compact?: boolean; interactive?: boolean }) {
   const s = useSyncStatus()
   const nav = useNavigate()
   let cls = ''
@@ -49,11 +49,24 @@ export function SyncBadge({ compact = false }: { compact?: boolean }) {
       text = s.pending ? 'Unsynced' : 'Synced'
   }
   const pending = s.pending && s.phase !== 'local' && s.phase !== 'syncing' ? ` · ${s.pending}` : ''
-  return (
-    <button type="button" className={`badge ${cls}`} onClick={() => nav('/settings')} title={s.error ?? text}>
+  const body = (
+    <>
       <span className="dot" />
       {text}
       {pending}
+    </>
+  )
+  // inside another button (the session header) it is a status, not a way out to Settings
+  if (!interactive) {
+    return (
+      <span className={`badge ${cls}`} title={s.error ?? text}>
+        {body}
+      </span>
+    )
+  }
+  return (
+    <button type="button" className={`badge ${cls}`} onClick={() => nav('/settings')} title={s.error ?? text}>
+      {body}
     </button>
   )
 }
