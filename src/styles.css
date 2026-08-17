@@ -454,16 +454,36 @@ textarea.input {
 .s-mode {
   flex: 0 0 auto;
   display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 52px;
+  color: var(--text);
+}
+.s-mode-chip {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 38px;
   height: 38px;
   border-radius: 11px;
   background: var(--surface-2);
-  color: var(--text);
+}
+.s-mode small {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  line-height: 1;
 }
 .s-mode.placement {
+  color: var(--bh-text);
+}
+.s-mode.placement .s-mode-chip {
   background: var(--bh-soft);
+}
+.s-mode.placement small {
   color: var(--bh-text);
 }
 .s-mode svg {

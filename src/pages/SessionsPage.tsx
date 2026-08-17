@@ -48,13 +48,14 @@ export function SessionsPage() {
             {rows.map(({ session, count, fh, bh }) => (
               <li key={session.id}>
                 <Link to={`/session/${session.id}`} className="session-card">
-                  <span className={`s-mode ${session.mode}`} title={`${MODE_LABEL[session.mode]} session`} aria-hidden="true">
-                    {session.mode === 'placement' ? <PlacementModeIcon /> : <ErrorsModeIcon />}
+                  <span className={`s-mode ${session.mode}`}>
+                    <span className="s-mode-chip" aria-hidden="true">{session.mode === 'placement' ? <PlacementModeIcon /> : <ErrorsModeIcon />}</span>
+                    <small>{MODE_LABEL[session.mode]}</small>
                   </span>
                   <div className="grow">
                     <div className="title">{sessionLabel(session)}</div>
                     <div className="sub">
-                      {MODE_LABEL[session.mode]} · {KIND_LABEL[session.kind]} · {formatDate(session.date)}
+                      {KIND_LABEL[session.kind]} · {formatDate(session.date)}
                       {session.venue ? ` · ${session.venue}` : ''}
                       {session.notes ? ` · ${session.notes.slice(0, 40)}${session.notes.length > 40 ? '…' : ''}` : ''}
                     </div>
