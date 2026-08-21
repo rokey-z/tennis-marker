@@ -5,7 +5,7 @@ import { useIsDesktop, usePlayer } from '../components/hooks'
 import { shortDate } from '../lib/format'
 import { Court, type CourtRotation } from '../components/Court'
 import { StatsFilters, StatsPanel, type StatsFilterState } from '../components/StatsPanel'
-import { BackIcon, ChartIcon, FlipIcon, ListIcon, PencilIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
+import { BackIcon, ChartIcon, ListIcon, PencilIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
 import { ShotPopover } from '../components/ShotPopover'
 import { store, useAppState } from '../data/app'
 import { livePointsForSession } from '../data/store'
@@ -22,7 +22,6 @@ import { downloadText } from '../lib/format'
 import { ERROR_LABEL, KIND_LABEL, MODE_HINT, MODE_LABEL, SESSION_MODES, STROKE_SHORT, type ErrorType, type Outcome, type PlacementStroke, type Point, type Session, type Stroke } from '../domain/types'
 
 const LOG_KEY = 'tennis-marker.logOpen'
-const FLIP_KEY = 'tennis-marker.flip'
 const ROTATE_90_KEY = 'tennis-marker.rotate90'
 const AFTER_SAVE_IGNORE_MS = 300
 const DEFAULT_STATS_FILTERS: StatsFilterState = { stroke: 'all', error: 'all', forced: 'all' }
@@ -51,7 +50,6 @@ export function RecordPage() {
   /** marks of the other kind, recorded before the session's mode was switched — hidden here, not lost */
   const otherMode = allPoints.length - points.length
 
-  const [flipped, setFlipped] = useState(() => localStorage.getItem(FLIP_KEY) === '1')
   const [rotation, setRotation] = useState<CourtRotation>(() => {
     const saved = Number(localStorage.getItem(ROTATE_90_KEY))
     // Versions before multi-turn rotation stored "1" for a single 90° turn.
@@ -72,9 +70,6 @@ export function RecordPage() {
   const [openPoint, setOpenPoint] = useState<{ id: string; index: number } | null>(null)
   const ignoreUntil = useRef(0)
 
-  useEffect(() => {
-    localStorage.setItem(FLIP_KEY, flipped ? '1' : '0')
-  }, [flipped])
   useEffect(() => {
     localStorage.setItem(ROTATE_90_KEY, String(rotation))
   }, [rotation])
@@ -219,21 +214,10 @@ export function RecordPage() {
             <span className="tb-line">
               {MODE_LABEL[session.mode]} · {KIND_LABEL[session.kind]} · {shortDate(session.date)}
               {session.venue ? ` · ${session.venue}` : ''}
-              {flipped ? ' · far end' : ''}
               {!session.opponent && session.kind === 'match' ? ' · add opponent' : ''}
             </span>
             <SyncBadge compact interactive={false} />
           </span>
-        </button>
-        <button
-          type="button"
-          className={`flip-fab${flipped ? ' on' : ''}`}
-          onClick={() => setFlipped((f) => !f)}
-          aria-pressed={flipped}
-          aria-label={flipped ? `${capitalise(player.subject)} is at the far end — tap to flip back` : `Flip ends (${player.subject} is at the far end)`}
-          title={flipped ? 'Far end — tap to flip back' : `Flip ends (${player.subject} is at the far end)`}
-        >
-          <FlipIcon />
         </button>
         <button
           type="button"
@@ -252,7 +236,6 @@ export function RecordPage() {
         <div className="court-box" ref={courtRef}>
           {statsMode ? (
             <Court
-              flipped={flipped}
               rotation={rotation}
               points={shownPoints}
               half={placementMode ? 'opposite' : 'own'}
@@ -263,7 +246,6 @@ export function RecordPage() {
             />
           ) : (
             <Court
-              flipped={flipped}
               rotation={rotation}
               onTap={onTap}
               onStrokeDrag={placementMode ? onStrokeDrag : undefined}

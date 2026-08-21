@@ -20,14 +20,6 @@ export const CloseIcon = () => (
     <path d="M18 6L6 18M6 6l12 12" />
   </svg>
 )
-export const FlipIcon = () => (
-  <svg {...base}>
-    <path d="M17 1l4 4-4 4" />
-    <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-    <path d="M7 23l-4-4 4-4" />
-    <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-  </svg>
-)
 /** Turn a view clockwise by one quarter turn. */
 export const Rotate90Icon = () => (
   <svg {...base}>

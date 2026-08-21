@@ -53,13 +53,12 @@ export type CourtRotation = 0 | 90 | 180 | 270
  * Text drawn inside the court group inherits the half's flip, which turns it upside down or
  * mirrored. This cancels it about the text's own anchor, so the words read normally where they are.
  * This cancels every view transform around a text's own anchor, so labels and mark letters
- * remain readable even while the court is flipped, rotated, or showing its far half.
+ * remain readable even while the court is rotated or showing its far half.
  */
-function uprightAt(x: number, y: number, flipped: boolean, verticallyMirrored: boolean, rotation: CourtRotation): string | undefined {
+function uprightAt(x: number, y: number, verticallyMirrored: boolean, rotation: CourtRotation): string | undefined {
   const transforms = [
     rotation ? `rotate(${-rotation} ${x} ${y})` : '',
     verticallyMirrored ? `translate(0 ${2 * y}) scale(1 -1)` : '',
-    flipped ? `rotate(180 ${x} ${y})` : '',
   ].filter(Boolean)
   return transforms.join(' ') || undefined
 }
@@ -77,8 +76,6 @@ interface DragState {
 }
 
 export interface CourtProps {
-  /** Rotate 180° so the parent taps what they see when she plays the far end. */
-  flipped?: boolean
   /** Rotate the court clockwise by a quarter-turn increment. */
   rotation?: CourtRotation
   /** Receives coordinates in feet, in the player's frame (already clamped to the court area), plus where on screen the tap landed. */
@@ -102,7 +99,7 @@ export interface CourtProps {
   className?: string
 }
 
-export function Court({ flipped = false, rotation = 0, onTap, disabled = false, points, emphasizeLast = false, half = 'own', sideLabel, onStrokeDrag, pending, showZones = false, heat, heatTotal = 0, className }: CourtProps) {
+export function Court({ rotation = 0, onTap, disabled = false, points, emphasizeLast = false, half = 'own', sideLabel, onStrokeDrag, pending, showZones = false, heat, heatTotal = 0, className }: CourtProps) {
   const gRef = useRef<SVGGElement>(null)
   const down = useRef<{ id: number; x: number; y: number; t: number } | null>(null)
   // the ref is authoritative (pointer events can arrive faster than React re-renders); state drives the drawing
@@ -187,9 +184,8 @@ export function Court({ flipped = false, rotation = 0, onTap, disabled = false, 
 
   // the far half is the same drawing mirrored about the net, so the net stays nearest the player
   const mirror = half === 'opposite' ? `translate(0 ${2 * PIVOT.y}) scale(1 -1)` : ''
-  const rotate = flipped ? `rotate(180 ${PIVOT.x} ${PIVOT.y})` : ''
   const rotationTransform = rotation ? `rotate(${rotation} ${PIVOT.x} ${PIVOT.y})` : ''
-  const flipTransform = [rotate, mirror, rotationTransform].filter(Boolean).join(' ') || undefined
+  const viewTransform = [mirror, rotationTransform].filter(Boolean).join(' ') || undefined
   const quarterTurned = rotation === 90 || rotation === 270
   const pendingZone = pending ? zoneId(zoneFor(pending.x, pending.y)) : null
 
@@ -220,14 +216,14 @@ export function Court({ flipped = false, rotation = 0, onTap, disabled = false, 
       style={onStrokeDrag ? { touchAction: 'none' } : undefined}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <g ref={gRef} transform={flipTransform}>
+      <g ref={gRef} transform={viewTransform}>
         {/* surround + court */}
         <rect x={DRAW_MIN_X} y={VB_MIN_Y} width={DRAW_WIDTH} height={VB_HEIGHT} fill="var(--surround)" />
         <rect x={-COURT.doublesHalfWidth} y={0} width={2 * COURT.doublesHalfWidth} height={COURT.halfLength} fill="var(--court)" />
 
         {/* whose half this is — dimmed, behind every mark, and always upright */}
         {sideLabel && (
-          <g transform={uprightAt(0, VB_MIN_Y + 4.6, flipped, half === 'opposite', rotation)} pointerEvents="none">
+          <g transform={uprightAt(0, VB_MIN_Y + 4.6, half === 'opposite', rotation)} pointerEvents="none">
             <text
               x={0}
               y={VB_MIN_Y + 4.6}
@@ -261,13 +257,13 @@ export function Court({ flipped = false, rotation = 0, onTap, disabled = false, 
               ['MID', 27.5],
               ['DEEP', 36.8],
             ].map(([label, y]) => (
-              <g key={label} transform={uprightAt(0, y as number, flipped, true, rotation)}>
+              <g key={label} transform={uprightAt(0, y as number, true, rotation)}>
                 <text x={0} y={y as number} fontSize={1.35} fontWeight={800} textAnchor="middle" fill="#ffffff" opacity={0.28} fontFamily="var(--font)" letterSpacing={0.2}>{label}</text>
               </g>
             ))}
-            <g transform={uprightAt(-19.8, 19.5, flipped, true, rotation)}><text x={-19.8} y={19.5} fontSize={1.15} fontWeight={800} textAnchor="middle" fill="#704018" opacity={0.5} fontFamily="var(--font)" transform="rotate(-90 -19.8 19.5)">WIDE</text></g>
-            <g transform={uprightAt(19.8, 19.5, flipped, true, rotation)}><text x={19.8} y={19.5} fontSize={1.15} fontWeight={800} textAnchor="middle" fill="#704018" opacity={0.5} fontFamily="var(--font)" transform="rotate(90 19.8 19.5)">WIDE</text></g>
-            <g transform={uprightAt(0, 45, flipped, true, rotation)}><text x={0} y={45} fontSize={1.35} fontWeight={800} textAnchor="middle" fill="#704018" opacity={0.52} fontFamily="var(--font)" letterSpacing={0.18}>LONG</text></g>
+            <g transform={uprightAt(-19.8, 19.5, true, rotation)}><text x={-19.8} y={19.5} fontSize={1.15} fontWeight={800} textAnchor="middle" fill="#704018" opacity={0.5} fontFamily="var(--font)" transform="rotate(-90 -19.8 19.5)">WIDE</text></g>
+            <g transform={uprightAt(19.8, 19.5, true, rotation)}><text x={19.8} y={19.5} fontSize={1.15} fontWeight={800} textAnchor="middle" fill="#704018" opacity={0.5} fontFamily="var(--font)" transform="rotate(90 19.8 19.5)">WIDE</text></g>
+            <g transform={uprightAt(0, 45, true, rotation)}><text x={0} y={45} fontSize={1.35} fontWeight={800} textAnchor="middle" fill="#704018" opacity={0.52} fontFamily="var(--font)" letterSpacing={0.18}>LONG</text></g>
           </g>
         )}
 
@@ -305,7 +301,7 @@ export function Court({ flipped = false, rotation = 0, onTap, disabled = false, 
             />
             <circle cx={drag.start.x} cy={drag.start.y} r={1.5} fill="none" stroke="#ffffff" strokeWidth={0.4} />
             {Math.max(Math.abs(drag.dx), Math.abs(drag.dy)) >= STROKE_DRAG_PX && (
-              <g transform={uprightAt(drag.cur.x, drag.cur.y, flipped, half === 'opposite', rotation)}>
+              <g transform={uprightAt(drag.cur.x, drag.cur.y, half === 'opposite', rotation)}>
                 <circle cx={drag.cur.x} cy={drag.cur.y} r={2.4} fill={`var(--${drag.dy < -STROKE_DRAG_PX && Math.abs(drag.dy) > Math.abs(drag.dx) ? 'serve' : drag.dx < 0 ? 'bh' : 'fh'})`} />
                 <text
                   x={drag.cur.x}
@@ -359,7 +355,7 @@ export function Court({ flipped = false, rotation = 0, onTap, disabled = false, 
               </pattern>
             </defs>
             <rect x={-COURT.netPostX} y={-NET_BAND} width={2 * COURT.netPostX} height={NET_BAND} fill="url(#net-error-mesh)" />
-            <g transform={uprightAt(0, -NET_BAND / 2, flipped, true, rotation)}>
+            <g transform={uprightAt(0, -NET_BAND / 2, true, rotation)}>
               <text x={0} y={-0.9} fontSize={0.9} fontWeight={800} textAnchor="middle" fill="#55300e" fontFamily="var(--font)" letterSpacing={0.16}>
                 NET
               </text>
@@ -367,7 +363,7 @@ export function Court({ flipped = false, rotation = 0, onTap, disabled = false, 
           </g>
         )}
 
-        {/* heat labels — counter-rotated when flipped so they stay readable */}
+        {/* heat labels stay upright in every rotated view */}
         {heatCells && (
           <g fontFamily="var(--font)" fontWeight={800} textAnchor="middle" pointerEvents="none">
             {heatCells.map((c) => {
@@ -375,7 +371,7 @@ export function Court({ flipped = false, rotation = 0, onTap, disabled = false, 
               const cy = c.r.y + c.r.height / 2
               const pctLabel = heatTotal > 0 && c.n > 0 ? `${Math.round((c.n / heatTotal) * 100)}%` : ''
               return (
-                <g key={c.id} transform={uprightAt(cx, cy, flipped, half === 'opposite', rotation)}>
+                <g key={c.id} transform={uprightAt(cx, cy, half === 'opposite', rotation)}>
                   <text x={cx} y={cy + 0.6} fontSize={3.4} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.7)'}>
                     {c.n}
                   </text>
@@ -394,7 +390,7 @@ export function Court({ flipped = false, rotation = 0, onTap, disabled = false, 
         {points && points.length > 0 && (
           <g pointerEvents="none">
             {points.map((p) => (
-              <Marker key={p.id} p={p} flipped={flipped} rotation={rotation} dim={newestId !== null && p.id !== newestId} />
+              <Marker key={p.id} p={p} rotation={rotation} dim={newestId !== null && p.id !== newestId} />
             ))}
           </g>
         )}
@@ -432,7 +428,7 @@ function clampRect(r: { x: number; y: number; width: number; height: number }) {
   return { x, y, width: Math.min(DRAW_MAX_X, r.x + r.width) - x, height: Math.min(DRAW_MAX_Y, r.y + r.height) - y }
 }
 
-function Marker({ p: pt, flipped, rotation, dim = false }: { p: Point; flipped: boolean; rotation: CourtRotation; dim?: boolean }) {
+function Marker({ p: pt, rotation, dim = false }: { p: Point; rotation: CourtRotation; dim?: boolean }) {
   const p = { ...pt, x: drawX(pt.x), y: drawY(pt.y) }
   const stroke = isPlacementStroke(p.stroke) ? p.stroke : 'fh'
   const error = isErrorType(p.error_type) ? p.error_type : 'long'
@@ -445,7 +441,7 @@ function Marker({ p: pt, flipped, rotation, dim = false }: { p: Point; flipped: 
   const out = p.outcome === 'placement' && p.stroke !== 'serve' && isOut(pt.x, pt.y)
   const a = r * 0.9
   return (
-    <g transform={uprightAt(p.x, p.y, flipped, false, rotation)} opacity={dim ? 0.78 : 1}>
+    <g transform={uprightAt(p.x, p.y, false, rotation)} opacity={dim ? 0.78 : 1}>
       <title>{markLabel(p.outcome === 'winner' ? '' : stroke, error, p.forced, p.outcome, out, p.placement_result)}</title>
       {/* colour carries her stroke; a dark outline marks a forced error. A winner is the opponent's
           shot, so it is a green diamond with no stroke colour at all. */}
