@@ -19,8 +19,8 @@ as a home-screen app, records offline.
 3. **Undo** removes the last point; the **Log** panel at the bottom lists every point (newest first)
    and lets you delete any of them.
 4. **Near end / Far end** flips the court 180° so you can tap what you physically see when she's on
-   the far side. The adjacent **Rotate 90°** control turns the court into landscape when that
-   better matches your viewing angle. Data is always stored from *her* point of view (net at top,
+   the far side. Each press of the adjacent **Rotate 90°** control turns the court another quarter
+   turn, including landscape views. Data is always stored from *her* point of view (net at top,
    deuce side right).
 5. **Placement mode** (the switch above the court) records where her ball *landed* instead of where
    she lost the point: it shows the **far half** of the court, and one motion logs a shot — press

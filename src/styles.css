@@ -733,7 +733,7 @@ textarea.input {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
-.court-svg.rotated {
+.court-svg.quarter-turned {
   aspect-ratio: 49.5 / 42;
 }
 /* phones: edge to edge — the court is always full width; the log below takes what's left */
@@ -786,14 +786,14 @@ textarea.input {
   .record.stats .court-box .court-svg {
     width: min(100%, calc(100cqh * 42 / 49.5));
   }
-  .record.stats .court-box .court-svg.rotated {
+  .record.stats .court-box .court-svg.quarter-turned {
     width: min(100%, calc(100cqh * 49.5 / 42));
   }
   @media (min-width: 900px) {
     .court-box .court-svg {
       width: min(100%, calc(100cqh * 42 / 49.5));
     }
-    .court-box .court-svg.rotated {
+    .court-box .court-svg.quarter-turned {
       width: min(100%, calc(100cqh * 49.5 / 42));
     }
   }

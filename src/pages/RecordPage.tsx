@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { Modal, PointList, SyncBadge, Tally, Toast, type ToastState } from '../components/Bits'
 import { useIsDesktop, usePlayer } from '../components/hooks'
 import { shortDate } from '../lib/format'
-import { Court } from '../components/Court'
+import { Court, type CourtRotation } from '../components/Court'
 import { StatsFilters, StatsPanel, type StatsFilterState } from '../components/StatsPanel'
 import { BackIcon, ChartIcon, FlipIcon, ListIcon, PencilIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
 import { ShotPopover } from '../components/ShotPopover'
@@ -52,7 +52,11 @@ export function RecordPage() {
   const otherMode = allPoints.length - points.length
 
   const [flipped, setFlipped] = useState(() => localStorage.getItem(FLIP_KEY) === '1')
-  const [rotated, setRotated] = useState(() => localStorage.getItem(ROTATE_90_KEY) === '1')
+  const [rotation, setRotation] = useState<CourtRotation>(() => {
+    const saved = Number(localStorage.getItem(ROTATE_90_KEY))
+    // Versions before multi-turn rotation stored "1" for a single 90° turn.
+    return saved === 1 ? 90 : [0, 90, 180, 270].includes(saved) ? saved as CourtRotation : 0
+  })
   const [pending, setPending] = useState<{ x: number; y: number; at: { clientX: number; clientY: number }; surface: 'court' | 'net' } | null>(null)
   const courtRef = useRef<HTMLDivElement>(null)
   const [forced, setForced] = useState(false)
@@ -72,8 +76,8 @@ export function RecordPage() {
     localStorage.setItem(FLIP_KEY, flipped ? '1' : '0')
   }, [flipped])
   useEffect(() => {
-    localStorage.setItem(ROTATE_90_KEY, rotated ? '1' : '0')
-  }, [rotated])
+    localStorage.setItem(ROTATE_90_KEY, String(rotation))
+  }, [rotation])
   useEffect(() => {
     localStorage.setItem(LOG_KEY, logOpen ? '1' : '0')
   }, [logOpen])
@@ -233,11 +237,11 @@ export function RecordPage() {
         </button>
         <button
           type="button"
-          className={`flip-fab${rotated ? ' on' : ''}`}
-          onClick={() => setRotated((value) => !value)}
-          aria-pressed={rotated}
-          aria-label={rotated ? 'Court rotated 90 degrees — tap to restore' : 'Rotate court 90 degrees'}
-          title={rotated ? 'Rotated 90° — tap to restore' : 'Rotate court 90°'}
+          className={`flip-fab${rotation ? ' on' : ''}`}
+          onClick={() => setRotation((value) => ((value + 90) % 360) as CourtRotation)}
+          aria-pressed={rotation !== 0}
+          aria-label={`Rotate court 90 degrees clockwise (currently ${rotation} degrees)`}
+          title={`Rotate 90° clockwise (currently ${rotation}°)`}
         >
           <Rotate90Icon />
         </button>
@@ -249,7 +253,7 @@ export function RecordPage() {
           {statsMode ? (
             <Court
               flipped={flipped}
-              rotated={rotated}
+              rotation={rotation}
               points={shownPoints}
               half={placementMode ? 'opposite' : 'own'}
               sideLabel={sideLabel}
@@ -260,7 +264,7 @@ export function RecordPage() {
           ) : (
             <Court
               flipped={flipped}
-              rotated={rotated}
+              rotation={rotation}
               onTap={onTap}
               onStrokeDrag={placementMode ? onStrokeDrag : undefined}
               half={placementMode ? 'opposite' : 'own'}
