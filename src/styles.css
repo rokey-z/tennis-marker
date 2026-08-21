@@ -11,17 +11,19 @@
   --danger: #d64545;
   --ok: #1f9d55;
   --warn: #e0a100;
-  /* Identity: colour = stroke — forehand teal, backhand blue: two cool tones that still separate
+  /* Identity: colour = stroke — forehand green, backhand blue: two cool tones that still separate
      well for colour-blind readers (CVD ΔE 23.6, floor 8) and differ in lightness (2.3:1) so they
      stay apart on the blue court; both carry white text. */
-  --fh: #ae0f08;
-  --fh-soft: #fbe6e4;
+  --fh: #16803c;
+  --fh-soft: #e0f3e7;
   --fh-ink: #ffffff;
-  --fh-text: #9c0d07;
+  --fh-text: #126c32;
   --bh: #1e40af;
   --bh-soft: #e5eafb;
   --bh-ink: #ffffff;
   --bh-text: #1b3a9c;
+  --serve: #8b5cf6;
+  --serve-ink: #ffffff;
   /* forced errors carry a dark outline; unforced carry none */
   --mark-outline: #14181d;
   /* winners are the opponent's shot: one neutral green, never a stroke colour */
@@ -495,7 +497,7 @@ textarea.input {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  width: 52px;
+  width: 72px;
   color: var(--text);
 }
 .s-mode-chip {
@@ -514,6 +516,7 @@ textarea.input {
   text-transform: uppercase;
   color: var(--muted);
   line-height: 1;
+  text-align: center;
 }
 .s-mode.placement {
   color: var(--bh-text);
@@ -542,6 +545,16 @@ textarea.input {
   font-size: 13px;
   color: var(--muted);
   margin-top: 2px;
+}
+.session-focus {
+  margin-top: 6px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
+.session-focus.ready {
+  color: var(--muted);
+  font-weight: 600;
 }
 .session-card .count {
   font-size: 22px;
@@ -1160,6 +1173,10 @@ textarea.input {
 .pill.bh {
   background: var(--bh);
   color: var(--bh-ink);
+}
+.pill.serve {
+  background: var(--serve);
+  color: var(--serve-ink);
 }
 .pill.forced {
   background: transparent;
@@ -1931,6 +1948,7 @@ span
   background: var(--bh);
   color: var(--bh-ink);
 }
+.tag.serve { background: var(--serve); color: var(--serve-ink); }
 .letter {
   display: inline-flex;
   align-items: center;
@@ -1965,6 +1983,7 @@ span
 .mark.bh .mark-sign {
   color: var(--bh-text);
 }
+.mark.serve .mark-sign { color: var(--serve); }
 .mark.winner .mark-sign {
   color: var(--win);
 }
@@ -1991,6 +2010,7 @@ span
   background: var(--bh);
   color: var(--bh-ink);
 }
+.dot.serve { background: var(--serve); color: var(--serve-ink); }
 .dot.forced {
   box-shadow: inset 0 0 0 2px var(--mark-outline);
 }

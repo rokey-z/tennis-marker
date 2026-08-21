@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { useSyncStatus } from '../data/app'
 import { describeMark, isOut } from '../domain/court'
-import { ERROR_LABEL, ERROR_TYPES, STROKE_LABEL, STROKES, type Point } from '../domain/types'
+import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, STROKE_LABEL, STROKES, type Point } from '../domain/types'
 import type { Summary } from '../domain/stats'
 import { CloseIcon, TrashIcon } from './Icons'
 import { ErrorLetter, MarkChip, StrokeTag } from './marks'
@@ -81,7 +81,7 @@ export function Tally({ s, mode = 'errors' }: { s: Summary; mode?: 'errors' | 'p
           {s.placements} {s.placements === 1 ? 'ball placed' : 'balls placed'}
         </span>
         <span className="sep" />
-        {STROKES.map((k) => (
+        {PLACEMENT_STROKES.map((k) => (
           <span key={k} className="t-item" title={`${STROKE_LABEL[k]}: ${s.placementsByStroke[k]}`}>
             <StrokeTag stroke={k} />
             {s.placementsByStroke[k]}
@@ -97,6 +97,12 @@ export function Tally({ s, mode = 'errors' }: { s: Summary; mode?: 'errors' | 'p
               {s.placementsOut}
             </span>
           </>
+        )}
+        {s.byError.net > 0 && (
+          <span className="t-item" title={`Net errors: ${s.byError.net}`}>
+            <ErrorLetter type="net" />
+            {s.byError.net}
+          </span>
         )}
       </div>
     )
@@ -158,7 +164,7 @@ export function PointList({ points, onOpen, onDelete }: { points: Point[]; onOpe
             <button type="button" className="row-open" onClick={() => onOpen(p, index)}>
               <span className="n">{index}</span>
               <span className="desc">
-                <MarkChip stroke={p.stroke} error={p.error_type} forced={p.forced} outcome={p.outcome} out={(p.outcome ?? 'error') === 'placement' && isOut(p.x, p.y)} />
+                  <MarkChip stroke={p.stroke} error={p.error_type} forced={p.forced} outcome={p.outcome} out={(p.outcome ?? 'error') === 'placement' && p.stroke !== 'serve' && isOut(p.x, p.y)} placementResult={p.placement_result} />
                 <small>
                   {describeMark(p.x, p.y, p.outcome ?? 'error')} · {formatTime(p.created_at)}
                 </small>

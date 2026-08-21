@@ -256,7 +256,7 @@ export function SequenceStrip({ items, gapThresholdMin = 5, onSelect }: { items:
         const gap = it.gapMin !== null && it.gapMin >= gapThresholdMin ? it.gapMin : null
         const stroke = isStroke(p.stroke) ? p.stroke : 'fh'
         const error = isErrorType(p.error_type) ? p.error_type : 'long'
-        const title = `#${i + 1} · ${markLabel(stroke, error, p.forced, p.outcome)} · ${describeMark(p.x, p.y, p.outcome ?? 'error')} · ${formatTime(p.created_at)}`
+        const title = `#${i + 1} · ${markLabel(stroke, error, p.forced, p.outcome, false, p.placement_result)} · ${describeMark(p.x, p.y, p.outcome ?? 'error')} · ${formatTime(p.created_at)}`
         const dot = <MarkDot stroke={stroke} error={error} forced={p.forced} size={24} title={title} />
         return (
           <span key={p.id} className="seq-item" role="listitem">

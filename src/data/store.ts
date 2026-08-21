@@ -283,6 +283,7 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
         stroke: input.outcome === 'winner' ? '' : input.stroke,
         error_type: input.outcome === 'winner' ? '' : input.error_type,
         outcome: input.outcome ?? 'error',
+        placement_result: input.outcome === 'placement' ? (input.placement_result ?? 'unknown') : null,
         forced: input.outcome === 'winner' ? false : !!input.forced,
         created_at: t,
         updated_at: t,

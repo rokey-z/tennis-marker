@@ -1,5 +1,5 @@
 import { pct, type Filters, type Summary } from '../domain/stats'
-import { ERROR_LABEL, ERROR_TYPES, STROKE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type Stroke } from '../domain/types'
+import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, STROKE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type PlacementResult, type Stroke } from '../domain/types'
 import { Chip } from './Bits'
 import { DownloadIcon } from './Icons'
 
@@ -73,9 +73,26 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
   )
   // a placement scope counts balls and where they landed: none of the error breakdowns apply
   if (mode === 'placement') {
-    const inCourt = summary.placements - summary.placementsOut
+    const resultTotal = (result: 'in' | 'net' | 'wide' | 'long') => PLACEMENT_STROKES.reduce((n, stroke) => n + summary.placementMatrix[stroke][result], 0)
+    const inCourt = resultTotal('in')
+    const net = resultTotal('net')
+    const wideLong = resultTotal('wide') + resultTotal('long')
+    const scoredLandings = inCourt + net + wideLong
+    const resultLabels: Record<PlacementResult, string> = { in: 'In', net: 'Net', wide: 'Wide', long: 'Long', unknown: 'Unrated' }
+    const misses: { stroke: typeof PLACEMENT_STROKES[number]; result: Exclude<PlacementResult, 'in' | 'unknown'>; count: number }[] = []
+    for (const stroke of PLACEMENT_STROKES) {
+      for (const result of ['net', 'wide', 'long'] as const) misses.push({ stroke, result, count: summary.placementMatrix[stroke][result] })
+    }
+    const focus = misses.sort((a, b) => b.count - a.count)[0]
     return (
       <div className="stack stats-panel">
+        {focus?.count > 0 && (
+          <div className="card insight-card">
+            <div className="section-title">Next focus</div>
+            <strong>{STROKE_LABEL[focus.stroke]} {resultLabels[focus.result]}</strong>
+            <span>{focus.count} {focus.count === 1 ? 'mark' : 'marks'} in this session</span>
+          </div>
+        )}
         <div className="tiles">
           <div className="tile">
             <div className="label">Balls placed</div>
@@ -85,14 +102,14 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
             <div className="label">In</div>
             <div className="value">
               {inCourt}
-              <small>{pct(inCourt, summary.placements)}%</small>
+              <small>{pct(inCourt, scoredLandings)}%</small>
             </div>
           </div>
           <div className="tile">
-            <div className="label">Out</div>
+            <div className="label">Wide + long</div>
             <div className="value">
-              {summary.placementsOut}
-              <small>{pct(summary.placementsOut, summary.placements)}%</small>
+              {wideLong}
+              <small>{pct(wideLong, scoredLandings)}%</small>
             </div>
           </div>
           <div className="tile">
@@ -102,13 +119,44 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
               <small>{pct(summary.placementsByStroke.fh, summary.placements)}%</small>
             </div>
           </div>
+          <div className="tile">
+            <div className="label">Serve</div>
+            <div className="value">
+              {summary.placementsByStroke.serve}
+              <small>{pct(summary.placementsByStroke.serve, summary.placements)}%</small>
+            </div>
+          </div>
+        </div>
+        <div className="card">
+          <div className="section-title">Stroke × result</div>
+          <table className="matrix">
+            <thead><tr><th /><th>In</th><th>Net</th><th>Wide</th><th>Long</th><th>Total</th></tr></thead>
+            <tbody>
+              {PLACEMENT_STROKES.map((stroke) => (
+                <tr key={stroke}>
+                  <td><span className={`pill ${stroke}`}>{STROKE_SHORT[stroke]}</span> {STROKE_LABEL[stroke]}</td>
+                  {(['in', 'net', 'wide', 'long'] as const).map((result) => <td className="big" key={result}>{summary.placementMatrix[stroke][result]}</td>)}
+                  <td className="big">{summary.placementsByStroke[stroke]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {summary.serveLandings > 0 && <p className="kbd-hint">Serve landings are shown as recorded; they are not rated in or out.</p>}
         </div>
         {exportRow}
       </div>
     )
   }
+  const errorFocus = STROKES.flatMap((stroke) => ERROR_TYPES.map((error) => ({ stroke, error, count: summary.matrix[stroke][error] }))).sort((a, b) => b.count - a.count)[0]
   return (
     <div className="stack stats-panel">
+      {errorFocus?.count > 0 && (
+        <div className="card insight-card">
+          <div className="section-title">Next focus</div>
+          <strong>{STROKE_LABEL[errorFocus.stroke]} {ERROR_LABEL[errorFocus.error]}</strong>
+          <span>{errorFocus.count} {errorFocus.count === 1 ? 'error' : 'errors'} in this session</span>
+        </div>
+      )}
       <div className="tiles">
         <div className="tile">
           <div className="label">Points lost</div>

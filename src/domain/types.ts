@@ -1,4 +1,7 @@
 export type Stroke = 'fh' | 'bh'
+/** A serve is only recorded as a landing in Placement mode, never as an error stroke. */
+export type PlacementStroke = Stroke | 'serve'
+export type PlacementResult = 'in' | 'net' | 'wide' | 'long' | 'unknown'
 export type ErrorType = 'long' | 'net' | 'wide'
 export type SessionKind = 'match' | 'practice'
 /** What a session records: her errors on her own half, or where her balls landed on the far half. */
@@ -11,11 +14,12 @@ export type SessionMode = 'errors' | 'placement'
 export type Outcome = 'error' | 'winner' | 'placement'
 
 export const STROKES: Stroke[] = ['fh', 'bh']
+export const PLACEMENT_STROKES: PlacementStroke[] = ['fh', 'bh', 'serve']
 export const ERROR_TYPES: ErrorType[] = ['long', 'net', 'wide']
 export const OUTCOMES: Outcome[] = ['error', 'winner', 'placement']
 
-export const STROKE_LABEL: Record<Stroke, string> = { fh: 'Forehand', bh: 'Backhand' }
-export const STROKE_SHORT: Record<Stroke, string> = { fh: 'FH', bh: 'BH' }
+export const STROKE_LABEL: Record<PlacementStroke, string> = { fh: 'Forehand', bh: 'Backhand', serve: 'Serve' }
+export const STROKE_SHORT: Record<PlacementStroke, string> = { fh: 'FH', bh: 'BH', serve: 'S' }
 export const ERROR_LABEL: Record<ErrorType, string> = { long: 'Long', net: 'Net', wide: 'Wide' }
 export const SESSION_KINDS: SessionKind[] = ['match', 'practice']
 export const KIND_LABEL: Record<SessionKind, string> = { match: 'Match', practice: 'Practice' }
@@ -24,10 +28,12 @@ export const SESSION_MODES: SessionMode[] = ['errors', 'placement']
 export const MODE_LABEL: Record<SessionMode, string> = { errors: 'Errors', placement: 'Placement' }
 export const MODE_HINT: Record<SessionMode, string> = {
   errors: 'Tap her half where she lost the point, then pick the stroke and error.',
-  placement: 'Shows the far half: press where the ball landed and drag left for backhand, right for forehand.',
+  placement: 'Shows the far half: drag left for backhand, right for forehand, or up for a serve landing. Mark the net to log a Net error.',
 }
 
 export const isStroke = (v: unknown): v is Stroke => v === 'fh' || v === 'bh'
+export const isPlacementStroke = (v: unknown): v is PlacementStroke => isStroke(v) || v === 'serve'
+export const isPlacementResult = (v: unknown): v is PlacementResult => v === 'in' || v === 'net' || v === 'wide' || v === 'long' || v === 'unknown'
 export const isErrorType = (v: unknown): v is ErrorType => v === 'long' || v === 'net' || v === 'wide'
 export const isOutcome = (v: unknown): v is Outcome => v === 'error' || v === 'winner' || v === 'placement'
 export const isSessionKind = (v: unknown): v is SessionKind => v === 'match' || v === 'practice'
@@ -69,10 +75,12 @@ export interface Point {
   x: number
   y: number
   /** Her stroke; '' for an opponent winner, which is nobody's stroke of hers. */
-  stroke: Stroke | ''
+  stroke: PlacementStroke | ''
   /** How it ended; '' for winners, which have no error type. */
   error_type: ErrorType | ''
   outcome: Outcome
+  /** Placement-mode result; null for Errors and Winners. */
+  placement_result?: PlacementResult | null
   /** Only meaningful for errors. */
   forced: boolean
   created_at: string
@@ -80,4 +88,4 @@ export interface Point {
   deleted_at: string | null
 }
 
-export type NewPoint = Pick<Point, 'session_id' | 'x' | 'y' | 'stroke' | 'error_type' | 'forced'> & { outcome?: Outcome }
+export type NewPoint = Pick<Point, 'session_id' | 'x' | 'y' | 'stroke' | 'error_type' | 'forced'> & { outcome?: Outcome; placement_result?: PlacementResult | null }

@@ -18,6 +18,7 @@ export const CSV_HEADER = [
   'y_ft',
   'zone',
   'stroke',
+  'placement_result',
   'error_type',
   'forced',
 ] as const
@@ -40,6 +41,7 @@ export function pointsToCsv(points: Iterable<Point>, sessionsById: Record<string
         csvEscape(p.y),
         csvEscape(describeZone(zoneFor(p.x, p.y))),
         csvEscape(p.stroke),
+        csvEscape(p.placement_result ?? ''),
         csvEscape(p.error_type),
         csvEscape(p.forced ? 'forced' : 'unforced'),
       ].join(','),

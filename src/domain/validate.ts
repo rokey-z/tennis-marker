@@ -1,7 +1,7 @@
 import { clampToView, roundFeet } from './court'
 import { isValidIso, YMD_RE } from '../lib/format'
 import { cleanOpponent } from './session'
-import { isErrorType, isOutcome, isSessionKind, isSessionMode, isStroke, type Point, type Session, type Stroke } from './types'
+import { isErrorType, isOutcome, isPlacementResult, isPlacementStroke, isSessionKind, isSessionMode, isStroke, type Point, type Session, type Stroke } from './types'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -50,7 +50,7 @@ export function sanitizePoint(raw: unknown): Point | null {
   if (!id || !session_id || x === null || y === null || !created) return null
   const outcome = isOutcome(r.outcome) ? r.outcome : 'error'
   // an opponent winner has neither stroke nor error type; anything else must name a stroke
-  if (outcome !== 'winner' && !isStroke(r.stroke)) return null
+  if (outcome !== 'winner' && !(outcome === 'placement' ? isPlacementStroke(r.stroke) : isStroke(r.stroke))) return null
   if (outcome === 'error' && !isErrorType(r.error_type)) return null
   const c = clampToView(x, y)
   return {
@@ -62,6 +62,7 @@ export function sanitizePoint(raw: unknown): Point | null {
     stroke: outcome === 'winner' ? '' : (r.stroke as Stroke),
     error_type: outcome === 'error' ? (r.error_type as Point['error_type']) : '',
     outcome,
+    placement_result: outcome === 'placement' ? (isPlacementResult(r.placement_result) ? r.placement_result : 'unknown') : null,
     forced: outcome === 'error' && (r.forced === true || r.forced === 'true' || r.forced === 1),
     created_at: created,
     updated_at: isoOrNull(r.updated_at) ?? created,

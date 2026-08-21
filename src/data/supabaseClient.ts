@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { isOutcome, type Outcome, type Point, type Session } from '../domain/types'
+import { isOutcome, isPlacementResult, type Outcome, type Point, type Session } from '../domain/types'
 import type { Remote, RemoteError } from './syncEngine'
 
 export const SUPABASE_URL: string | undefined = import.meta.env.VITE_SUPABASE_URL
@@ -75,9 +75,10 @@ export function normalizePoint(r: Record<string, unknown>): Point {
     x: Number(r.x),
     y: Number(r.y),
     // a winner is the opponent's shot: no stroke of hers, no error type, never forced
-    stroke: outcome === 'winner' ? '' : r.stroke === 'bh' ? 'bh' : 'fh',
+    stroke: outcome === 'winner' ? '' : r.stroke === 'serve' ? 'serve' : r.stroke === 'bh' ? 'bh' : 'fh',
     error_type: outcome === 'error' ? (r.error_type === 'net' ? 'net' : r.error_type === 'wide' ? 'wide' : 'long') : '',
     outcome,
+    placement_result: outcome === 'placement' ? (isPlacementResult(r.placement_result) ? r.placement_result : 'unknown') : null,
     forced: outcome === 'error' && Boolean(r.forced),
     created_at: toIso(r.created_at),
     updated_at: toIso(r.updated_at),

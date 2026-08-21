@@ -78,6 +78,12 @@ export function isOut(x: number, y: number): boolean {
   return Math.abs(x) > COURT.singlesHalfWidth || y > COURT.halfLength
 }
 
+/** Placement result inferred from the landing location, excluding a net strike (the UI detects that surface). */
+export function placementResultFor(x: number, y: number): 'in' | 'wide' | 'long' {
+  if (Math.abs(x) > COURT.singlesHalfWidth) return 'wide'
+  return y > COURT.halfLength ? 'long' : 'in'
+}
+
 export function describeLanding(x: number, y: number): string {
   const z = zoneFor(x, y)
   // the out call rides on the mark itself (see components/marks), so this stays pure position

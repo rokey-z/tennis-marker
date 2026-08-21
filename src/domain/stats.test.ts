@@ -131,6 +131,14 @@ describe('summarize', () => {
     expect(s.placementsOut).toBe(2)
   })
 
+  it('records serve landings without assigning them an in or out result', () => {
+    const s = summarize([point({ stroke: 'serve', error_type: '', outcome: 'placement', x: 16, y: 44 })])
+    expect(s.placements).toBe(1)
+    expect(s.serveLandings).toBe(1)
+    expect(s.placementsOut).toBe(0)
+    expect(s.placementsByStroke.serve).toBe(1)
+  })
+
   it('counts placements apart from errors and winners', () => {
     const s = summarize([
       point({ error_type: 'long' }),
@@ -141,7 +149,7 @@ describe('summarize', () => {
     expect(s.total).toBe(1)
     expect(s.lost).toBe(2) // placements are not points lost; the winner is
     expect(s.placements).toBe(2)
-    expect(s.placementsByStroke).toEqual({ fh: 1, bh: 1 })
+    expect(s.placementsByStroke).toEqual({ fh: 1, bh: 1, serve: 0 })
     expect(s.winners).toBe(1)
     // placements never enter the error views; the error and the winner both mark her half
     expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(2)

@@ -1,6 +1,6 @@
 import { isOut, zoneFor, zoneId } from './court'
-import type { ErrorType, Outcome, Point, Session, Stroke } from './types'
-import { isErrorType, isStroke } from './types'
+import type { ErrorType, Outcome, PlacementResult, PlacementStroke, Point, Session, Stroke } from './types'
+import { isErrorType, isPlacementResult, isPlacementStroke, isStroke } from './types'
 
 export type ForcedFilter = 'all' | 'forced' | 'unforced'
 
@@ -54,12 +54,15 @@ export interface Summary {
   /** winners and placements are counted apart — neither is an error */
   winners: number
   placements: number
+  /** Serves are recorded as landings but deliberately have no in/out result. */
+  serveLandings: number
   /** placements that landed outside the singles lines */
   placementsOut: number
   /** zoneId → count for placements — where the BALL landed, never mixed with the error zones */
   placementZones: Record<string, number>
   maxPlacementZone: number
-  placementsByStroke: Record<Stroke, number>
+  placementsByStroke: Record<PlacementStroke, number>
+  placementMatrix: Record<PlacementStroke, Record<PlacementResult, number>>
 }
 
 export function summarize(points: Iterable<Point>): Summary {
@@ -75,10 +78,16 @@ export function summarize(points: Iterable<Point>): Summary {
     lost: 0,
     winners: 0,
     placements: 0,
+    serveLandings: 0,
     placementsOut: 0,
     placementZones: {},
     maxPlacementZone: 0,
-    placementsByStroke: { fh: 0, bh: 0 },
+    placementsByStroke: { fh: 0, bh: 0, serve: 0 },
+    placementMatrix: {
+      fh: { in: 0, net: 0, wide: 0, long: 0, unknown: 0 },
+      bh: { in: 0, net: 0, wide: 0, long: 0, unknown: 0 },
+      serve: { in: 0, net: 0, wide: 0, long: 0, unknown: 0 },
+    },
   }
   for (const p of points) {
     if (p.deleted_at) continue
@@ -93,8 +102,13 @@ export function summarize(points: Iterable<Point>): Summary {
     }
     if (outcome === 'placement') {
       s.placements++
-      if (isOut(p.x, p.y)) s.placementsOut++
-      if (isStroke(p.stroke)) s.placementsByStroke[p.stroke]++
+      if (p.stroke === 'serve') s.serveLandings++
+      else if (p.placement_result === 'wide' || p.placement_result === 'long' || (p.placement_result === undefined && isOut(p.x, p.y))) s.placementsOut++
+      if (isPlacementStroke(p.stroke)) s.placementsByStroke[p.stroke]++
+      if (isPlacementStroke(p.stroke)) {
+        const result: PlacementResult = isPlacementResult(p.placement_result) ? p.placement_result : isOut(p.x, p.y) ? 'unknown' : 'in'
+        s.placementMatrix[p.stroke][result]++
+      }
       const pz = zoneId(zoneFor(p.x, p.y))
       s.placementZones[pz] = (s.placementZones[pz] ?? 0) + 1
       if (s.placementZones[pz] > s.maxPlacementZone) s.maxPlacementZone = s.placementZones[pz]

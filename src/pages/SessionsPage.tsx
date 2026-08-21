@@ -5,10 +5,10 @@ import { ErrorsModeIcon, PlacementModeIcon, PlusIcon } from '../components/Icons
 import { Shell } from '../components/Shell'
 import { usePlayer } from '../components/hooks'
 import { store, useAppState } from '../data/app'
-import { liveSessions } from '../data/store'
+import { livePointsForSession, liveSessions } from '../data/store'
 import { sessionLabel } from '../domain/session'
-import { perSessionCounts } from '../domain/stats'
-import { KIND_LABEL, KIND_PLURAL, MODE_LABEL, SESSION_KINDS, type SessionKind } from '../domain/types'
+import { perSessionCounts, summarize, type Summary } from '../domain/stats'
+import { KIND_LABEL, KIND_PLURAL, SESSION_KINDS, STROKE_LABEL, type SessionKind } from '../domain/types'
 
 type KindFilter = SessionKind | 'all'
 
@@ -19,6 +19,7 @@ export function SessionsPage() {
   const [kind, setKind] = useState<KindFilter>('all')
   // oldest first, so the newest session sits at the bottom — next to the thumb, next to the buttons
   const all = useMemo(() => perSessionCounts(liveSessions(state), Object.values(state.points)).reverse(), [state])
+  const summaries = useMemo(() => new Map(all.map(({ session }) => [session.id, summarize(livePointsForSession(state, session.id))])), [all, state])
   const rows = useMemo(() => (kind === 'all' ? all : all.filter((r) => r.session.kind === kind)), [all, kind])
   const countFor = (k: KindFilter) => (k === 'all' ? all.length : all.filter((r) => r.session.kind === k).length)
 
@@ -62,38 +63,52 @@ export function SessionsPage() {
             </div>
           ) : (
           <ul className="session-list">
-            {rows.map(({ session, count, fh, bh }) => (
+            {rows.map(({ session }) => {
+              const summary = summaries.get(session.id)!
+              const placement = session.mode === 'placement'
+              const count = placement ? summary.placements : summary.total
+              const focus = sessionFocus(summary, placement)
+              return (
               <li key={session.id}>
                 <Link to={`/session/${session.id}`} className="session-card">
                   <span className={`s-mode ${session.mode}`}>
                     <span className="s-mode-chip" aria-hidden="true">{session.mode === 'placement' ? <PlacementModeIcon /> : <ErrorsModeIcon />}</span>
-                    <small>{MODE_LABEL[session.mode]}</small>
+                    <small>{placement ? 'Ball placement' : `${player.name || 'Player'}’s errors`}</small>
                   </span>
                   <div className="grow">
                     <div className="title">{sessionLabel(session)}</div>
                     <div className="sub">
                       {KIND_LABEL[session.kind]} · {formatDate(session.date)}
                       {session.venue ? ` · ${session.venue}` : ''}
-                      {session.notes ? ` · ${session.notes.slice(0, 40)}${session.notes.length > 40 ? '…' : ''}` : ''}
                     </div>
-                    {count > 0 && (
-                      <div className="split-bar" title={`FH ${fh} · BH ${bh}`}>
-                        <span className="fh" style={{ width: `${(fh / count) * 100}%` }} />
-                        <span className="bh" style={{ width: `${(bh / count) * 100}%` }} />
-                      </div>
-                    )}
+                    <div className={`session-focus${focus ? '' : ' ready'}`}>{focus ?? 'Ready to record'}</div>
                   </div>
                   <div className="count">
                     {count}
-                    <small>{session.mode === 'placement' ? (count === 1 ? 'ball' : 'balls') : count === 1 ? 'mark' : 'marks'}</small>
+                    <small>{placement ? (count === 1 ? 'landing' : 'landings') : count === 1 ? 'error' : 'errors'}</small>
                   </div>
                 </Link>
               </li>
-            ))}
+              )})}
           </ul>
           )}
         </>
       )}
     </Shell>
   )
+}
+
+function sessionFocus(summary: Summary, placement: boolean): string | null {
+  if (placement) {
+    const candidates = (['fh', 'bh', 'serve'] as const).flatMap((stroke) =>
+      (['net', 'wide', 'long'] as const).map((result) => ({ stroke, result, count: summary.placementMatrix[stroke][result] })),
+    )
+    const best = candidates.sort((a, b) => b.count - a.count)[0]
+    return best?.count >= 3 ? `Focus: ${STROKE_LABEL[best.stroke]} ${best.result} — ${best.count} marks` : null
+  }
+  const candidates = (['fh', 'bh'] as const).flatMap((stroke) =>
+    (['net', 'wide', 'long'] as const).map((error) => ({ stroke, error, count: summary.matrix[stroke][error] })),
+  )
+  const best = candidates.sort((a, b) => b.count - a.count)[0]
+  return best?.count >= 3 ? `Focus: ${STROKE_LABEL[best.stroke]} ${best.error} — ${best.count} errors` : null
 }

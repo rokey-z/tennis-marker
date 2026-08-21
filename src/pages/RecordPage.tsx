@@ -9,7 +9,7 @@ import { BackIcon, ChartIcon, FlipIcon, ListIcon, PencilIcon, UndoIcon } from '.
 import { ShotPopover } from '../components/ShotPopover'
 import { store, useAppState } from '../data/app'
 import { livePointsForSession } from '../data/store'
-import { describeMark, describeZone, zoneFor } from '../domain/court'
+import { describeMark, describeZone, placementResultFor, zoneFor } from '../domain/court'
 import { capitalise, cleanOpponent } from '../domain/session'
 import { opponentRowsWithRoster, sessionLabel, venueRows } from '../domain/session'
 import { MarkLegend, markLabel } from '../components/marks'
@@ -19,7 +19,7 @@ import { VenuePicker } from '../components/VenuePicker'
 import { filterPoints, summarize } from '../domain/stats'
 import { pointsToCsv, safeFilename, toExportBundle } from '../domain/export'
 import { downloadText } from '../lib/format'
-import { ERROR_LABEL, KIND_LABEL, MODE_HINT, MODE_LABEL, SESSION_MODES, STROKE_SHORT, type ErrorType, type Outcome, type Point, type Session, type Stroke } from '../domain/types'
+import { ERROR_LABEL, KIND_LABEL, MODE_HINT, MODE_LABEL, SESSION_MODES, STROKE_SHORT, type ErrorType, type Outcome, type PlacementStroke, type Point, type Session, type Stroke } from '../domain/types'
 
 const LOG_KEY = 'tennis-marker.logOpen'
 const FLIP_KEY = 'tennis-marker.flip'
@@ -40,7 +40,9 @@ export function RecordPage() {
   const allPoints = useMemo(() => livePointsForSession(state, id), [state, id])
   // each mode shows its own marks: they live in different halves of the court
   const points = useMemo(
-    () => allPoints.filter((p) => ((p.outcome ?? 'error') === 'placement') === placementMode),
+    // Placement sessions also retain net strikes on the court: they are errors, but the net is
+    // part of the placement workflow and should not vanish immediately after being recorded.
+    () => allPoints.filter((p) => placementMode ? p.outcome === 'placement' || (p.outcome === 'error' && p.error_type === 'net') : p.outcome !== 'placement'),
     [allPoints, placementMode],
   )
   // the tally counts what the court and the log show: the marks of the mode being recorded
@@ -49,7 +51,7 @@ export function RecordPage() {
   const otherMode = allPoints.length - points.length
 
   const [flipped, setFlipped] = useState(() => localStorage.getItem(FLIP_KEY) === '1')
-  const [pending, setPending] = useState<{ x: number; y: number; at: { clientX: number; clientY: number } } | null>(null)
+  const [pending, setPending] = useState<{ x: number; y: number; at: { clientX: number; clientY: number }; surface: 'court' | 'net' } | null>(null)
   const courtRef = useRef<HTMLDivElement>(null)
   const [forced, setForced] = useState(false)
   const [toast, setToast] = useState<ToastState | null>(null)
@@ -74,17 +76,17 @@ export function RecordPage() {
     setPending(null)
   }, [placementMode])
 
-  const onTap = useCallback((x: number, y: number, at: { clientX: number; clientY: number }) => {
+  const onTap = useCallback((x: number, y: number, at: { clientX: number; clientY: number }, surface: 'court' | 'net' = 'court') => {
     if (performance.now() < ignoreUntil.current) return
     setForced(false)
-    setPending({ x, y, at })
+    setPending({ x, y, at, surface })
   }, [])
 
   const cancel = useCallback(() => setPending(null), [])
 
-  const logPoint = (stroke: Stroke | '', error: ErrorType | '', outcome: Outcome) => {
+  const logPoint = (stroke: PlacementStroke | '', error: ErrorType | '', outcome: Outcome, placementResult: Point['placement_result'] = null) => {
     if (!pending) return
-    const p = store.addPoint({ session_id: id, x: pending.x, y: pending.y, stroke, error_type: error, forced: outcome === 'error' && forced, outcome })
+    const p = store.addPoint({ session_id: id, x: pending.x, y: pending.y, stroke, error_type: error, forced: outcome === 'error' && forced, outcome, placement_result: placementResult })
     setPending(null)
     ignoreUntil.current = performance.now() + AFTER_SAVE_IGNORE_MS
     try {
@@ -105,15 +107,20 @@ export function RecordPage() {
     })
   }
 
-  const pick = (stroke: Stroke, error: ErrorType) => logPoint(stroke, error, placementMode ? 'placement' : 'error')
+  const pick = (stroke: Stroke, error: ErrorType) => {
+    const net = pending?.surface === 'net'
+    logPoint(stroke, net ? '' : error, placementMode ? 'placement' : 'error', placementMode ? (net ? 'net' : placementResultFor(pending!.x, pending!.y)) : null)
+  }
   /** The opponent hit a winner past her: one tap, nothing of hers to attribute. */
   const logWinner = () => logPoint('', '', 'winner')
 
   /** Placement mode: one motion — press where the ball landed, drag left for BH or right for FH. */
   const onStrokeDrag = useCallback(
-    (x: number, y: number, stroke: Stroke) => {
+    (x: number, y: number, stroke: PlacementStroke, surface: 'court' | 'net' = 'court') => {
       if (performance.now() < ignoreUntil.current) return
-      const p = store.addPoint({ session_id: id, x, y, stroke, error_type: '', forced: false, outcome: 'placement' })
+      const net = surface === 'net'
+      const placement_result = net ? 'net' : stroke === 'serve' ? 'unknown' : placementResultFor(x, y)
+      const p = store.addPoint({ session_id: id, x, y, stroke, error_type: '', forced: false, outcome: 'placement', placement_result })
       ignoreUntil.current = performance.now() + AFTER_SAVE_IGNORE_MS
       try {
         navigator.vibrate?.(12)
@@ -122,7 +129,7 @@ export function RecordPage() {
       }
       setToast({
         id: Date.now(),
-        text: `${STROKE_SHORT[stroke]} landed ${describeMark(p.x, p.y, 'placement').toLowerCase()}`,
+        text: `${STROKE_SHORT[stroke]} · ${placement_result === 'unknown' ? 'serve landing' : placement_result === 'in' ? describeMark(p.x, p.y, 'placement').toLowerCase() : placement_result}`,
         actionLabel: 'Undo',
         onAction: () => store.deletePoint(p.id),
       })
@@ -136,7 +143,7 @@ export function RecordPage() {
     if (!p) return
     setToast({
       id: Date.now(),
-      text: `Removed ${markLabel(p.stroke, p.error_type, p.forced, p.outcome)}`,
+      text: `Removed ${markLabel(p.stroke, p.error_type, p.forced, p.outcome, false, p.placement_result)}`,
       actionLabel: 'Undo',
       onAction: () => store.restorePoint(p.id),
     })
@@ -148,7 +155,7 @@ export function RecordPage() {
     store.deletePoint(p.id)
     setToast({
       id: Date.now(),
-      text: `Removed ${markLabel(p.stroke, p.error_type, p.forced, p.outcome)}`,
+      text: `Removed ${markLabel(p.stroke, p.error_type, p.forced, p.outcome, false, p.placement_result)}`,
       actionLabel: 'Undo',
       onAction: () => store.restorePoint(p.id),
     })
@@ -175,7 +182,7 @@ export function RecordPage() {
     )
   }
 
-  const where = pending ? describeZone(zoneFor(pending.x, pending.y)) : ''
+  const where = pending ? pending.surface === 'net' ? 'Net' : describeZone(zoneFor(pending.x, pending.y)) : ''
 
   const actions = (
     <div className="record-actions">
@@ -275,7 +282,7 @@ export function RecordPage() {
           {!statsMode && (
             <div className="record-hint">
               {placementMode
-                ? `Click where the ball landed, then pick the stroke ${player.name ? `${player.name} hit it with` : 'she hit it with'}.`
+                ? `Click where the ball landed, then pick the stroke ${player.name ? `${player.name} hit it with` : 'she hit it with'}. Swipe up to record a serve; mark the net for a Net error.`
                 : `Click the court where ${player.subject} lost the point, then pick FH/BH × Long/Net/Wide right there.`}
             </div>
           )}

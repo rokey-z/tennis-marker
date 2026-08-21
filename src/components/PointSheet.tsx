@@ -17,7 +17,7 @@ export interface PointSheetProps {
 export function PointSheet({ point, index, onChange, onDelete, onClose }: PointSheetProps) {
   const winner = point.outcome === 'winner'
   const placement = point.outcome === 'placement'
-  const out = placement && isOut(point.x, point.y)
+  const out = placement && point.stroke !== 'serve' && isOut(point.x, point.y)
   // a placement lives on the far half: the only thing to correct is which stroke played it
   const pick = (stroke: Stroke, error: ErrorType) => {
     onChange(placement ? { stroke } : { stroke, error_type: error, outcome: 'error' })
@@ -35,7 +35,7 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
         <div className="ps-head">
           <MarkDot stroke={point.stroke} error={point.error_type} forced={point.forced} outcome={point.outcome} out={out} size={34} />
           <div className="grow">
-            <div className="ps-now">{markLabel(point.stroke, point.error_type, point.forced, point.outcome, out)}</div>
+            <div className="ps-now">{markLabel(point.stroke, point.error_type, point.forced, point.outcome, out, point.placement_result)}</div>
             <div className="ps-meta">
               {describeMark(point.x, point.y, point.outcome)} · {formatTime(point.created_at)}
             </div>
