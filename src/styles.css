@@ -733,6 +733,9 @@ textarea.input {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
+.court-svg.rotated {
+  aspect-ratio: 49.5 / 42;
+}
 /* phones: edge to edge — the court is always full width; the log below takes what's left */
 @media (max-width: 899px) {
   /* the record screen scrolls as one page: court, actions, then the whole log */
@@ -783,9 +786,15 @@ textarea.input {
   .record.stats .court-box .court-svg {
     width: min(100%, calc(100cqh * 42 / 49.5));
   }
+  .record.stats .court-box .court-svg.rotated {
+    width: min(100%, calc(100cqh * 49.5 / 42));
+  }
   @media (min-width: 900px) {
     .court-box .court-svg {
       width: min(100%, calc(100cqh * 42 / 49.5));
+    }
+    .court-box .court-svg.rotated {
+      width: min(100%, calc(100cqh * 49.5 / 42));
     }
   }
 }

@@ -37,6 +37,8 @@ const VIEWBOX = `${DRAW_MIN_X} ${VB_MIN_Y} ${DRAW_WIDTH} ${VB_HEIGHT}`
 export const COURT_ASPECT = `${DRAW_WIDTH} / ${VB_HEIGHT}`
 /** Visual pivot for the 180° flip: the center of the drawn box (any pivot yields correct taps via the CTM inverse). */
 const PIVOT = { x: DRAW_MIN_X + DRAW_WIDTH / 2, y: VB_MIN_Y + VB_HEIGHT / 2 }
+/** The 90° view needs a swapped viewport, otherwise the court would be clipped at the sidelines. */
+const ROTATED_VIEWBOX = `${PIVOT.x - VB_HEIGHT / 2} ${PIVOT.y - DRAW_WIDTH / 2} ${VB_HEIGHT} ${DRAW_WIDTH}`
 const drawX = (x: number) => Math.min(DRAW_MAX_X - 1.4, Math.max(DRAW_MIN_X + 1.4, x))
 const drawY = (y: number) => Math.min(DRAW_MAX_Y - 1.4, Math.max(VB_MIN_Y + 1.4, y))
 
@@ -49,13 +51,13 @@ const STROKE_DRAG_PX = 26
  * Text drawn inside the court group inherits the half's flip, which turns it upside down or
  * mirrored. This cancels it about the text's own anchor, so the words read normally where they are.
  * This cancels every view transform around a text's own anchor, so labels and mark letters
- * remain readable even while the court is flipped, mirrored, or showing its far half.
+ * remain readable even while the court is flipped, rotated, or showing its far half.
  */
-function uprightAt(x: number, y: number, flipped: boolean, verticallyMirrored: boolean, horizontallyMirrored: boolean): string | undefined {
+function uprightAt(x: number, y: number, flipped: boolean, verticallyMirrored: boolean, rotated: boolean): string | undefined {
   const transforms = [
-    flipped ? `rotate(180 ${x} ${y})` : '',
+    rotated ? `rotate(-90 ${x} ${y})` : '',
     verticallyMirrored ? `translate(0 ${2 * y}) scale(1 -1)` : '',
-    horizontallyMirrored ? `translate(${2 * x} 0) scale(-1 1)` : '',
+    flipped ? `rotate(180 ${x} ${y})` : '',
   ].filter(Boolean)
   return transforms.join(' ') || undefined
 }
@@ -75,8 +77,8 @@ interface DragState {
 export interface CourtProps {
   /** Rotate 180° so the parent taps what they see when she plays the far end. */
   flipped?: boolean
-  /** Mirror left/right so the court matches the observer's horizontal view. */
-  horizontallyMirrored?: boolean
+  /** Turn the court 90° clockwise into a landscape view. */
+  rotated?: boolean
   /** Receives coordinates in feet, in the player's frame (already clamped to the court area), plus where on screen the tap landed. */
   onTap?: (x: number, y: number, at: { clientX: number; clientY: number }, surface?: 'court' | 'net') => void
   /** Ignore input (e.g. while the shot sheet is open). */
@@ -98,7 +100,7 @@ export interface CourtProps {
   className?: string
 }
 
-export function Court({ flipped = false, horizontallyMirrored = false, onTap, disabled = false, points, emphasizeLast = false, half = 'own', sideLabel, onStrokeDrag, pending, showZones = false, heat, heatTotal = 0, className }: CourtProps) {
+export function Court({ flipped = false, rotated = false, onTap, disabled = false, points, emphasizeLast = false, half = 'own', sideLabel, onStrokeDrag, pending, showZones = false, heat, heatTotal = 0, className }: CourtProps) {
   const gRef = useRef<SVGGElement>(null)
   const down = useRef<{ id: number; x: number; y: number; t: number } | null>(null)
   // the ref is authoritative (pointer events can arrive faster than React re-renders); state drives the drawing
@@ -184,8 +186,8 @@ export function Court({ flipped = false, horizontallyMirrored = false, onTap, di
   // the far half is the same drawing mirrored about the net, so the net stays nearest the player
   const mirror = half === 'opposite' ? `translate(0 ${2 * PIVOT.y}) scale(1 -1)` : ''
   const rotate = flipped ? `rotate(180 ${PIVOT.x} ${PIVOT.y})` : ''
-  const horizontalMirror = horizontallyMirrored ? `translate(${2 * PIVOT.x} 0) scale(-1 1)` : ''
-  const flipTransform = [rotate, mirror, horizontalMirror].filter(Boolean).join(' ') || undefined
+  const quarterTurn = rotated ? `rotate(90 ${PIVOT.x} ${PIVOT.y})` : ''
+  const flipTransform = [rotate, mirror, quarterTurn].filter(Boolean).join(' ') || undefined
   const pendingZone = pending ? zoneId(zoneFor(pending.x, pending.y)) : null
 
   const heatCells = useMemo(() => {
@@ -203,8 +205,8 @@ export function Court({ flipped = false, horizontallyMirrored = false, onTap, di
 
   return (
     <svg
-      className={`court-svg${interactive ? ' interactive' : ''}${className ? ` ${className}` : ''}`}
-      viewBox={VIEWBOX}
+      className={`court-svg${interactive ? ' interactive' : ''}${rotated ? ' rotated' : ''}${className ? ` ${className}` : ''}`}
+      viewBox={rotated ? ROTATED_VIEWBOX : VIEWBOX}
       role={interactive ? 'button' : 'img'}
       aria-label={interactive ? 'Half tennis court — tap where the point was lost' : 'Half tennis court'}
       onPointerDown={onPointerDown}
@@ -222,7 +224,7 @@ export function Court({ flipped = false, horizontallyMirrored = false, onTap, di
 
         {/* whose half this is — dimmed, behind every mark, and always upright */}
         {sideLabel && (
-          <g transform={uprightAt(0, VB_MIN_Y + 4.6, flipped, half === 'opposite', horizontallyMirrored)} pointerEvents="none">
+          <g transform={uprightAt(0, VB_MIN_Y + 4.6, flipped, half === 'opposite', rotated)} pointerEvents="none">
             <text
               x={0}
               y={VB_MIN_Y + 4.6}
@@ -256,13 +258,13 @@ export function Court({ flipped = false, horizontallyMirrored = false, onTap, di
               ['MID', 27.5],
               ['DEEP', 36.8],
             ].map(([label, y]) => (
-              <g key={label} transform={uprightAt(0, y as number, flipped, true, horizontallyMirrored)}>
+              <g key={label} transform={uprightAt(0, y as number, flipped, true, rotated)}>
                 <text x={0} y={y as number} fontSize={1.35} fontWeight={800} textAnchor="middle" fill="#ffffff" opacity={0.28} fontFamily="var(--font)" letterSpacing={0.2}>{label}</text>
               </g>
             ))}
-            <g transform={uprightAt(-19.8, 19.5, flipped, true, horizontallyMirrored)}><text x={-19.8} y={19.5} fontSize={1.15} fontWeight={800} textAnchor="middle" fill="#704018" opacity={0.5} fontFamily="var(--font)" transform="rotate(-90 -19.8 19.5)">WIDE</text></g>
-            <g transform={uprightAt(19.8, 19.5, flipped, true, horizontallyMirrored)}><text x={19.8} y={19.5} fontSize={1.15} fontWeight={800} textAnchor="middle" fill="#704018" opacity={0.5} fontFamily="var(--font)" transform="rotate(90 19.8 19.5)">WIDE</text></g>
-            <g transform={uprightAt(0, 45, flipped, true, horizontallyMirrored)}><text x={0} y={45} fontSize={1.35} fontWeight={800} textAnchor="middle" fill="#704018" opacity={0.52} fontFamily="var(--font)" letterSpacing={0.18}>LONG</text></g>
+            <g transform={uprightAt(-19.8, 19.5, flipped, true, rotated)}><text x={-19.8} y={19.5} fontSize={1.15} fontWeight={800} textAnchor="middle" fill="#704018" opacity={0.5} fontFamily="var(--font)" transform="rotate(-90 -19.8 19.5)">WIDE</text></g>
+            <g transform={uprightAt(19.8, 19.5, flipped, true, rotated)}><text x={19.8} y={19.5} fontSize={1.15} fontWeight={800} textAnchor="middle" fill="#704018" opacity={0.5} fontFamily="var(--font)" transform="rotate(90 19.8 19.5)">WIDE</text></g>
+            <g transform={uprightAt(0, 45, flipped, true, rotated)}><text x={0} y={45} fontSize={1.35} fontWeight={800} textAnchor="middle" fill="#704018" opacity={0.52} fontFamily="var(--font)" letterSpacing={0.18}>LONG</text></g>
           </g>
         )}
 
@@ -300,7 +302,7 @@ export function Court({ flipped = false, horizontallyMirrored = false, onTap, di
             />
             <circle cx={drag.start.x} cy={drag.start.y} r={1.5} fill="none" stroke="#ffffff" strokeWidth={0.4} />
             {Math.max(Math.abs(drag.dx), Math.abs(drag.dy)) >= STROKE_DRAG_PX && (
-              <g transform={uprightAt(drag.cur.x, drag.cur.y, flipped, half === 'opposite', horizontallyMirrored)}>
+              <g transform={uprightAt(drag.cur.x, drag.cur.y, flipped, half === 'opposite', rotated)}>
                 <circle cx={drag.cur.x} cy={drag.cur.y} r={2.4} fill={`var(--${drag.dy < -STROKE_DRAG_PX && Math.abs(drag.dy) > Math.abs(drag.dx) ? 'serve' : drag.dx < 0 ? 'bh' : 'fh'})`} />
                 <text
                   x={drag.cur.x}
@@ -354,7 +356,7 @@ export function Court({ flipped = false, horizontallyMirrored = false, onTap, di
               </pattern>
             </defs>
             <rect x={-COURT.netPostX} y={-NET_BAND} width={2 * COURT.netPostX} height={NET_BAND} fill="url(#net-error-mesh)" />
-            <g transform={uprightAt(0, -NET_BAND / 2, flipped, true, horizontallyMirrored)}>
+            <g transform={uprightAt(0, -NET_BAND / 2, flipped, true, rotated)}>
               <text x={0} y={-0.9} fontSize={0.9} fontWeight={800} textAnchor="middle" fill="#55300e" fontFamily="var(--font)" letterSpacing={0.16}>
                 NET
               </text>
@@ -370,7 +372,7 @@ export function Court({ flipped = false, horizontallyMirrored = false, onTap, di
               const cy = c.r.y + c.r.height / 2
               const pctLabel = heatTotal > 0 && c.n > 0 ? `${Math.round((c.n / heatTotal) * 100)}%` : ''
               return (
-                <g key={c.id} transform={uprightAt(cx, cy, flipped, half === 'opposite', horizontallyMirrored)}>
+                <g key={c.id} transform={uprightAt(cx, cy, flipped, half === 'opposite', rotated)}>
                   <text x={cx} y={cy + 0.6} fontSize={3.4} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.7)'}>
                     {c.n}
                   </text>
@@ -389,7 +391,7 @@ export function Court({ flipped = false, horizontallyMirrored = false, onTap, di
         {points && points.length > 0 && (
           <g pointerEvents="none">
             {points.map((p) => (
-              <Marker key={p.id} p={p} flipped={flipped} horizontallyMirrored={horizontallyMirrored} dim={newestId !== null && p.id !== newestId} />
+              <Marker key={p.id} p={p} flipped={flipped} rotated={rotated} dim={newestId !== null && p.id !== newestId} />
             ))}
           </g>
         )}
@@ -427,7 +429,7 @@ function clampRect(r: { x: number; y: number; width: number; height: number }) {
   return { x, y, width: Math.min(DRAW_MAX_X, r.x + r.width) - x, height: Math.min(DRAW_MAX_Y, r.y + r.height) - y }
 }
 
-function Marker({ p: pt, flipped, horizontallyMirrored, dim = false }: { p: Point; flipped: boolean; horizontallyMirrored: boolean; dim?: boolean }) {
+function Marker({ p: pt, flipped, rotated, dim = false }: { p: Point; flipped: boolean; rotated: boolean; dim?: boolean }) {
   const p = { ...pt, x: drawX(pt.x), y: drawY(pt.y) }
   const stroke = isPlacementStroke(p.stroke) ? p.stroke : 'fh'
   const error = isErrorType(p.error_type) ? p.error_type : 'long'
@@ -440,7 +442,7 @@ function Marker({ p: pt, flipped, horizontallyMirrored, dim = false }: { p: Poin
   const out = p.outcome === 'placement' && p.stroke !== 'serve' && isOut(pt.x, pt.y)
   const a = r * 0.9
   return (
-    <g transform={uprightAt(p.x, p.y, flipped, false, horizontallyMirrored)} opacity={dim ? 0.78 : 1}>
+    <g transform={uprightAt(p.x, p.y, flipped, false, rotated)} opacity={dim ? 0.78 : 1}>
       <title>{markLabel(p.outcome === 'winner' ? '' : stroke, error, p.forced, p.outcome, out, p.placement_result)}</title>
       {/* colour carries her stroke; a dark outline marks a forced error. A winner is the opponent's
           shot, so it is a green diamond with no stroke colour at all. */}
