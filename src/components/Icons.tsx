@@ -28,6 +28,14 @@ export const FlipIcon = () => (
     <path d="M21 13v2a4 4 0 0 1-4 4H3" />
   </svg>
 )
+/** Mirror a view across its vertical centre line. */
+export const FlipHorizontalIcon = () => (
+  <svg {...base}>
+    <path d="M12 3v18" strokeDasharray="2 2" />
+    <path d="M9 7 5 11l4 4M5 11h7" />
+    <path d="m15 7 4 4-4 4M19 11h-7" />
+  </svg>
+)
 /** Curved arrow doubling back to the left — the usual "undo that" gesture. */
 export const UndoIcon = () => (
   <svg {...base}>

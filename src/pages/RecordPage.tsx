@@ -5,7 +5,7 @@ import { useIsDesktop, usePlayer } from '../components/hooks'
 import { shortDate } from '../lib/format'
 import { Court } from '../components/Court'
 import { StatsFilters, StatsPanel, type StatsFilterState } from '../components/StatsPanel'
-import { BackIcon, ChartIcon, FlipIcon, ListIcon, PencilIcon, UndoIcon } from '../components/Icons'
+import { BackIcon, ChartIcon, FlipHorizontalIcon, FlipIcon, ListIcon, PencilIcon, UndoIcon } from '../components/Icons'
 import { ShotPopover } from '../components/ShotPopover'
 import { store, useAppState } from '../data/app'
 import { livePointsForSession } from '../data/store'
@@ -23,6 +23,7 @@ import { ERROR_LABEL, KIND_LABEL, MODE_HINT, MODE_LABEL, SESSION_MODES, STROKE_S
 
 const LOG_KEY = 'tennis-marker.logOpen'
 const FLIP_KEY = 'tennis-marker.flip'
+const HORIZONTAL_FLIP_KEY = 'tennis-marker.horizontalFlip'
 const AFTER_SAVE_IGNORE_MS = 300
 const DEFAULT_STATS_FILTERS: StatsFilterState = { stroke: 'all', error: 'all', forced: 'all' }
 
@@ -51,6 +52,7 @@ export function RecordPage() {
   const otherMode = allPoints.length - points.length
 
   const [flipped, setFlipped] = useState(() => localStorage.getItem(FLIP_KEY) === '1')
+  const [horizontallyMirrored, setHorizontallyMirrored] = useState(() => localStorage.getItem(HORIZONTAL_FLIP_KEY) === '1')
   const [pending, setPending] = useState<{ x: number; y: number; at: { clientX: number; clientY: number }; surface: 'court' | 'net' } | null>(null)
   const courtRef = useRef<HTMLDivElement>(null)
   const [forced, setForced] = useState(false)
@@ -69,6 +71,9 @@ export function RecordPage() {
   useEffect(() => {
     localStorage.setItem(FLIP_KEY, flipped ? '1' : '0')
   }, [flipped])
+  useEffect(() => {
+    localStorage.setItem(HORIZONTAL_FLIP_KEY, horizontallyMirrored ? '1' : '0')
+  }, [horizontallyMirrored])
   useEffect(() => {
     localStorage.setItem(LOG_KEY, logOpen ? '1' : '0')
   }, [logOpen])
@@ -226,6 +231,16 @@ export function RecordPage() {
         >
           <FlipIcon />
         </button>
+        <button
+          type="button"
+          className={`flip-fab${horizontallyMirrored ? ' on' : ''}`}
+          onClick={() => setHorizontallyMirrored((mirrored) => !mirrored)}
+          aria-pressed={horizontallyMirrored}
+          aria-label={horizontallyMirrored ? 'Court mirrored horizontally — tap to restore' : 'Mirror court horizontally'}
+          title={horizontallyMirrored ? 'Horizontally mirrored — tap to restore' : 'Mirror court horizontally'}
+        >
+          <FlipHorizontalIcon />
+        </button>
       </header>
 
       <div className="record-court">
@@ -234,6 +249,7 @@ export function RecordPage() {
           {statsMode ? (
             <Court
               flipped={flipped}
+              horizontallyMirrored={horizontallyMirrored}
               points={shownPoints}
               half={placementMode ? 'opposite' : 'own'}
               sideLabel={sideLabel}
@@ -244,6 +260,7 @@ export function RecordPage() {
           ) : (
             <Court
               flipped={flipped}
+              horizontallyMirrored={horizontallyMirrored}
               onTap={onTap}
               onStrokeDrag={placementMode ? onStrokeDrag : undefined}
               half={placementMode ? 'opposite' : 'own'}
