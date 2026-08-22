@@ -152,7 +152,7 @@ export function Tally({ s, mode = 'errors' }: { s: Summary; mode?: 'errors' | 'p
 }
 
 // ---------- point list ----------
-export function PointList({ points, onOpen, onDelete }: { points: Point[]; onOpen: (point: Point, index: number) => void; onDelete: (point: Point) => void }) {
+export function PointList({ points, onOpen, onDelete }: { points: Point[]; onOpen?: (point: Point, index: number) => void; onDelete?: (point: Point) => void }) {
   if (!points.length) return <p className="muted">No points logged yet.</p>
   const rows = [...points].reverse()
   return (
@@ -161,7 +161,7 @@ export function PointList({ points, onOpen, onDelete }: { points: Point[]; onOpe
         const index = points.length - i
         return (
           <li key={p.id} className="row-btn">
-            <button type="button" className="row-open" onClick={() => onOpen(p, index)}>
+            {onOpen ? <button type="button" className="row-open" onClick={() => onOpen(p, index)}>
               <span className="n">{index}</span>
               <span className="desc">
                   <MarkChip stroke={p.stroke} error={p.error_type} forced={p.forced} outcome={p.outcome} out={(p.outcome ?? 'error') === 'placement' && p.stroke !== 'serve' && isOut(p.x, p.y)} placementResult={p.placement_result} />
@@ -169,10 +169,16 @@ export function PointList({ points, onOpen, onDelete }: { points: Point[]; onOpe
                   {describeMark(p.x, p.y, p.outcome ?? 'error')} · {formatTime(p.created_at)}
                 </small>
               </span>
-            </button>
-            <button type="button" className="icon-btn row-del" aria-label={`Delete point ${index}`} onClick={() => onDelete(p)}>
+            </button> : <div className="row-open">
+              <span className="n">{index}</span>
+              <span className="desc">
+                <MarkChip stroke={p.stroke} error={p.error_type} forced={p.forced} outcome={p.outcome} out={(p.outcome ?? 'error') === 'placement' && p.stroke !== 'serve' && isOut(p.x, p.y)} placementResult={p.placement_result} />
+                <small>{describeMark(p.x, p.y, p.outcome ?? 'error')} · {formatTime(p.created_at)}</small>
+              </span>
+            </div>}
+            {onDelete && <button type="button" className="icon-btn row-del" aria-label={`Delete point ${index}`} onClick={() => onDelete(p)}>
               <TrashIcon />
-            </button>
+            </button>}
           </li>
         )
       })}

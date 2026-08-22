@@ -54,6 +54,10 @@ export interface Session {
   /** Sessions record one thing or the other; the court and the gesture follow from this. */
   mode: SessionMode
   notes: string
+  /** Set when recording is finished; a finished session is read-only until explicitly unlocked. */
+  finished_at?: string | null
+  /** Player's editable 1–5 assessment of the finished session. */
+  self_rating?: number | null
   created_at: string
   updated_at: string
   deleted_at: string | null

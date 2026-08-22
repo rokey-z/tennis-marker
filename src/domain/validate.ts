@@ -13,6 +13,10 @@ export function isUuid(v: unknown): v is string {
 const str = (v: unknown): string | null => (typeof v === 'string' && v.length > 0 ? v : null)
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : null)
 const isoOrNull = (v: unknown): string | null => (v === null || v === undefined || v === '' ? null : isValidIso(v) ? new Date(v).toISOString() : null)
+const ratingOrNull = (v: unknown): number | null => {
+  const n = num(v)
+  return n !== null && Number.isInteger(n) && n >= 1 && n <= 5 ? n : null
+}
 
 /** Coerce an untrusted session row (backup import, hand-edited storage) or reject it. */
 export function sanitizeSession(raw: unknown): Session | null {
@@ -32,6 +36,8 @@ export function sanitizeSession(raw: unknown): Session | null {
     kind: isSessionKind(r.kind) ? r.kind : 'practice',
     mode: isSessionMode(r.mode) ? r.mode : 'errors',
     notes: typeof r.notes === 'string' ? r.notes : '',
+    finished_at: isoOrNull(r.finished_at),
+    self_rating: ratingOrNull(r.self_rating),
     created_at: created,
     updated_at: isoOrNull(r.updated_at) ?? created,
     deleted_at: isoOrNull(r.deleted_at),

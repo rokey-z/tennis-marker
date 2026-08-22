@@ -53,6 +53,12 @@ describe('sanitizeSession', () => {
     expect(sanitizeSession({ ...good, mode: 'nonsense' })?.mode).toBe('errors')
     expect(sanitizeSession({ ...good, mode: 'placement' })?.mode).toBe('placement')
     expect(sanitizeSession(good)?.mode).toBe('errors')
+    expect(sanitizeSession(good)?.finished_at).toBeNull()
+    expect(sanitizeSession({ ...good, finished_at: t })?.finished_at).toBe(t)
+    expect(sanitizeSession(good)?.self_rating).toBeNull()
+    expect(sanitizeSession({ ...good, self_rating: 4 })?.self_rating).toBe(4)
+    expect(sanitizeSession({ ...good, self_rating: 0 })?.self_rating).toBeNull()
+    expect(sanitizeSession({ ...good, self_rating: 3.5 })?.self_rating).toBeNull()
   })
 
   it('rejects malformed dates / ids', () => {

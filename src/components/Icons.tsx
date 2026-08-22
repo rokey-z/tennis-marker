@@ -25,6 +25,12 @@ export const FullscreenIcon = () => (
     <path d="M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5" />
   </svg>
 )
+export const LockIcon = ({ open = false }: { open?: boolean }) => (
+  <svg {...base}>
+    <rect x="5" y="10" width="14" height="11" rx="2" />
+    <path d={open ? 'M9 10V7a3 3 0 0 1 5.7-1.3' : 'M8 10V7a4 4 0 0 1 8 0v3'} />
+  </svg>
+)
 /** Turn a view clockwise by one quarter turn. */
 export const Rotate90Icon = () => (
   <svg {...base}>

@@ -30,6 +30,8 @@ function sess(over: Partial<Session> = {}): Session {
     kind: 'practice',
     mode: 'errors',
     notes: '',
+    finished_at: null,
+    self_rating: null,
     created_at: t1,
     updated_at: t1,
     deleted_at: null,
@@ -72,6 +74,8 @@ describe('load/save', () => {
     expect(loaded.sessions.s1.opponent).toBe('')
     expect(loaded.sessions.s1.venue).toBe('')
     expect(loaded.sessions.s1.mode).toBe('errors')
+    expect(loaded.sessions.s1.finished_at).toBeNull()
+    expect(loaded.sessions.s1.self_rating).toBeNull()
     expect(loaded.sessions.s1.title).toBe('Practice 2026-08-01')
   })
 

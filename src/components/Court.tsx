@@ -85,6 +85,8 @@ export interface CourtProps {
   points?: Point[]
   /** Recording view: the newest mark stays full size, earlier ones shrink and fade back. */
   emphasizeLast?: boolean
+  /** Compact all marks for analysis, or show a brighter compact overview after finishing. */
+  compactMarks?: 'analysis' | 'overview'
   /** 'own' = her half (errors); 'opposite' = the far half, mirrored, for ball placements. */
   half?: 'own' | 'opposite'
   /** Dimmed watermark naming whose half is on screen, so the two modes are never confused. */
@@ -96,10 +98,12 @@ export interface CourtProps {
   /** zoneId → count; draws a heat overlay with labels. */
   heat?: Record<string, number> | null
   heatTotal?: number
+  /** Stretch the SVG viewport edge-to-edge (used by the portrait full-screen recorder). */
+  fillViewport?: boolean
   className?: string
 }
 
-export function Court({ rotation = 0, onTap, disabled = false, points, emphasizeLast = false, half = 'own', sideLabel, onStrokeDrag, pending, showZones = false, heat, heatTotal = 0, className }: CourtProps) {
+export function Court({ rotation = 0, onTap, disabled = false, points, emphasizeLast = false, compactMarks, half = 'own', sideLabel, onStrokeDrag, pending, showZones = false, heat, heatTotal = 0, fillViewport = false, className }: CourtProps) {
   const gRef = useRef<SVGGElement>(null)
   const down = useRef<{ id: number; x: number; y: number; t: number } | null>(null)
   // the ref is authoritative (pointer events can arrive faster than React re-renders); state drives the drawing
@@ -206,6 +210,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
     <svg
       className={`court-svg${interactive ? ' interactive' : ''}${quarterTurned ? ' quarter-turned' : ''}${className ? ` ${className}` : ''}`}
       viewBox={quarterTurned ? ROTATED_VIEWBOX : VIEWBOX}
+      preserveAspectRatio={fillViewport ? 'none' : 'xMidYMid meet'}
       role={interactive ? 'button' : 'img'}
       aria-label={interactive ? 'Half tennis court — tap where the point was lost' : 'Half tennis court'}
       onPointerDown={onPointerDown}
@@ -390,7 +395,12 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
         {points && points.length > 0 && (
           <g pointerEvents="none">
             {points.map((p) => (
-              <Marker key={p.id} p={p} rotation={rotation} dim={newestId !== null && p.id !== newestId} />
+              <Marker
+                key={p.id}
+                p={p}
+                rotation={rotation}
+                compact={compactMarks ?? (newestId !== null && p.id !== newestId ? 'past' : undefined)}
+              />
             ))}
           </g>
         )}
@@ -428,7 +438,7 @@ function clampRect(r: { x: number; y: number; width: number; height: number }) {
   return { x, y, width: Math.min(DRAW_MAX_X, r.x + r.width) - x, height: Math.min(DRAW_MAX_Y, r.y + r.height) - y }
 }
 
-function Marker({ p: pt, rotation, dim = false }: { p: Point; rotation: CourtRotation; dim?: boolean }) {
+function Marker({ p: pt, rotation, compact }: { p: Point; rotation: CourtRotation; compact?: 'past' | 'analysis' | 'overview' }) {
   const p = { ...pt, x: drawX(pt.x), y: drawY(pt.y) }
   const stroke = isPlacementStroke(p.stroke) ? p.stroke : 'fh'
   const error = isErrorType(p.error_type) ? p.error_type : 'long'
@@ -441,17 +451,20 @@ function Marker({ p: pt, rotation, dim = false }: { p: Point; rotation: CourtRot
 
   // Previous points are positional context only. Keep them visible without letting their symbols,
   // letters, or outlines compete with the newest mark.
-  if (dim) {
+  if (compact) {
+    const overview = compact === 'overview'
+    const compactRadius = overview ? 0.58 : 0.42
+    const compactOpacity = overview ? 0.58 : 0.34
     return (
-      <g transform={uprightAt(p.x, p.y, false, rotation)} opacity={0.34}>
+      <g transform={uprightAt(p.x, p.y, false, rotation)} opacity={compactOpacity}>
         <title>{label}</title>
         {net ? (
           <g stroke={color} strokeWidth={0.28} strokeLinecap="round">
-            <line x1={p.x - 0.38} y1={p.y - 0.38} x2={p.x + 0.38} y2={p.y + 0.38} />
-            <line x1={p.x - 0.38} y1={p.y + 0.38} x2={p.x + 0.38} y2={p.y - 0.38} />
+            <line x1={p.x - compactRadius} y1={p.y - compactRadius} x2={p.x + compactRadius} y2={p.y + compactRadius} />
+            <line x1={p.x - compactRadius} y1={p.y + compactRadius} x2={p.x + compactRadius} y2={p.y - compactRadius} />
           </g>
         ) : (
-          <circle cx={p.x} cy={p.y} r={0.42} fill={p.outcome === 'winner' ? 'var(--win)' : color} />
+          <circle cx={p.x} cy={p.y} r={compactRadius} fill={p.outcome === 'winner' ? 'var(--win)' : color} />
         )}
       </g>
     )

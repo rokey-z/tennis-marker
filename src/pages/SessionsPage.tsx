@@ -80,6 +80,7 @@ export function SessionsPage() {
                     <div className="sub">
                       {KIND_LABEL[session.kind]} · {formatDate(session.date)}
                       {session.venue ? ` · ${session.venue}` : ''}
+                      {session.self_rating ? ` · ${session.self_rating}/5` : ''}
                     </div>
                     <div className={`session-focus${focus ? '' : ' ready'}`}>{focus ?? 'Ready to record'}</div>
                   </div>

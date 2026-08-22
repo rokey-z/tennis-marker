@@ -5,7 +5,7 @@ import { useIsDesktop, usePlayer } from '../components/hooks'
 import { shortDate } from '../lib/format'
 import { Court, type CourtRotation } from '../components/Court'
 import { StatsFilters, StatsPanel, type StatsFilterState } from '../components/StatsPanel'
-import { BackIcon, ChartIcon, CloseIcon, FullscreenIcon, ListIcon, PencilIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
+import { BackIcon, ChartIcon, CloseIcon, FullscreenIcon, ListIcon, LockIcon, PencilIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
 import { ShotPopover } from '../components/ShotPopover'
 import { store, useAppState } from '../data/app'
 import { livePointsForSession } from '../data/store'
@@ -33,6 +33,7 @@ export function RecordPage() {
   const isDesktop = useIsDesktop()
   const session = state.sessions[id]
   const placementMode = session?.mode === 'placement'
+  const finished = !!session?.finished_at
   const player = usePlayer()
   // name whose half is on screen: hers when recording her errors, her opponent's when placing balls
   const opponentName = cleanOpponent(session?.opponent)
@@ -69,6 +70,7 @@ export function RecordPage() {
   const statsSummary = useMemo(() => summarize(shownPoints), [shownPoints])
   const justCreated = (useLocation().state as { justCreated?: boolean } | null)?.justCreated === true
   const [showDetails, setShowDetails] = useState(justCreated)
+  const [showFinish, setShowFinish] = useState(false)
   const [openPoint, setOpenPoint] = useState<{ id: string; index: number } | null>(null)
   const ignoreUntil = useRef(0)
 
@@ -89,12 +91,6 @@ export function RecordPage() {
       setRotation(previous)
       rotationBeforeFullscreen.current = null
     }
-    try {
-      const orientation = screen.orientation as ScreenOrientation & { unlock?: () => void }
-      orientation.unlock?.()
-    } catch {
-      /* orientation locking is best-effort and unsupported on iOS Safari */
-    }
   }, [])
 
   useEffect(() => {
@@ -108,14 +104,14 @@ export function RecordPage() {
   const enterCourtFullscreen = async () => {
     if (courtFullscreen) return
     rotationBeforeFullscreen.current = rotation
-    setRotation(rotation === 90 || rotation === 270 ? rotation : 90)
+    // Portrait full screen always presents the half court vertically. Preserve which baseline is
+    // nearest when possible, then restore the user's exact rotation on exit.
+    setRotation(rotation === 180 || rotation === 270 ? 180 : 0)
     setCourtFullscreen(true)
     try {
       await courtRef.current?.requestFullscreen?.()
-      const orientation = screen.orientation as ScreenOrientation & { lock?: (value: 'landscape') => Promise<void> }
-      await orientation.lock?.('landscape')
     } catch {
-      // The fixed-position fallback still provides a full-screen court. Users can rotate iPhones manually.
+      // The fixed-position fallback still fills browsers that do not support element full screen.
     }
   }
 
@@ -191,6 +187,7 @@ export function RecordPage() {
   )
 
   const undo = () => {
+    if (finished) return
     // only the marks this mode shows: a placement session must never quietly drop an error mark
     const p = store.undoLastPoint(id, (q) => placementMode ? (q.outcome ?? 'error') === 'placement' || q.error_type === 'net' : (q.outcome ?? 'error') !== 'placement')
     if (!p) return
@@ -205,6 +202,7 @@ export function RecordPage() {
   const dismissToast = useCallback(() => setToast(null), [])
 
   const deletePoint = useCallback((p: Point) => {
+    if (finished) return
     store.deletePoint(p.id)
     setToast({
       id: Date.now(),
@@ -212,7 +210,14 @@ export function RecordPage() {
       actionLabel: 'Undo',
       onAction: () => store.restorePoint(p.id),
     })
-  }, [])
+  }, [finished])
+
+  const openFinish = () => {
+    setPending(null)
+    setOpenPoint(null)
+    setToast(null)
+    setShowFinish(true)
+  }
 
   const exportCsv = () => {
     downloadText(safeFilename(`tennis-${session?.title ?? 'session'}`, 'csv'), pointsToCsv(shownPoints, state.sessions), 'text/csv;charset=utf-8')
@@ -239,11 +244,14 @@ export function RecordPage() {
 
   const actions = (
     <div className="record-actions">
-      <button type="button" className="btn" onClick={undo} disabled={points.length === 0}>
+      <button type="button" className="btn" onClick={undo} disabled={finished || points.length === 0}>
         <UndoIcon /> Undo
       </button>
       <button type="button" className={`btn${statsMode ? ' primary' : ''}`} onClick={() => setView((v) => (v === 'stats' ? 'court' : 'stats'))} aria-pressed={statsMode}>
         <ChartIcon /> {statsMode ? 'Court' : 'Stats'}
+      </button>
+      <button type="button" className={`btn${finished ? ' primary' : ''}`} onClick={openFinish} aria-pressed={finished} title={finished ? 'Edit rating or unlock this session' : 'Finish, rate, and lock this session'}>
+        <LockIcon /> {finished && session.self_rating ? `${session.self_rating}/5` : 'Finish'}
       </button>
     </div>
   )
@@ -264,6 +272,8 @@ export function RecordPage() {
               {MODE_LABEL[session.mode]} · {KIND_LABEL[session.kind]} · {shortDate(session.date)}
               {session.venue ? ` · ${session.venue}` : ''}
               {!session.opponent && session.kind === 'match' ? ' · add opponent' : ''}
+              {finished ? ' · finished' : ''}
+              {session.self_rating ? ` · ${session.self_rating}/5` : ''}
             </span>
             <SyncBadge compact interactive={false} />
           </span>
@@ -302,7 +312,9 @@ export function RecordPage() {
           {statsMode ? (
             <Court
               rotation={rotation}
+              fillViewport={courtFullscreen}
               points={shownPoints}
+              compactMarks={finished ? 'overview' : 'analysis'}
               half={placementMode ? 'opposite' : 'own'}
               sideLabel={sideLabel}
               heat={placementMode ? statsSummary.placementZones : statsSummary.byZone}
@@ -312,13 +324,15 @@ export function RecordPage() {
           ) : (
             <Court
               rotation={rotation}
-              onTap={onTap}
-              onStrokeDrag={placementMode ? onStrokeDrag : undefined}
+              fillViewport={courtFullscreen}
+              onTap={finished ? undefined : onTap}
+              onStrokeDrag={!finished && placementMode ? onStrokeDrag : undefined}
               half={placementMode ? 'opposite' : 'own'}
               sideLabel={sideLabel}
-              disabled={!!pending}
+              disabled={finished || !!pending}
               points={points}
-              emphasizeLast
+              emphasizeLast={!finished}
+              compactMarks={finished ? 'overview' : undefined}
               pending={pending}
               showZones
             />
@@ -349,7 +363,9 @@ export function RecordPage() {
           )}
           {!statsMode && (
             <div className="record-hint">
-              {placementMode
+              {finished
+                ? 'Session finished and locked. Unlock it to record or edit points.'
+                : placementMode
                 ? `Click where the ball landed, then pick the stroke ${player.name ? `${player.name} hit it with` : 'she hit it with'}. Swipe up to record a serve; mark the net for a Net error.`
                 : `Click the court where ${player.subject} lost the point, then pick FH/BH × Long/Net/Wide right there.`}
             </div>
@@ -360,7 +376,7 @@ export function RecordPage() {
           ) : (
             <div className="card side-list">
               <div className="section-title">Points</div>
-              <PointList points={points} onOpen={(p, index) => setOpenPoint({ id: p.id, index })} onDelete={deletePoint} />
+              <PointList points={points} onOpen={finished ? undefined : (p, index) => setOpenPoint({ id: p.id, index })} onDelete={finished ? undefined : deletePoint} />
             </div>
           )}
         </aside>
@@ -386,7 +402,7 @@ export function RecordPage() {
             {logOpen && (
               <div className="log-body">
                 <MarkLegend className="log-legend" mode={placementMode ? 'placement' : 'errors'} />
-                <PointList points={points} onOpen={(p, index) => setOpenPoint({ id: p.id, index })} onDelete={deletePoint} />
+                <PointList points={points} onOpen={finished ? undefined : (p, index) => setOpenPoint({ id: p.id, index })} onDelete={finished ? undefined : deletePoint} />
                 {otherMode > 0 && (
                   <p className="log-note">
                     {otherMode} {otherMode === 1 ? 'mark' : 'marks'} recorded in {placementMode ? MODE_LABEL.errors : MODE_LABEL.placement} mode {otherMode === 1 ? 'is' : 'are'} hidden here — switch this session’s mode to see {otherMode === 1 ? 'it' : 'them'}.
@@ -413,6 +429,8 @@ export function RecordPage() {
 
       <Toast toast={toast} onDismiss={dismissToast} />
 
+      {showFinish && <FinishSessionModal session={session} onClose={() => setShowFinish(false)} />}
+
       {showDetails && (
         <SessionDetails
           session={session}
@@ -425,6 +443,55 @@ export function RecordPage() {
         />
       )}
     </div>
+  )
+}
+
+const RATING_LABELS = ['Rough', 'Below par', 'Okay', 'Good', 'Great'] as const
+
+function FinishSessionModal({ session, onClose }: { session: Session; onClose: () => void }) {
+  const [rating, setRating] = useState(session.self_rating ?? 3)
+  const finished = !!session.finished_at
+
+  const save = () => {
+    store.updateSession(session.id, {
+      self_rating: rating,
+      finished_at: session.finished_at ?? new Date().toISOString(),
+    })
+    onClose()
+  }
+
+  const unlock = () => {
+    store.updateSession(session.id, { finished_at: null })
+    onClose()
+  }
+
+  return (
+    <Modal title={finished ? 'Session rating' : 'Finish session'} onClose={onClose}>
+      <div className="field">
+        <span>How did you play?</span>
+        <div className="rating-picker" role="radiogroup" aria-label="Self rating from 1 to 5">
+          {RATING_LABELS.map((label, index) => {
+            const value = index + 1
+            return (
+              <button key={value} type="button" role="radio" aria-checked={rating === value} className={rating === value ? 'on' : ''} onClick={() => setRating(value)}>
+                <strong>{value}</strong>
+                <small>{label}</small>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+      <div className="row finish-rating-actions">
+        <button type="button" className="btn primary grow" onClick={save}>
+          {finished ? 'Save rating' : 'Finish & lock'}
+        </button>
+        {finished && (
+          <button type="button" className="btn" onClick={unlock}>
+            <LockIcon open /> Unlock
+          </button>
+        )}
+      </div>
+    </Modal>
   )
 }
 

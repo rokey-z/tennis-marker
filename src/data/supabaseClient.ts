@@ -24,7 +24,7 @@ export function createSupabase(): SupabaseClient | null {
 const PAGE = 1000
 
 /** Columns added after 0001; dropped from the payload until the matching migration is applied. */
-const OPTIONAL_SESSION_COLUMNS = ['opponent', 'venue', 'mode'] as const
+const OPTIONAL_SESSION_COLUMNS = ['opponent', 'venue', 'mode', 'finished_at', 'self_rating'] as const
 const OPTIONAL_POINT_COLUMNS = ['outcome'] as const
 const missingColumns = new Set<string>()
 
@@ -56,6 +56,8 @@ function normalizeSession(r: Record<string, unknown>): Session {
     kind: r.kind === 'match' ? 'match' : 'practice',
     mode: r.mode === 'placement' ? 'placement' : 'errors',
     notes: String(r.notes ?? ''),
+    finished_at: r.finished_at ? toIso(r.finished_at) : null,
+    self_rating: Number.isInteger(Number(r.self_rating)) && Number(r.self_rating) >= 1 && Number(r.self_rating) <= 5 ? Number(r.self_rating) : null,
     created_at: toIso(r.created_at),
     updated_at: toIso(r.updated_at),
     deleted_at: r.deleted_at ? toIso(r.deleted_at) : null,

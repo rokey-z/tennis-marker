@@ -18,10 +18,13 @@ as a home-screen app, records offline.
    from errors everywhere — they never land in the error breakdowns or the heat map.
 3. **Undo** removes the last point; the **Log** panel at the bottom lists every point (newest first)
    and lets you delete any of them.
+   Tap **Finish** when recording is done, choose an editable **1–5 self-rating**, and lock point
+   entry while showing a brighter compact overview. Tap the rating to change it or **Unlock** to
+   resume recording and editing.
 4. **Rotate 90°** turns the court another quarter turn with each press, including landscape and
    far-end views. Data is always stored from *her* point of view (net at top, deuce side right).
-   On mobile, **Full screen** opens a landscape court with the largest available tap area; rotate
-   the phone sideways if the browser does not rotate it automatically.
+   On mobile, **Full screen** stretches the vertical half court edge-to-edge so the entire display
+   is available as a tap area.
 5. **Placement mode** (the switch above the court) records where her ball *landed* instead of where
    she lost the point: it shows the **far half** of the court, and one motion logs a shot — press
    where the ball landed and **drag left for a backhand, right for a forehand**, with a live BH/FH
@@ -34,7 +37,7 @@ as a home-screen app, records offline.
    run, thirds), error mix by stroke, match vs practice, the zone heatmap, and a chronological
    **timeline** of every session. Filters (date range, match/practice) scope the whole page.
 7. **Stats** (button on the record screen) flips the same court into the 3×3 zone heatmap with every
-   point drawn (Ad side | Middle | Deuce side × Net | Mid-court | Baseline), with stroke / error /
+   point drawn as a compact dimmed mark (Ad side | Middle | Deuce side × Net | Mid-court | Baseline), with stroke / error /
    forced filters, and shows the tiles, "where the ball went" bars, the FH/BH × long/net/wide matrix
    and CSV / JSON export below — no page change. Tap **Court** to go back to recording.
 8. Tap the session name in the header to edit it: **opponent** (one-tap chips for people she has
@@ -98,8 +101,8 @@ The build is fully functional without this; do it when you want phone ↔ deskto
 
 1. **Create a Supabase project** at https://supabase.com/dashboard (free tier is fine).
 2. **Create the tables:** Dashboard → *SQL Editor* → paste `supabase/migrations/0001_init.sql` → Run,
-   then the same for `supabase/migrations/0002_session_fields.sql` (adds `opponent` and `venue`)
-   and `supabase/migrations/0003_winners.sql` (adds `outcome`, so winners sync).
+   then run the remaining numbered migrations in order (session details/mode, winners,
+   finished-session locking, and self-ratings).
    (Or with the CLI: `supabase link` then `supabase db push`.) If a migration is missing, the app
    still syncs everything else — it drops the unknown columns and warns in the console — and picks
    the fields up automatically once you run it.
