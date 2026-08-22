@@ -1380,6 +1380,9 @@ textarea.input {
 .bar-row .fill.bh {
   background: var(--bh);
 }
+.bar-row .fill.out {
+  background: var(--danger);
+}
 .bar-row .val {
   text-align: right;
   color: var(--muted);

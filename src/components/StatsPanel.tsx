@@ -81,6 +81,16 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
     // headline answers the useful question: what share of attempts landed in?
     const errors = net + wideLong
     const scoredLandings = inCourt + errors
+    const inDepth = (row: 'net' | 'mid' | 'baseline') =>
+      Object.entries(summary.placementInZones).reduce((total, [id, count]) => total + (id.startsWith(`${row}-`) ? count : 0), 0)
+    const placementAreas = [
+      { label: 'Short', count: inDepth('net'), kind: 'in' },
+      { label: 'Mid', count: inDepth('mid'), kind: 'in' },
+      { label: 'Deep', count: inDepth('baseline'), kind: 'in' },
+      { label: 'Wide', count: resultTotal('wide'), kind: 'out' },
+      { label: 'Long', count: resultTotal('long'), kind: 'out' },
+      { label: 'Net', count: net, kind: 'out' },
+    ]
     const resultLabels: Record<PlacementResult, string> = { in: 'In', net: 'Net', wide: 'Wide', long: 'Long', unknown: 'Unrated' }
     const misses: { stroke: typeof PLACEMENT_STROKES[number]; result: Exclude<PlacementResult, 'in' | 'unknown'>; count: number }[] = []
     for (const stroke of PLACEMENT_STROKES) {
@@ -131,6 +141,20 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
               {summary.placementsByStroke.serve}
               <small>{pct(summary.placementsByStroke.serve, summary.placements)}%</small>
             </div>
+          </div>
+        </div>
+        <div className="card">
+          <div className="section-title">Placement areas</div>
+          <div className="bars">
+            {placementAreas.map((area) => (
+              <div className="bar-row" key={area.label}>
+                <span>{area.label}{area.kind === 'out' ? ' miss' : ''}</span>
+                <div className="track">
+                  <div className={`fill${area.kind === 'out' ? ' out' : ''}`} style={{ width: `${pct(area.count, scoredLandings)}%` }} />
+                </div>
+                <span className="val">{pct(area.count, scoredLandings)}%</span>
+              </div>
+            ))}
           </div>
         </div>
         <div className="card">
