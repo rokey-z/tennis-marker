@@ -9,11 +9,12 @@ import {
   ZONE_ROW_SPLITS,
   clampToView,
   isOut,
+  placementResultFor,
   zoneFor,
   zoneId,
   zoneRect,
 } from '../domain/court'
-import { isErrorType, isPlacementStroke, type PlacementStroke, type Point } from '../domain/types'
+import { isErrorType, isPlacementResult, isPlacementStroke, type PlacementStroke, type Point } from '../domain/types'
 import { ERROR_LETTER, markLabel } from './marks'
 
 /** Extra headroom above the net line so the net band is visible (presentational only). */
@@ -263,6 +264,30 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
     return [...cells, ...longCells, ...wideCells, netCell]
   }, [placementHeat])
 
+  /** Hovering a placement-map area answers the natural follow-up: which stroke made those marks? */
+  const placementHeatStrokes = useMemo(() => {
+    const counts = new Map<string, { fh: number; bh: number }>()
+    if (!placementHeat) return counts
+    for (const p of points ?? []) {
+      if (p.stroke !== 'fh' && p.stroke !== 'bh') continue
+      const outcome = p.outcome ?? 'error'
+      let id: string | null = null
+      if (outcome === 'placement') {
+        const result = isPlacementResult(p.placement_result) ? p.placement_result : placementResultFor(p.x, p.y)
+        const zone = zoneId(zoneFor(p.x, p.y))
+        if (result === 'in' || result === 'long' || result === 'wide') id = `${result}-${zone}`
+        else if (result === 'net') id = 'net'
+      } else if (p.error_type === 'net') {
+        id = 'net'
+      }
+      if (!id) continue
+      const row = counts.get(id) ?? { fh: 0, bh: 0 }
+      row[p.stroke]++
+      counts.set(id, row)
+    }
+    return counts
+  }, [placementHeat, points])
+
   return (
     <svg
       className={`court-svg${interactive ? ' interactive' : ''}${quarterTurned ? ' quarter-turned' : ''}${className ? ` ${className}` : ''}`}
@@ -353,9 +378,14 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
         )}
         {placementHeatCells && (
           <g>
-            {placementHeatCells.map((c) => (
-              <rect key={c.id} x={c.r.x} y={c.r.y} width={c.r.width} height={c.r.height} fill={c.fill} fillOpacity={c.a} stroke="rgba(255,255,255,0.48)" strokeWidth={0.2} />
-            ))}
+            {placementHeatCells.map((c) => {
+              const strokes = placementHeatStrokes.get(c.id) ?? { fh: 0, bh: 0 }
+              return (
+                <rect key={c.id} x={c.r.x} y={c.r.y} width={c.r.width} height={c.r.height} fill={c.fill} fillOpacity={c.a} stroke="rgba(255,255,255,0.48)" strokeWidth={0.2}>
+                  <title>FH {strokes.fh} · BH {strokes.bh}</title>
+                </rect>
+              )
+            })}
           </g>
         )}
 
