@@ -112,6 +112,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
   // the ref is authoritative (pointer events can arrive faster than React re-renders); state drives the drawing
   const dragRef = useRef<DragState | null>(null)
   const [drag, setDrag] = useState<DragState | null>(null)
+  const [hoveredPlacementCell, setHoveredPlacementCell] = useState<string | null>(null)
   const interactive = !!onTap
 
   const toCourt = useCallback((clientX: number, clientY: number): { x: number; y: number; net: boolean } | null => {
@@ -287,6 +288,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
     }
     return counts
   }, [placementHeat, points])
+  const hoveredPlacement = placementHeatCells?.find((cell) => cell.id === hoveredPlacementCell) ?? null
 
   return (
     <svg
@@ -380,8 +382,22 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
           <g>
             {placementHeatCells.map((c) => {
               const strokes = placementHeatStrokes.get(c.id) ?? { fh: 0, bh: 0 }
+              const hovered = c.id === hoveredPlacementCell
               return (
-                <rect key={c.id} x={c.r.x} y={c.r.y} width={c.r.width} height={c.r.height} fill={c.fill} fillOpacity={c.a} stroke="rgba(255,255,255,0.48)" strokeWidth={0.2}>
+                <rect
+                  key={c.id}
+                  x={c.r.x}
+                  y={c.r.y}
+                  width={c.r.width}
+                  height={c.r.height}
+                  fill={c.fill}
+                  fillOpacity={hovered ? Math.min(1, c.a + 0.18) : c.a}
+                  stroke={hovered ? "#ffffff" : "rgba(255,255,255,0.48)"}
+                  strokeWidth={hovered ? 0.58 : 0.2}
+                  style={{ cursor: 'help' }}
+                  onPointerEnter={() => setHoveredPlacementCell(c.id)}
+                  onPointerLeave={() => setHoveredPlacementCell(null)}
+                >
                   <title>FH {strokes.fh} · BH {strokes.bh}</title>
                 </rect>
               )
@@ -501,6 +517,17 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
                 </g>
               )
             })}
+          </g>
+        )}
+        {hoveredPlacement && (
+          <g transform={uprightAt(0, VB_MIN_Y + 2.7, half === 'opposite', rotation)} pointerEvents="none">
+            <rect x={-8.2} y={VB_MIN_Y + 0.6} width={16.4} height={4.2} rx={0.8} fill="#14181d" fillOpacity={0.9} />
+            <text x={0} y={VB_MIN_Y + 2.35} fontFamily="var(--font)" fontSize={1.55} fontWeight={800} textAnchor="middle" fill="#ffffff">
+              FH {placementHeatStrokes.get(hoveredPlacement.id)?.fh ?? 0} · BH {placementHeatStrokes.get(hoveredPlacement.id)?.bh ?? 0}
+            </text>
+            <text x={0} y={VB_MIN_Y + 3.85} fontFamily="var(--font)" fontSize={1.05} fontWeight={700} textAnchor="middle" fill="rgba(255,255,255,0.72)">
+              {hoveredPlacement.n} mark{hoveredPlacement.n === 1 ? '' : 's'} in this area
+            </text>
           </g>
         )}
 
