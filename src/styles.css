@@ -905,6 +905,36 @@ textarea.input {
   pointer-events: none;
   user-select: none;
 }
+.court-hover-tooltip {
+  position: fixed;
+  z-index: 2147483647;
+  pointer-events: none;
+  min-width: 128px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 8px 22px rgba(20, 24, 29, 0.24);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.court-hover-tooltip .fh {
+  color: var(--fh-text);
+}
+.court-hover-tooltip .bh {
+  color: var(--bh-text);
+}
+.court-hover-tooltip .sep,
+.court-hover-tooltip small {
+  color: var(--muted);
+}
+.court-hover-tooltip small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 700;
+}
 .record-bottom {
   padding: 4px 8px calc(6px + env(safe-area-inset-bottom));
   display: flex;

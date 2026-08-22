@@ -113,7 +113,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
   const dragRef = useRef<DragState | null>(null)
   const [drag, setDrag] = useState<DragState | null>(null)
   const [hoveredPlacementCell, setHoveredPlacementCell] = useState<string | null>(null)
-  const [placementHoverPoint, setPlacementHoverPoint] = useState<{ x: number; y: number } | null>(null)
+  const [placementHoverClient, setPlacementHoverClient] = useState<{ x: number; y: number } | null>(null)
   const interactive = !!onTap
 
   const toCourt = useCallback((clientX: number, clientY: number): { x: number; y: number; net: boolean } | null => {
@@ -291,12 +291,16 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
   }, [placementHeat, points])
   const hoveredPlacement = placementHeatCells?.find((cell) => cell.id === hoveredPlacementCell) ?? null
   const updatePlacementHover = (id: string, e: ReactPointerEvent<SVGRectElement>) => {
-    const point = toCourt(e.clientX, e.clientY)
     setHoveredPlacementCell(id)
-    if (point) setPlacementHoverPoint(point)
+    setPlacementHoverClient({ x: e.clientX, y: e.clientY })
+  }
+  const clearPlacementHover = () => {
+    setHoveredPlacementCell(null)
+    setPlacementHoverClient(null)
   }
 
   return (
+    <>
     <svg
       className={`court-svg${interactive ? ' interactive' : ''}${quarterTurned ? ' quarter-turned' : ''}${className ? ` ${className}` : ''}`}
       viewBox={quarterTurned ? ROTATED_VIEWBOX : VIEWBOX}
@@ -403,10 +407,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
                   style={{ cursor: 'help' }}
                   onPointerEnter={(e) => updatePlacementHover(c.id, e)}
                   onPointerMove={(e) => updatePlacementHover(c.id, e)}
-                  onPointerLeave={() => {
-                    setHoveredPlacementCell(null)
-                    setPlacementHoverPoint(null)
-                  }}
+                  onPointerLeave={clearPlacementHover}
                 >
                   <title>FH {strokes.fh} · BH {strokes.bh}</title>
                 </rect>
@@ -487,10 +488,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
               style={{ cursor: 'help' }}
               onPointerEnter={(e) => updatePlacementHover('net', e)}
               onPointerMove={(e) => updatePlacementHover('net', e)}
-              onPointerLeave={() => {
-                setHoveredPlacementCell(null)
-                setPlacementHoverPoint(null)
-              }}
+              onPointerLeave={clearPlacementHover}
             >
               <title>FH {strokes.fh} · BH {strokes.bh}</title>
             </rect>
@@ -578,30 +576,20 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
             <circle cx={pending.x} cy={pending.y} r={0.9} fill="#ffffff" stroke="#14181d" strokeWidth={0.25} />
           </g>
         )}
-        {/* Render last so the hover window is fully opaque and always above dots and court marks. */}
-        {hoveredPlacement && placementHoverPoint && (() => {
-          const tooltipWidth = 13.2
-          const tooltipHeight = 4.6
-          const x = Math.min(DRAW_MAX_X - tooltipWidth - 0.7, Math.max(DRAW_MIN_X + 0.7, placementHoverPoint.x + 1.1))
-          const y = Math.min(DRAW_MAX_Y - tooltipHeight - 0.7, Math.max(VB_MIN_Y + 0.7, placementHoverPoint.y - tooltipHeight - 1.1))
-          const strokes = placementHeatStrokes.get(hoveredPlacement.id) ?? { fh: 0, bh: 0 }
-          return (
-            <g transform={uprightAt(x, y, half === 'opposite', rotation)} pointerEvents="none">
-              <rect x={x} y={y} width={tooltipWidth} height={tooltipHeight} rx={0.8} fill="var(--surface)" />
-              <text x={x + tooltipWidth / 2} y={y + 1.85} fontFamily="var(--font)" fontSize={1.5} fontWeight={800} textAnchor="middle">
-                <tspan fill="var(--fh)">FH {strokes.fh}</tspan>
-                <tspan fill="var(--muted)"> · </tspan>
-                <tspan fill="var(--bh)">BH {strokes.bh}</tspan>
-              </text>
-              <text x={x + tooltipWidth / 2} y={y + 3.45} fontFamily="var(--font)" fontSize={1.05} fontWeight={700} textAnchor="middle" fill="var(--muted)">
-                {hoveredPlacement.n} mark{hoveredPlacement.n === 1 ? '' : 's'} in this area
-              </text>
-            </g>
-          )
-        })()}
       </g>
 
     </svg>
+    {hoveredPlacement && placementHoverClient && (
+      <div className="court-hover-tooltip" style={{ left: placementHoverClient.x + 14, top: placementHoverClient.y + 14 }}>
+        <div>
+          <span className="fh">FH {placementHeatStrokes.get(hoveredPlacement.id)?.fh ?? 0}</span>
+          <span className="sep"> · </span>
+          <span className="bh">BH {placementHeatStrokes.get(hoveredPlacement.id)?.bh ?? 0}</span>
+        </div>
+        <small>{hoveredPlacement.n} mark{hoveredPlacement.n === 1 ? '' : 's'} in this area</small>
+      </div>
+    )}
+    </>
   )
 }
 
