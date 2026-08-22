@@ -137,6 +137,16 @@ describe('summarize', () => {
     expect(s.placementWideZones).toEqual({ 'mid-deuce': 1 })
   })
 
+  it('reconstructs wide and long map areas for older coordinate-only placements', () => {
+    const s = summarize([
+      point({ stroke: 'fh', error_type: '', outcome: 'placement', placement_result: null, x: 16, y: 30 }),
+      point({ stroke: 'bh', error_type: '', outcome: 'placement', placement_result: null, x: 0, y: 44 }),
+    ])
+    expect(s.placementsOut).toBe(2)
+    expect(s.placementWideZones).toEqual({ 'mid-deuce': 1 })
+    expect(s.placementLongZones).toEqual({ 'baseline-middle': 1 })
+  })
+
   it('records serve landings without assigning them an in or out result', () => {
     const s = summarize([point({ stroke: 'serve', error_type: '', outcome: 'placement', x: 16, y: 44 })])
     expect(s.placements).toBe(1)
@@ -169,6 +179,12 @@ describe('summarize', () => {
     expect(s.byError.net).toBe(1)
     expect(s.placements).toBe(0)
     expect(s.placementMatrix.fh.net).toBe(0)
+    expect(s.placementNet).toBe(1)
+  })
+
+  it('keeps legacy placement net marks on the placement map', () => {
+    const s = summarize([point({ stroke: 'fh', error_type: '', outcome: 'placement', placement_result: 'net', x: 2, y: 0 })])
+    expect(s.placementMatrix.fh.net).toBe(1)
     expect(s.placementNet).toBe(1)
   })
 

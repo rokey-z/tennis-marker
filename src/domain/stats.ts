@@ -1,4 +1,4 @@
-import { isOut, zoneFor, zoneId } from './court'
+import { placementResultFor, zoneFor, zoneId } from './court'
 import type { ErrorType, Outcome, PlacementResult, PlacementStroke, Point, Session, Stroke } from './types'
 import { isErrorType, isPlacementResult, isPlacementStroke, isStroke } from './types'
 
@@ -115,11 +115,18 @@ export function summarize(points: Iterable<Point>): Summary {
     if (outcome === 'placement') {
       s.placements++
       if (p.stroke === 'serve') s.serveLandings++
-      else if (p.placement_result === 'wide' || p.placement_result === 'long' || (p.placement_result === undefined && isOut(p.x, p.y))) s.placementsOut++
       if (isPlacementStroke(p.stroke)) s.placementsByStroke[p.stroke]++
       if (isPlacementStroke(p.stroke)) {
-        const result: PlacementResult = isPlacementResult(p.placement_result) ? p.placement_result : isOut(p.x, p.y) ? 'unknown' : 'in'
+        // Old marks only have their landing coordinates. Reconstruct Wide/Long from those so
+        // their map areas still receive a count; serves intentionally stay unrated.
+        const result: PlacementResult = isPlacementResult(p.placement_result)
+          ? p.placement_result
+          : p.stroke === 'serve'
+            ? 'unknown'
+            : placementResultFor(p.x, p.y)
         s.placementMatrix[p.stroke][result]++
+        if (result === 'wide' || result === 'long') s.placementsOut++
+        if (result === 'net') s.placementNet++
         const placementZone = zoneId(zoneFor(p.x, p.y))
         if (result === 'in') s.placementInZones[placementZone] = (s.placementInZones[placementZone] ?? 0) + 1
         else if (result === 'long') s.placementLongZones[placementZone] = (s.placementLongZones[placementZone] ?? 0) + 1
