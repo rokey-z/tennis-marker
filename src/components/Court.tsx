@@ -462,10 +462,12 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
               const cx = c.r.x + c.r.width / 2
               const cy = c.r.y + c.r.height / 2
               const pctLabel = heatTotal > 0 ? `${Math.round((c.n / heatTotal) * 100)}%` : ''
+              const inCourt = c.id.startsWith('in-')
+              const textColor = c.id === 'net' ? '#ffffff' : inCourt ? '#155d32' : '#8b220f'
               return (
                 <g key={c.id} transform={uprightAt(cx, cy, half === 'opposite', rotation)}>
-                  <text x={cx} y={cy + 0.7} fontSize={c.id === 'net' ? 3.4 : 4.6} fill={c.id === 'net' ? '#ffffff' : '#14181d'}>{c.n}</text>
-                  {pctLabel && <text x={cx} y={cy + (c.id === 'net' ? 2.2 : 3.1)} fontSize={c.id === 'net' ? 1.4 : 2} fill={c.id === 'net' ? '#ffffff' : '#14181d'} opacity={0.82}>{pctLabel}</text>}
+                  <text x={cx} y={cy + 0.7} fontSize={c.id === 'net' ? 3.4 : 4.6} fill={textColor}>{c.n}</text>
+                  {pctLabel && <text x={cx} y={cy + (c.id === 'net' ? 2.2 : 3.1)} fontSize={c.id === 'net' ? 1.4 : 2} fill={textColor} opacity={0.88}>{pctLabel}</text>}
                 </g>
               )
             })}
