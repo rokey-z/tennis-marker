@@ -100,7 +100,7 @@ export interface CourtProps {
   /** zoneId → count; draws a heat overlay with labels. */
   heat?: Record<string, number> | null
   /** Placement analysis keeps made shots and long misses in their real court areas. */
-  placementHeat?: { in: Record<string, number>; long: Record<string, number> } | null
+  placementHeat?: { in: Record<string, number>; long: Record<string, number>; wide: Record<string, number>; net: number } | null
   heatTotal?: number
   className?: string
 }
@@ -222,7 +222,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
     if (!placementHeat) return null
     const cols = [-COURT.singlesHalfWidth, -ZONE_COL_SPLIT, ZONE_COL_SPLIT, COURT.singlesHalfWidth]
     const rows = [0, ZONE_ROW_SPLITS[0], ZONE_ROW_SPLITS[1], COURT.halfLength]
-    const max = Math.max(1, ...Object.values(placementHeat.in), ...Object.values(placementHeat.long))
+    const max = Math.max(1, ...Object.values(placementHeat.in), ...Object.values(placementHeat.long), ...Object.values(placementHeat.wide), placementHeat.net)
     const cells = ZONE_ROWS.flatMap((row, rowIndex) =>
       ZONE_COLS.map((col, colIndex) => {
         const id = zoneId({ row, col })
@@ -247,7 +247,20 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
         a: n === 0 ? 0 : 0.52 + 0.36 * (n / max),
       }
     })
-    return [...cells, ...longCells]
+    const wideCells = ZONE_ROWS.flatMap((row, rowIndex) => {
+      const y = rows[rowIndex]
+      const height = rows[rowIndex + 1] - y
+      return [
+        { col: 'ad' as const, x: DRAW_MIN_X, width: -COURT.singlesHalfWidth - DRAW_MIN_X },
+        { col: 'deuce' as const, x: COURT.singlesHalfWidth, width: DRAW_MAX_X - COURT.singlesHalfWidth },
+      ].map(({ col, x, width }) => {
+        const id = zoneId({ row, col })
+        const n = placementHeat.wide[id] ?? 0
+        return { id: `wide-${id}`, r: { x, y, width, height }, n, fill: heatColor(n / max), a: n === 0 ? 0 : 0.52 + 0.36 * (n / max) }
+      })
+    })
+    const netCell = { id: 'net', r: { x: -COURT.singlesHalfWidth, y: -NET_BAND, width: 2 * COURT.singlesHalfWidth, height: NET_BAND }, n: placementHeat.net, fill: heatColor(placementHeat.net / max), a: placementHeat.net === 0 ? 0 : 0.52 + 0.36 * (placementHeat.net / max) }
+    return [...cells, ...longCells, ...wideCells, netCell]
   }, [placementHeat])
 
   return (
@@ -451,8 +464,8 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
               const pctLabel = heatTotal > 0 ? `${Math.round((c.n / heatTotal) * 100)}%` : ''
               return (
                 <g key={c.id} transform={uprightAt(cx, cy, half === 'opposite', rotation)}>
-                  <text x={cx} y={cy + 0.7} fontSize={4.6} fill="#14181d">{c.n}</text>
-                  {pctLabel && <text x={cx} y={cy + 3.1} fontSize={2} fill="#14181d" opacity={0.82}>{pctLabel}</text>}
+                  <text x={cx} y={cy + 0.7} fontSize={c.id === 'net' ? 3.4 : 4.6} fill={c.id === 'net' ? '#ffffff' : '#14181d'}>{c.n}</text>
+                  {pctLabel && <text x={cx} y={cy + (c.id === 'net' ? 2.2 : 3.1)} fontSize={c.id === 'net' ? 1.4 : 2} fill={c.id === 'net' ? '#ffffff' : '#14181d'} opacity={0.82}>{pctLabel}</text>}
                 </g>
               )
             })}

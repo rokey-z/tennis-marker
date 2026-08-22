@@ -65,6 +65,10 @@ export interface Summary {
   placementInZones: Record<string, number>
   /** Long-placement zones, drawn above the baseline on the placement analysis map. */
   placementLongZones: Record<string, number>
+  /** Wide-placement zones, drawn outside the singles sidelines on the placement analysis map. */
+  placementWideZones: Record<string, number>
+  /** Net strikes shown on the placement map's net band. */
+  placementNet: number
   placementsByStroke: Record<PlacementStroke, number>
   placementMatrix: Record<PlacementStroke, Record<PlacementResult, number>>
 }
@@ -88,6 +92,8 @@ export function summarize(points: Iterable<Point>): Summary {
     maxPlacementZone: 0,
     placementInZones: {},
     placementLongZones: {},
+    placementWideZones: {},
+    placementNet: 0,
     placementsByStroke: { fh: 0, bh: 0, serve: 0 },
     placementMatrix: {
       fh: { in: 0, net: 0, wide: 0, long: 0, unknown: 0 },
@@ -117,6 +123,7 @@ export function summarize(points: Iterable<Point>): Summary {
         const placementZone = zoneId(zoneFor(p.x, p.y))
         if (result === 'in') s.placementInZones[placementZone] = (s.placementInZones[placementZone] ?? 0) + 1
         else if (result === 'long') s.placementLongZones[placementZone] = (s.placementLongZones[placementZone] ?? 0) + 1
+        else if (result === 'wide') s.placementWideZones[placementZone] = (s.placementWideZones[placementZone] ?? 0) + 1
       }
       const pz = zoneId(zoneFor(p.x, p.y))
       s.placementZones[pz] = (s.placementZones[pz] ?? 0) + 1
@@ -130,6 +137,7 @@ export function summarize(points: Iterable<Point>): Summary {
       if (p.forced) s.byStrokeForced[p.stroke]++
     }
     if (isErrorType(p.error_type)) s.byError[p.error_type]++
+    if (p.error_type === 'net') s.placementNet++
     if (p.forced) s.byForced.forced++
     else s.byForced.unforced++
     countZone(s, p)

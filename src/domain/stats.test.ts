@@ -120,6 +120,7 @@ describe('summarize', () => {
     expect(s.placementZones).toEqual({ 'net-deuce': 2 })
     expect(s.placementInZones).toEqual({ 'net-deuce': 2 })
     expect(s.placementLongZones).toEqual({})
+    expect(s.placementWideZones).toEqual({})
     expect(s.maxPlacementZone).toBe(2)
   })
 
@@ -133,6 +134,7 @@ describe('summarize', () => {
     expect(s.placementsOut).toBe(2)
     expect(s.placementInZones).toEqual({ 'mid-deuce': 1 })
     expect(s.placementLongZones).toEqual({ 'baseline-middle': 1 })
+    expect(s.placementWideZones).toEqual({ 'mid-deuce': 1 })
   })
 
   it('records serve landings without assigning them an in or out result', () => {
@@ -167,6 +169,7 @@ describe('summarize', () => {
     expect(s.byError.net).toBe(1)
     expect(s.placements).toBe(0)
     expect(s.placementMatrix.fh.net).toBe(0)
+    expect(s.placementNet).toBe(1)
   })
 
   it('filters by outcome', () => {
