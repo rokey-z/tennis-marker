@@ -99,11 +99,13 @@ export interface CourtProps {
   showZones?: boolean
   /** zoneId → count; draws a heat overlay with labels. */
   heat?: Record<string, number> | null
+  /** Placement analysis keeps made shots and long misses in their real court areas. */
+  placementHeat?: { in: Record<string, number>; long: Record<string, number> } | null
   heatTotal?: number
   className?: string
 }
 
-export function Court({ rotation = 0, onTap, disabled = false, points, emphasizeLast = false, compactMarks, half = 'own', sideLabel, onStrokeDrag, dragNetOnly = false, pending, showZones = false, heat, heatTotal = 0, className }: CourtProps) {
+export function Court({ rotation = 0, onTap, disabled = false, points, emphasizeLast = false, compactMarks, half = 'own', sideLabel, onStrokeDrag, dragNetOnly = false, pending, showZones = false, heat, placementHeat, heatTotal = 0, className }: CourtProps) {
   const gRef = useRef<SVGGElement>(null)
   const down = useRef<{ id: number; x: number; y: number; t: number } | null>(null)
   // the ref is authoritative (pointer events can arrive faster than React re-renders); state drives the drawing
@@ -213,6 +215,41 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
     )
   }, [heat])
 
+  // Placement maps are deliberately not a generic 3 × 3 heat map: made balls belong inside the
+  // singles lines, while long balls live above the baseline. Wide and net misses remain visible as
+  // their × marks in their own areas rather than being blended into an in-court cell.
+  const placementHeatCells = useMemo(() => {
+    if (!placementHeat) return null
+    const cols = [-COURT.singlesHalfWidth, -ZONE_COL_SPLIT, ZONE_COL_SPLIT, COURT.singlesHalfWidth]
+    const rows = [0, ZONE_ROW_SPLITS[0], ZONE_ROW_SPLITS[1], COURT.halfLength]
+    const max = Math.max(1, ...Object.values(placementHeat.in), ...Object.values(placementHeat.long))
+    const cells = ZONE_ROWS.flatMap((row, rowIndex) =>
+      ZONE_COLS.map((col, colIndex) => {
+        const id = zoneId({ row, col })
+        const n = placementHeat.in[id] ?? 0
+        return {
+          id: `in-${id}`,
+          r: { x: cols[colIndex], y: rows[rowIndex], width: cols[colIndex + 1] - cols[colIndex], height: rows[rowIndex + 1] - rows[rowIndex] },
+          n,
+          fill: heatColor(n / max),
+          a: n === 0 ? 0 : 0.52 + 0.36 * (n / max),
+        }
+      }),
+    )
+    const longCells = ZONE_COLS.map((col, colIndex) => {
+      const id = zoneId({ row: 'baseline', col })
+      const n = placementHeat.long[id] ?? 0
+      return {
+        id: `long-${id}`,
+        r: { x: cols[colIndex], y: COURT.halfLength, width: cols[colIndex + 1] - cols[colIndex], height: DRAW_MAX_Y - COURT.halfLength },
+        n,
+        fill: heatColor(n / max),
+        a: n === 0 ? 0 : 0.52 + 0.36 * (n / max),
+      }
+    })
+    return [...cells, ...longCells]
+  }, [placementHeat])
+
   return (
     <svg
       className={`court-svg${interactive ? ' interactive' : ''}${quarterTurned ? ' quarter-turned' : ''}${className ? ` ${className}` : ''}`}
@@ -257,7 +294,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
         {/* Keep the placement result areas visible in analysis too: the heat layer then shows
             where balls landed, while the court itself still explains whether that area is in,
             wide, or long. */}
-        {(interactive || heat) && half === 'opposite' && (
+        {(interactive || heat || placementHeat) && half === 'opposite' && (
           <g pointerEvents="none">
             {/* The three playable landing depths. */}
             <rect x={-COURT.singlesHalfWidth} y={0} width={2 * COURT.singlesHalfWidth} height={ZONE_ROW_SPLITS[0]} fill="rgba(114, 184, 151, 0.18)" />
@@ -298,6 +335,13 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
           <g>
             {heatCells.map((c) => (
               <rect key={c.id} x={c.r.x} y={c.r.y} width={c.r.width} height={c.r.height} fill={c.fill} fillOpacity={c.a} stroke="rgba(255,255,255,0.35)" strokeWidth={0.15} />
+            ))}
+          </g>
+        )}
+        {placementHeatCells && (
+          <g>
+            {placementHeatCells.map((c) => (
+              <rect key={c.id} x={c.r.x} y={c.r.y} width={c.r.width} height={c.r.height} fill={c.fill} fillOpacity={c.a} stroke="rgba(255,255,255,0.48)" strokeWidth={0.2} />
             ))}
           </g>
         )}
@@ -394,6 +438,21 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
                       {pctLabel}
                     </text>
                   )}
+                </g>
+              )
+            })}
+          </g>
+        )}
+        {placementHeatCells && (
+          <g fontFamily="var(--font)" fontWeight={800} textAnchor="middle" pointerEvents="none">
+            {placementHeatCells.filter((c) => c.n > 0).map((c) => {
+              const cx = c.r.x + c.r.width / 2
+              const cy = c.r.y + c.r.height / 2
+              const pctLabel = heatTotal > 0 ? `${Math.round((c.n / heatTotal) * 100)}%` : ''
+              return (
+                <g key={c.id} transform={uprightAt(cx, cy, half === 'opposite', rotation)}>
+                  <text x={cx} y={cy + 0.7} fontSize={4.6} fill="#14181d">{c.n}</text>
+                  {pctLabel && <text x={cx} y={cy + 3.1} fontSize={2} fill="#14181d" opacity={0.82}>{pctLabel}</text>}
                 </g>
               )
             })}

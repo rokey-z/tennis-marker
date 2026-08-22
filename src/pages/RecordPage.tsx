@@ -337,7 +337,8 @@ export function RecordPage() {
               compactMarks={finished ? 'overview' : 'analysis'}
               half={placementMode ? 'opposite' : 'own'}
               sideLabel={sideLabel}
-              heat={placementMode ? statsSummary.placementZones : statsSummary.byZone}
+              heat={placementMode ? null : statsSummary.byZone}
+              placementHeat={placementMode ? { in: statsSummary.placementInZones, long: statsSummary.placementLongZones } : null}
               heatTotal={placementMode ? statsSummary.placements : statsSummary.lost}
               showZones
             />

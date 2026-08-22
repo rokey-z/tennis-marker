@@ -61,6 +61,10 @@ export interface Summary {
   /** zoneId → count for placements — where the BALL landed, never mixed with the error zones */
   placementZones: Record<string, number>
   maxPlacementZone: number
+  /** Successful placement zones, kept separate so the court map never blends them with misses. */
+  placementInZones: Record<string, number>
+  /** Long-placement zones, drawn above the baseline on the placement analysis map. */
+  placementLongZones: Record<string, number>
   placementsByStroke: Record<PlacementStroke, number>
   placementMatrix: Record<PlacementStroke, Record<PlacementResult, number>>
 }
@@ -82,6 +86,8 @@ export function summarize(points: Iterable<Point>): Summary {
     placementsOut: 0,
     placementZones: {},
     maxPlacementZone: 0,
+    placementInZones: {},
+    placementLongZones: {},
     placementsByStroke: { fh: 0, bh: 0, serve: 0 },
     placementMatrix: {
       fh: { in: 0, net: 0, wide: 0, long: 0, unknown: 0 },
@@ -108,6 +114,9 @@ export function summarize(points: Iterable<Point>): Summary {
       if (isPlacementStroke(p.stroke)) {
         const result: PlacementResult = isPlacementResult(p.placement_result) ? p.placement_result : isOut(p.x, p.y) ? 'unknown' : 'in'
         s.placementMatrix[p.stroke][result]++
+        const placementZone = zoneId(zoneFor(p.x, p.y))
+        if (result === 'in') s.placementInZones[placementZone] = (s.placementInZones[placementZone] ?? 0) + 1
+        else if (result === 'long') s.placementLongZones[placementZone] = (s.placementLongZones[placementZone] ?? 0) + 1
       }
       const pz = zoneId(zoneFor(p.x, p.y))
       s.placementZones[pz] = (s.placementZones[pz] ?? 0) + 1
