@@ -95,7 +95,7 @@ function upgradeSessions(sessions: Record<string, Session>): Record<string, Sess
       venue: typeof s?.venue === 'string' ? s.venue : '',
       mode: s?.mode === 'placement' ? 'placement' : 'errors',
       finished_at: typeof s?.finished_at === 'string' ? s.finished_at : null,
-      self_rating: Number.isInteger(s?.self_rating) && Number(s.self_rating) >= 1 && Number(s.self_rating) <= 5 ? Number(s.self_rating) : null,
+      self_rating: Number.isInteger(s?.self_rating) && Number(s.self_rating) >= 1 && Number(s.self_rating) <= 100 ? Number(s.self_rating) : null,
     }
   }
   return out

@@ -56,8 +56,10 @@ describe('sanitizeSession', () => {
     expect(sanitizeSession(good)?.finished_at).toBeNull()
     expect(sanitizeSession({ ...good, finished_at: t })?.finished_at).toBe(t)
     expect(sanitizeSession(good)?.self_rating).toBeNull()
-    expect(sanitizeSession({ ...good, self_rating: 4 })?.self_rating).toBe(4)
+    expect(sanitizeSession({ ...good, self_rating: 86 })?.self_rating).toBe(86)
+    expect(sanitizeSession({ ...good, self_rating: 100 })?.self_rating).toBe(100)
     expect(sanitizeSession({ ...good, self_rating: 0 })?.self_rating).toBeNull()
+    expect(sanitizeSession({ ...good, self_rating: 101 })?.self_rating).toBeNull()
     expect(sanitizeSession({ ...good, self_rating: 3.5 })?.self_rating).toBeNull()
   })
 

@@ -13,18 +13,19 @@ as a home-screen app, records offline.
 2. **Tap the court** where the point ended → a small menu pops up right at your finger → tap
    **FH/BH × Long/Net/Wide**. That's 2 taps per point. Toggle **Forced** on the menu only when
    needed (it resets each point). Tap anywhere else on the court to cancel.
+   The thicker net band also supports one-motion entry: drag left for a BH net error or right for FH.
    Tap **★ Winner** on the menu to record a point she *won* instead: the grid switches to one
    button per stroke, and the mark is drawn as a green-ringed diamond. Winners are counted apart
    from errors everywhere — they never land in the error breakdowns or the heat map.
 3. **Undo** removes the last point; the **Log** panel at the bottom lists every point (newest first)
    and lets you delete any of them.
-   Tap **Finish** when recording is done, choose an editable **1–5 self-rating**, and lock point
+   Tap **Finish** when recording is done, choose an editable **1–100 self-rating**, and lock point
    entry while showing a brighter compact overview. Tap the rating to change it or **Unlock** to
    resume recording and editing.
 4. **Rotate 90°** turns the court another quarter turn with each press, including landscape and
    far-end views. Data is always stored from *her* point of view (net at top, deuce side right).
-   On mobile, **Full screen** stretches the vertical half court edge-to-edge so the entire display
-   is available as a tap area.
+   On mobile, **Full screen** centers the vertical half court at its correct proportions for a
+   larger, distortion-free tap area.
 5. **Placement mode** (the switch above the court) records where her ball *landed* instead of where
    she lost the point: it shows the **far half** of the court, and one motion logs a shot — press
    where the ball landed and **drag left for a backhand, right for a forehand**, with a live BH/FH

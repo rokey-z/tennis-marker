@@ -57,7 +57,7 @@ function normalizeSession(r: Record<string, unknown>): Session {
     mode: r.mode === 'placement' ? 'placement' : 'errors',
     notes: String(r.notes ?? ''),
     finished_at: r.finished_at ? toIso(r.finished_at) : null,
-    self_rating: Number.isInteger(Number(r.self_rating)) && Number(r.self_rating) >= 1 && Number(r.self_rating) <= 5 ? Number(r.self_rating) : null,
+    self_rating: Number.isInteger(Number(r.self_rating)) && Number(r.self_rating) >= 1 && Number(r.self_rating) <= 100 ? Number(r.self_rating) : null,
     created_at: toIso(r.created_at),
     updated_at: toIso(r.updated_at),
     deleted_at: r.deleted_at ? toIso(r.deleted_at) : null,

@@ -15,7 +15,7 @@ const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFi
 const isoOrNull = (v: unknown): string | null => (v === null || v === undefined || v === '' ? null : isValidIso(v) ? new Date(v).toISOString() : null)
 const ratingOrNull = (v: unknown): number | null => {
   const n = num(v)
-  return n !== null && Number.isInteger(n) && n >= 1 && n <= 5 ? n : null
+  return n !== null && Number.isInteger(n) && n >= 1 && n <= 100 ? n : null
 }
 
 /** Coerce an untrusted session row (backup import, hand-edited storage) or reject it. */

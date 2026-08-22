@@ -17,8 +17,8 @@ import { isErrorType, isPlacementStroke, type PlacementStroke, type Point } from
 import { ERROR_LETTER, markLabel } from './marks'
 
 /** Extra headroom above the net line so the net band is visible (presentational only). */
-// A generous, 3 ft target keeps a net strike easy to mark courtside.
-const NET_BAND = 3
+// A deliberately thick target keeps a net strike easy to mark courtside.
+const NET_BAND = 5
 /**
  * Drawn margins: half of what the data model keeps (6 ft beside the lines, 12 ft behind the
  * baseline), so the court is large on a phone while a band of green stays visible around it.
@@ -93,17 +93,17 @@ export interface CourtProps {
   sideLabel?: string
   /** Placement mode: press where the ball landed and drag left for backhand, right for forehand. */
   onStrokeDrag?: (x: number, y: number, stroke: PlacementStroke, surface?: 'court' | 'net') => void
+  /** Only start the stroke gesture on the net; ordinary court taps remain taps. */
+  dragNetOnly?: boolean
   pending?: { x: number; y: number } | null
   showZones?: boolean
   /** zoneId → count; draws a heat overlay with labels. */
   heat?: Record<string, number> | null
   heatTotal?: number
-  /** Stretch the SVG viewport edge-to-edge (used by the portrait full-screen recorder). */
-  fillViewport?: boolean
   className?: string
 }
 
-export function Court({ rotation = 0, onTap, disabled = false, points, emphasizeLast = false, compactMarks, half = 'own', sideLabel, onStrokeDrag, pending, showZones = false, heat, heatTotal = 0, fillViewport = false, className }: CourtProps) {
+export function Court({ rotation = 0, onTap, disabled = false, points, emphasizeLast = false, compactMarks, half = 'own', sideLabel, onStrokeDrag, dragNetOnly = false, pending, showZones = false, heat, heatTotal = 0, className }: CourtProps) {
   const gRef = useRef<SVGGElement>(null)
   const down = useRef<{ id: number; x: number; y: number; t: number } | null>(null)
   // the ref is authoritative (pointer events can arrive faster than React re-renders); state drives the drawing
@@ -117,9 +117,9 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
     const m = g.getScreenCTM()
     if (!m) return null
     const p = new DOMPoint(clientX, clientY).matrixTransform(m.inverse())
-    // The visible net band is an input target in Placement mode. Its mark is stored on the net
-    // line (y = 0), but we preserve which surface was tapped so it becomes a Net error.
-    const net = half === 'opposite' && p.y >= -NET_BAND && p.y < 0 && Math.abs(p.x) <= COURT.netPostX
+    // The visible net band is an input target in either recording mode. Its mark is stored on the
+    // net line (y = 0), but we preserve which surface was tapped so it can become a Net error.
+    const net = p.y >= -NET_BAND && p.y < 0 && Math.abs(p.x) <= COURT.netPostX
     return { ...clampToView(p.x, p.y), net }
   }, [half])
 
@@ -130,7 +130,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
     down.current = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() }
     if (!onStrokeDrag || disabled) return
     const c = toCourt(e.clientX, e.clientY)
-    if (!c) return
+    if (!c || (dragNetOnly && !c.net)) return
     try {
       e.currentTarget.setPointerCapture(e.pointerId)
     } catch {
@@ -173,7 +173,9 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
     setDrag(null)
   }
   const onClick = (e: ReactMouseEvent<SVGSVGElement>) => {
-    if (!interactive || disabled || onStrokeDrag) return
+    // Placement mode handles short taps at pointer-up. In errors mode only the net owns a drag,
+    // so a regular court press still falls through to the normal tap chooser.
+    if (!interactive || disabled || (onStrokeDrag && (!dragNetOnly || down.current === null))) return
     const d = down.current
     down.current = null
     if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) > DRAG_PX) return
@@ -192,6 +194,11 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
   const viewTransform = [mirror, rotationTransform].filter(Boolean).join(' ') || undefined
   const quarterTurned = rotation === 90 || rotation === 270
   const pendingZone = pending ? zoneId(zoneFor(pending.x, pending.y)) : null
+  const previewStroke: PlacementStroke | null = drag
+    ? drag.net
+      ? drag.dx < 0 ? 'bh' : 'fh'
+      : drag.dy < -STROKE_DRAG_PX && Math.abs(drag.dy) > Math.abs(drag.dx) ? 'serve' : drag.dx < 0 ? 'bh' : 'fh'
+    : null
 
   const heatCells = useMemo(() => {
     if (!heat) return null
@@ -210,7 +217,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
     <svg
       className={`court-svg${interactive ? ' interactive' : ''}${quarterTurned ? ' quarter-turned' : ''}${className ? ` ${className}` : ''}`}
       viewBox={quarterTurned ? ROTATED_VIEWBOX : VIEWBOX}
-      preserveAspectRatio={fillViewport ? 'none' : 'xMidYMid meet'}
+      preserveAspectRatio="xMidYMid meet"
       role={interactive ? 'button' : 'img'}
       aria-label={interactive ? 'Half tennis court — tap where the point was lost' : 'Half tennis court'}
       onPointerDown={onPointerDown}
@@ -218,7 +225,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
       onPointerUp={onStrokeDrag ? endDrag : undefined}
       onPointerCancel={onPointerCancel}
       onClick={onClick}
-      style={onStrokeDrag ? { touchAction: 'none' } : undefined}
+      style={onStrokeDrag ? { touchAction: dragNetOnly ? 'pan-y' : 'none' } : undefined}
       onContextMenu={(e) => e.preventDefault()}
     >
       <g ref={gRef} transform={viewTransform}>
@@ -300,14 +307,14 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
               y1={drag.start.y}
               x2={drag.cur.x}
               y2={drag.cur.y}
-              stroke={Math.max(Math.abs(drag.dx), Math.abs(drag.dy)) < STROKE_DRAG_PX ? 'rgba(255,255,255,0.7)' : `var(--${drag.dy < -STROKE_DRAG_PX && Math.abs(drag.dy) > Math.abs(drag.dx) ? 'serve' : drag.dx < 0 ? 'bh' : 'fh'})`}
+              stroke={Math.max(Math.abs(drag.dx), Math.abs(drag.dy)) < STROKE_DRAG_PX ? 'rgba(255,255,255,0.7)' : `var(--${previewStroke})`}
               strokeWidth={0.5}
               strokeLinecap="round"
             />
             <circle cx={drag.start.x} cy={drag.start.y} r={1.5} fill="none" stroke="#ffffff" strokeWidth={0.4} />
             {Math.max(Math.abs(drag.dx), Math.abs(drag.dy)) >= STROKE_DRAG_PX && (
               <g transform={uprightAt(drag.cur.x, drag.cur.y, half === 'opposite', rotation)}>
-                <circle cx={drag.cur.x} cy={drag.cur.y} r={2.4} fill={`var(--${drag.dy < -STROKE_DRAG_PX && Math.abs(drag.dy) > Math.abs(drag.dx) ? 'serve' : drag.dx < 0 ? 'bh' : 'fh'})`} />
+                <circle cx={drag.cur.x} cy={drag.cur.y} r={2.4} fill={`var(--${previewStroke})`} />
                 <text
                   x={drag.cur.x}
                   y={drag.cur.y + 0.85}
@@ -317,7 +324,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
                   fill="#ffffff"
                   fontFamily="var(--font)"
                 >
-                  {drag.dy < -STROKE_DRAG_PX && Math.abs(drag.dy) > Math.abs(drag.dx) ? 'S' : drag.dx < 0 ? 'BH' : 'FH'}
+                  {previewStroke === 'serve' ? 'S' : previewStroke === 'bh' ? 'BH' : 'FH'}
                 </text>
               </g>
             )}
@@ -349,9 +356,8 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
           <rect x={COURT.netPostX - 0.4} y={-NET_BAND - 0.3} width={0.8} height={NET_BAND + 0.6} fill="#1c1f26" />
         </g>
 
-        {/* In Placement mode, the net itself is a deliberately large target: a ball here lost
-            the point, so it is recorded as a Net error rather than a placement. */}
-        {interactive && half === 'opposite' && (
+        {/* The net itself is a deliberately large target in both recording modes. */}
+        {interactive && (
           <g pointerEvents="none">
             <defs>
               <pattern id="net-error-mesh" width="1.2" height="1.2" patternUnits="userSpaceOnUse">
@@ -360,7 +366,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
               </pattern>
             </defs>
             <rect x={-COURT.netPostX} y={-NET_BAND} width={2 * COURT.netPostX} height={NET_BAND} fill="url(#net-error-mesh)" />
-            <g transform={uprightAt(0, -NET_BAND / 2, true, rotation)}>
+            <g transform={uprightAt(0, -NET_BAND / 2, half === 'opposite', rotation)}>
               <text x={0} y={-0.9} fontSize={0.9} fontWeight={800} textAnchor="middle" fill="#55300e" fontFamily="var(--font)" letterSpacing={0.16}>
                 NET
               </text>
@@ -447,6 +453,7 @@ function Marker({ p: pt, rotation, compact }: { p: Point; rotation: CourtRotatio
   // placements only: a ball past the singles lines was called out
   const out = p.outcome === 'placement' && p.stroke !== 'serve' && isOut(pt.x, pt.y)
   const net = error === 'net'
+  const miss = p.outcome === 'error' || out
   const label = markLabel(p.outcome === 'winner' ? '' : stroke, error, p.forced, p.outcome, out, p.placement_result)
 
   // Previous points are positional context only. Keep them visible without letting their symbols,
@@ -458,7 +465,7 @@ function Marker({ p: pt, rotation, compact }: { p: Point; rotation: CourtRotatio
     return (
       <g transform={uprightAt(p.x, p.y, false, rotation)} opacity={compactOpacity}>
         <title>{label}</title>
-        {net ? (
+        {miss ? (
           <g stroke={color} strokeWidth={0.28} strokeLinecap="round">
             <line x1={p.x - compactRadius} y1={p.y - compactRadius} x2={p.x + compactRadius} y2={p.y + compactRadius} />
             <line x1={p.x - compactRadius} y1={p.y + compactRadius} x2={p.x + compactRadius} y2={p.y - compactRadius} />

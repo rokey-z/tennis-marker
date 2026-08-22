@@ -56,7 +56,7 @@ export interface Session {
   notes: string
   /** Set when recording is finished; a finished session is read-only until explicitly unlocked. */
   finished_at?: string | null
-  /** Player's editable 1–5 assessment of the finished session. */
+  /** Player's editable 1–100 assessment of the finished session. */
   self_rating?: number | null
   created_at: string
   updated_at: string

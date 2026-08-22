@@ -387,41 +387,42 @@ textarea.input {
   color: #fff;
 }
 
-.rating-picker {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 7px;
-}
-.rating-picker button {
-  min-width: 0;
-  min-height: 66px;
-  padding: 8px 2px;
+.rating-score {
+  padding: 14px 16px 10px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--surface-2);
-  color: var(--muted);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
 }
-.rating-picker button strong {
-  font-size: 22px;
+.rating-score output {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  color: var(--text);
+}
+.rating-score output strong {
+  font-size: 34px;
   line-height: 1;
 }
-.rating-picker button small {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 10px;
-  white-space: nowrap;
+.rating-score output span {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
 }
-.rating-picker button.on {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+.rating-slider {
+  width: 100%;
+  height: 40px;
+  margin: 6px 0 0;
+  accent-color: var(--accent);
+  cursor: ew-resize;
+}
+.rating-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: -5px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
 }
 .finish-rating-actions {
   margin-top: 4px;
@@ -769,7 +770,7 @@ textarea.input {
   max-width: 100%;
   max-height: 100%;
   height: auto;
-  aspect-ratio: 42 / 49.5;
+  aspect-ratio: 42 / 53;
   border-radius: 10px;
   touch-action: manipulation;
   user-select: none;
@@ -777,7 +778,7 @@ textarea.input {
   -webkit-touch-callout: none;
 }
 .court-svg.quarter-turned {
-  aspect-ratio: 49.5 / 42;
+  aspect-ratio: 53 / 42;
 }
 /* phones: edge to edge — the court is always full width; the log below takes what's left */
 @media (max-width: 899px) {
@@ -854,12 +855,11 @@ textarea.input {
   }
   .record.court-fullscreen .court-svg,
   .court-box:fullscreen .court-svg {
-    width: 100%;
+    width: auto;
     height: 100%;
-    max-width: none;
-    max-height: none;
-    aspect-ratio: auto;
-    border-radius: 0;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 10px;
   }
   .court-fullscreen-exit {
     position: absolute;
@@ -884,17 +884,17 @@ textarea.input {
 }
 @supports (width: 1cqh) {
   .record.stats .court-box .court-svg {
-    width: min(100%, calc(100cqh * 42 / 49.5));
+    width: min(100%, calc(100cqh * 42 / 53));
   }
   .record.stats .court-box .court-svg.quarter-turned {
-    width: min(100%, calc(100cqh * 49.5 / 42));
+    width: min(100%, calc(100cqh * 53 / 42));
   }
   @media (min-width: 900px) {
     .court-box .court-svg {
-      width: min(100%, calc(100cqh * 42 / 49.5));
+      width: min(100%, calc(100cqh * 42 / 53));
     }
     .court-box .court-svg.quarter-turned {
-      width: min(100%, calc(100cqh * 49.5 / 42));
+      width: min(100%, calc(100cqh * 53 / 42));
     }
   }
 }
@@ -1302,7 +1302,7 @@ textarea.input {
   margin: 0 auto;
 }
 .stats-court .court-svg {
-  aspect-ratio: 42 / 49.5;
+  aspect-ratio: 42 / 53;
 }
 .legend {
   display: flex;

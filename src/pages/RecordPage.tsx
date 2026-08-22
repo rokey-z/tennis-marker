@@ -186,6 +186,27 @@ export function RecordPage() {
     [id],
   )
 
+  /** Errors mode: dragging left/right directly on the net logs BH/FH × Net in one gesture. */
+  const onNetStrokeDrag = useCallback(
+    (x: number, y: number, stroke: PlacementStroke, surface: 'court' | 'net' = 'court') => {
+      if (surface !== 'net' || stroke === 'serve') return
+      const p = store.addPoint({ session_id: id, x, y, stroke, error_type: 'net', forced: false, outcome: 'error', placement_result: null })
+      ignoreUntil.current = performance.now() + AFTER_SAVE_IGNORE_MS
+      try {
+        navigator.vibrate?.(12)
+      } catch {
+        /* ignore */
+      }
+      setToast({
+        id: Date.now(),
+        text: `${STROKE_SHORT[stroke]} net error`,
+        actionLabel: 'Undo',
+        onAction: () => store.deletePoint(p.id),
+      })
+    },
+    [id],
+  )
+
   const undo = () => {
     if (finished) return
     // only the marks this mode shows: a placement session must never quietly drop an error mark
@@ -251,7 +272,7 @@ export function RecordPage() {
         <ChartIcon /> {statsMode ? 'Court' : 'Stats'}
       </button>
       <button type="button" className={`btn${finished ? ' primary' : ''}`} onClick={openFinish} aria-pressed={finished} title={finished ? 'Edit rating or unlock this session' : 'Finish, rate, and lock this session'}>
-        <LockIcon /> {finished && session.self_rating ? `${session.self_rating}/5` : 'Finish'}
+        <LockIcon /> {finished && session.self_rating ? `${session.self_rating}/100` : 'Finish'}
       </button>
     </div>
   )
@@ -273,7 +294,7 @@ export function RecordPage() {
               {session.venue ? ` · ${session.venue}` : ''}
               {!session.opponent && session.kind === 'match' ? ' · add opponent' : ''}
               {finished ? ' · finished' : ''}
-              {session.self_rating ? ` · ${session.self_rating}/5` : ''}
+              {session.self_rating ? ` · ${session.self_rating}/100` : ''}
             </span>
             <SyncBadge compact interactive={false} />
           </span>
@@ -312,7 +333,6 @@ export function RecordPage() {
           {statsMode ? (
             <Court
               rotation={rotation}
-              fillViewport={courtFullscreen}
               points={shownPoints}
               compactMarks={finished ? 'overview' : 'analysis'}
               half={placementMode ? 'opposite' : 'own'}
@@ -324,9 +344,9 @@ export function RecordPage() {
           ) : (
             <Court
               rotation={rotation}
-              fillViewport={courtFullscreen}
               onTap={finished ? undefined : onTap}
-              onStrokeDrag={!finished && placementMode ? onStrokeDrag : undefined}
+              onStrokeDrag={!finished ? (placementMode ? onStrokeDrag : onNetStrokeDrag) : undefined}
+              dragNetOnly={!placementMode}
               half={placementMode ? 'opposite' : 'own'}
               sideLabel={sideLabel}
               disabled={finished || !!pending}
@@ -446,10 +466,8 @@ export function RecordPage() {
   )
 }
 
-const RATING_LABELS = ['Rough', 'Below par', 'Okay', 'Good', 'Great'] as const
-
 function FinishSessionModal({ session, onClose }: { session: Session; onClose: () => void }) {
-  const [rating, setRating] = useState(session.self_rating ?? 3)
+  const [rating, setRating] = useState(session.self_rating ?? 50)
   const finished = !!session.finished_at
 
   const save = () => {
@@ -469,16 +487,20 @@ function FinishSessionModal({ session, onClose }: { session: Session; onClose: (
     <Modal title={finished ? 'Session rating' : 'Finish session'} onClose={onClose}>
       <div className="field">
         <span>How did you play?</span>
-        <div className="rating-picker" role="radiogroup" aria-label="Self rating from 1 to 5">
-          {RATING_LABELS.map((label, index) => {
-            const value = index + 1
-            return (
-              <button key={value} type="button" role="radio" aria-checked={rating === value} className={rating === value ? 'on' : ''} onClick={() => setRating(value)}>
-                <strong>{value}</strong>
-                <small>{label}</small>
-              </button>
-            )
-          })}
+        <div className="rating-score">
+          <output htmlFor="self-rating"><strong>{rating}</strong><span>/100</span></output>
+          <input
+            id="self-rating"
+            className="rating-slider"
+            type="range"
+            min="1"
+            max="100"
+            step="1"
+            value={rating}
+            onChange={(e) => setRating(Number(e.target.value))}
+            aria-label="Self rating out of 100"
+          />
+          <div className="rating-scale" aria-hidden="true"><span>1</span><span>50</span><span>100</span></div>
         </div>
       </div>
       <div className="row finish-rating-actions">
