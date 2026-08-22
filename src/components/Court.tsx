@@ -113,6 +113,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
   const dragRef = useRef<DragState | null>(null)
   const [drag, setDrag] = useState<DragState | null>(null)
   const [hoveredPlacementCell, setHoveredPlacementCell] = useState<string | null>(null)
+  const [placementHoverPoint, setPlacementHoverPoint] = useState<{ x: number; y: number } | null>(null)
   const interactive = !!onTap
 
   const toCourt = useCallback((clientX: number, clientY: number): { x: number; y: number; net: boolean } | null => {
@@ -289,6 +290,11 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
     return counts
   }, [placementHeat, points])
   const hoveredPlacement = placementHeatCells?.find((cell) => cell.id === hoveredPlacementCell) ?? null
+  const updatePlacementHover = (id: string, e: ReactPointerEvent<SVGRectElement>) => {
+    const point = toCourt(e.clientX, e.clientY)
+    setHoveredPlacementCell(id)
+    if (point) setPlacementHoverPoint(point)
+  }
 
   return (
     <svg
@@ -395,8 +401,12 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
                   stroke={hovered ? "#ffffff" : "rgba(255,255,255,0.48)"}
                   strokeWidth={hovered ? 0.58 : 0.2}
                   style={{ cursor: 'help' }}
-                  onPointerEnter={() => setHoveredPlacementCell(c.id)}
-                  onPointerLeave={() => setHoveredPlacementCell(null)}
+                  onPointerEnter={(e) => updatePlacementHover(c.id, e)}
+                  onPointerMove={(e) => updatePlacementHover(c.id, e)}
+                  onPointerLeave={() => {
+                    setHoveredPlacementCell(null)
+                    setPlacementHoverPoint(null)
+                  }}
                 >
                   <title>FH {strokes.fh} · BH {strokes.bh}</title>
                 </rect>
@@ -512,24 +522,33 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
               const textColor = c.id === 'net' ? '#ffffff' : inCourt ? '#155d32' : '#8b220f'
               return (
                 <g key={c.id} transform={uprightAt(cx, cy, half === 'opposite', rotation)}>
-                  <text x={cx} y={cy + 0.7} fontSize={c.id === 'net' ? 3.4 : 4.6} fill={textColor}>{pctLabel}</text>
-                  <text x={cx} y={cy + (c.id === 'net' ? 2.2 : 3.1)} fontSize={c.id === 'net' ? 1.4 : 2} fill={textColor} opacity={0.88}>{c.n} {c.n === 1 ? 'mark' : 'marks'}</text>
+                  <text x={cx} y={cy + 0.55} fontSize={c.id === 'net' ? 2.8 : 3.8} fill={textColor}>{pctLabel}</text>
+                  <text x={cx} y={cy + (c.id === 'net' ? 1.8 : 2.45)} fontSize={c.id === 'net' ? 1.1 : 1.5} fill={textColor} opacity={0.88}>{c.n} {c.n === 1 ? 'mark' : 'marks'}</text>
                 </g>
               )
             })}
           </g>
         )}
-        {hoveredPlacement && (
-          <g transform={uprightAt(0, VB_MIN_Y + 2.7, half === 'opposite', rotation)} pointerEvents="none">
-            <rect x={-8.2} y={VB_MIN_Y + 0.6} width={16.4} height={4.2} rx={0.8} fill="#14181d" fillOpacity={0.9} />
-            <text x={0} y={VB_MIN_Y + 2.35} fontFamily="var(--font)" fontSize={1.55} fontWeight={800} textAnchor="middle" fill="#ffffff">
-              FH {placementHeatStrokes.get(hoveredPlacement.id)?.fh ?? 0} · BH {placementHeatStrokes.get(hoveredPlacement.id)?.bh ?? 0}
-            </text>
-            <text x={0} y={VB_MIN_Y + 3.85} fontFamily="var(--font)" fontSize={1.05} fontWeight={700} textAnchor="middle" fill="rgba(255,255,255,0.72)">
-              {hoveredPlacement.n} mark{hoveredPlacement.n === 1 ? '' : 's'} in this area
-            </text>
-          </g>
-        )}
+        {hoveredPlacement && placementHoverPoint && (() => {
+          const tooltipWidth = 13.2
+          const tooltipHeight = 4.6
+          const x = Math.min(DRAW_MAX_X - tooltipWidth - 0.7, Math.max(DRAW_MIN_X + 0.7, placementHoverPoint.x + 1.1))
+          const y = Math.min(DRAW_MAX_Y - tooltipHeight - 0.7, Math.max(VB_MIN_Y + 0.7, placementHoverPoint.y - tooltipHeight - 1.1))
+          const strokes = placementHeatStrokes.get(hoveredPlacement.id) ?? { fh: 0, bh: 0 }
+          return (
+            <g transform={uprightAt(x, y, half === 'opposite', rotation)} pointerEvents="none">
+              <rect x={x} y={y} width={tooltipWidth} height={tooltipHeight} rx={0.8} fill="var(--surface)" stroke="var(--line)" strokeWidth={0.22} />
+              <text x={x + tooltipWidth / 2} y={y + 1.85} fontFamily="var(--font)" fontSize={1.5} fontWeight={800} textAnchor="middle">
+                <tspan fill="var(--fh)">FH {strokes.fh}</tspan>
+                <tspan fill="var(--muted)"> · </tspan>
+                <tspan fill="var(--bh)">BH {strokes.bh}</tspan>
+              </text>
+              <text x={x + tooltipWidth / 2} y={y + 3.45} fontFamily="var(--font)" fontSize={1.05} fontWeight={700} textAnchor="middle" fill="var(--muted)">
+                {hoveredPlacement.n} mark{hoveredPlacement.n === 1 ? '' : 's'} in this area
+              </text>
+            </g>
+          )
+        })()}
 
         {/* logged points */}
         {points && points.length > 0 && (
