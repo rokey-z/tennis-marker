@@ -77,7 +77,10 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
     const inCourt = resultTotal('in')
     const net = summary.byError.net
     const wideLong = resultTotal('wide') + resultTotal('long')
-    const scoredLandings = inCourt + wideLong
+    // A net strike is an error outcome too. Keep it with the other misses so the
+    // headline answers the useful question: what share of attempts landed in?
+    const errors = net + wideLong
+    const scoredLandings = inCourt + errors
     const resultLabels: Record<PlacementResult, string> = { in: 'In', net: 'Net', wide: 'Wide', long: 'Long', unknown: 'Unrated' }
     const misses: { stroke: typeof PLACEMENT_STROKES[number]; result: Exclude<PlacementResult, 'in' | 'unknown'>; count: number }[] = []
     for (const stroke of PLACEMENT_STROKES) {
@@ -104,20 +107,16 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
           <div className="tile">
             <div className="label">In</div>
             <div className="value">
-              {inCourt}
-              <small>{pct(inCourt, scoredLandings)}%</small>
+              {pct(inCourt, scoredLandings)}%
+              <small>{inCourt} {inCourt === 1 ? 'ball' : 'balls'}</small>
             </div>
           </div>
           <div className="tile">
-            <div className="label">Wide + long</div>
+            <div className="label">Errors</div>
             <div className="value">
-              {wideLong}
-              <small>{pct(wideLong, scoredLandings)}%</small>
+              {pct(errors, scoredLandings)}%
+              <small>{errors} {errors === 1 ? 'ball' : 'balls'}</small>
             </div>
-          </div>
-          <div className="tile">
-            <div className="label">Net errors</div>
-            <div className="value">{net}</div>
           </div>
           <div className="tile">
             <div className="label">Forehand</div>
