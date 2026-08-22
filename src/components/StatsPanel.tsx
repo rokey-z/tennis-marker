@@ -75,13 +75,16 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
   if (mode === 'placement') {
     const resultTotal = (result: 'in' | 'net' | 'wide' | 'long') => PLACEMENT_STROKES.reduce((n, stroke) => n + summary.placementMatrix[stroke][result], 0)
     const inCourt = resultTotal('in')
-    const net = resultTotal('net')
+    const net = summary.byError.net
     const wideLong = resultTotal('wide') + resultTotal('long')
-    const scoredLandings = inCourt + net + wideLong
+    const scoredLandings = inCourt + wideLong
     const resultLabels: Record<PlacementResult, string> = { in: 'In', net: 'Net', wide: 'Wide', long: 'Long', unknown: 'Unrated' }
     const misses: { stroke: typeof PLACEMENT_STROKES[number]; result: Exclude<PlacementResult, 'in' | 'unknown'>; count: number }[] = []
     for (const stroke of PLACEMENT_STROKES) {
-      for (const result of ['net', 'wide', 'long'] as const) misses.push({ stroke, result, count: summary.placementMatrix[stroke][result] })
+      for (const result of ['net', 'wide', 'long'] as const) {
+        const count = result === 'net' ? (stroke === 'serve' ? 0 : summary.matrix[stroke].net) : summary.placementMatrix[stroke][result]
+        misses.push({ stroke, result, count })
+      }
     }
     const focus = misses.sort((a, b) => b.count - a.count)[0]
     return (
@@ -113,6 +116,10 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
             </div>
           </div>
           <div className="tile">
+            <div className="label">Net errors</div>
+            <div className="value">{net}</div>
+          </div>
+          <div className="tile">
             <div className="label">Forehand</div>
             <div className="value">
               {summary.placementsByStroke.fh}
@@ -135,8 +142,10 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
               {PLACEMENT_STROKES.map((stroke) => (
                 <tr key={stroke}>
                   <td><span className={`pill ${stroke}`}>{STROKE_SHORT[stroke]}</span> {STROKE_LABEL[stroke]}</td>
-                  {(['in', 'net', 'wide', 'long'] as const).map((result) => <td className="big" key={result}>{summary.placementMatrix[stroke][result]}</td>)}
-                  <td className="big">{summary.placementsByStroke[stroke]}</td>
+                  {(['in', 'net', 'wide', 'long'] as const).map((result) => (
+                    <td className="big" key={result}>{result === 'net' ? (stroke === 'serve' ? 0 : summary.matrix[stroke].net) : summary.placementMatrix[stroke][result]}</td>
+                  ))}
+                  <td className="big">{summary.placementsByStroke[stroke] + (stroke === 'serve' ? 0 : summary.matrix[stroke].net)}</td>
                 </tr>
               ))}
             </tbody>

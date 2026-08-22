@@ -20,6 +20,8 @@ as a home-screen app, records offline.
    and lets you delete any of them.
 4. **Rotate 90°** turns the court another quarter turn with each press, including landscape and
    far-end views. Data is always stored from *her* point of view (net at top, deuce side right).
+   On mobile, **Full screen** opens a landscape court with the largest available tap area; rotate
+   the phone sideways if the browser does not rotate it automatically.
 5. **Placement mode** (the switch above the court) records where her ball *landed* instead of where
    she lost the point: it shows the **far half** of the court, and one motion logs a shot — press
    where the ball landed and **drag left for a backhand, right for a forehand**, with a live BH/FH

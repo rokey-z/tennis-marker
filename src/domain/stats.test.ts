@@ -156,6 +156,15 @@ describe('summarize', () => {
     expect(s.byStroke).toEqual({ fh: 1, bh: 0 })
   })
 
+  it('counts net strikes as errors rather than placements', () => {
+    const s = summarize([point({ stroke: 'fh', error_type: 'net', outcome: 'error', placement_result: null })])
+    expect(s.total).toBe(1)
+    expect(s.lost).toBe(1)
+    expect(s.byError.net).toBe(1)
+    expect(s.placements).toBe(0)
+    expect(s.placementMatrix.fh.net).toBe(0)
+  })
+
   it('filters by outcome', () => {
     const pts = [point({ error_type: 'long' }), point({ error_type: '', outcome: 'winner' })]
     expect(filterPoints(pts, { outcome: 'winner' })).toHaveLength(1)

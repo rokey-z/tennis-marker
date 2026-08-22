@@ -434,32 +434,62 @@ function Marker({ p: pt, rotation, dim = false }: { p: Point; rotation: CourtRot
   const error = isErrorType(p.error_type) ? p.error_type : 'long'
   const color = `var(--${stroke})`
   const ink = `var(--${stroke}-ink)`
-  // earlier marks step back so the point just logged is the one you see; they stay solid enough
-  // that a backhand blue still reads against the blue court
-  const r = dim ? 0.95 : 1.4
   // placements only: a ball past the singles lines was called out
   const out = p.outcome === 'placement' && p.stroke !== 'serve' && isOut(pt.x, pt.y)
+  const net = error === 'net'
+  const label = markLabel(p.outcome === 'winner' ? '' : stroke, error, p.forced, p.outcome, out, p.placement_result)
+
+  // Previous points are positional context only. Keep them visible without letting their symbols,
+  // letters, or outlines compete with the newest mark.
+  if (dim) {
+    return (
+      <g transform={uprightAt(p.x, p.y, false, rotation)} opacity={0.34}>
+        <title>{label}</title>
+        {net ? (
+          <g stroke={color} strokeWidth={0.28} strokeLinecap="round">
+            <line x1={p.x - 0.38} y1={p.y - 0.38} x2={p.x + 0.38} y2={p.y + 0.38} />
+            <line x1={p.x - 0.38} y1={p.y + 0.38} x2={p.x + 0.38} y2={p.y - 0.38} />
+          </g>
+        ) : (
+          <circle cx={p.x} cy={p.y} r={0.42} fill={p.outcome === 'winner' ? 'var(--win)' : color} />
+        )}
+      </g>
+    )
+  }
+
+  const r = 1.4
   const a = r * 0.9
   return (
-    <g transform={uprightAt(p.x, p.y, false, rotation)} opacity={dim ? 0.78 : 1}>
-      <title>{markLabel(p.outcome === 'winner' ? '' : stroke, error, p.forced, p.outcome, out, p.placement_result)}</title>
+    <g transform={uprightAt(p.x, p.y, false, rotation)}>
+      <title>{label}</title>
       {/* colour carries her stroke; a dark outline marks a forced error. A winner is the opponent's
           shot, so it is a green diamond with no stroke colour at all. */}
-      {p.outcome === 'placement' ? (
+      {net ? (
+        <g strokeLinecap="round">
+          <g stroke="#ffffff" strokeWidth={1} opacity={0.85}>
+            <line x1={p.x - a} y1={p.y - a} x2={p.x + a} y2={p.y + a} />
+            <line x1={p.x - a} y1={p.y + a} x2={p.x + a} y2={p.y - a} />
+          </g>
+          <g stroke={color} strokeWidth={0.55}>
+            <line x1={p.x - a} y1={p.y - a} x2={p.x + a} y2={p.y + a} />
+            <line x1={p.x - a} y1={p.y + a} x2={p.x + a} y2={p.y - a} />
+          </g>
+        </g>
+      ) : p.outcome === 'placement' ? (
         out ? (
           // the umpire's call: a ball outside the singles lines is a cross, never a solid dot
           <g strokeLinecap="round">
-            <g stroke="#ffffff" strokeWidth={dim ? 0.75 : 1} opacity={0.85}>
+            <g stroke="#ffffff" strokeWidth={1} opacity={0.85}>
               <line x1={p.x - a} y1={p.y - a} x2={p.x + a} y2={p.y + a} />
               <line x1={p.x - a} y1={p.y + a} x2={p.x + a} y2={p.y - a} />
             </g>
-            <g stroke={color} strokeWidth={dim ? 0.4 : 0.55}>
+            <g stroke={color} strokeWidth={0.55}>
               <line x1={p.x - a} y1={p.y - a} x2={p.x + a} y2={p.y + a} />
               <line x1={p.x - a} y1={p.y + a} x2={p.x + a} y2={p.y - a} />
             </g>
           </g>
         ) : (
-          <circle cx={p.x} cy={p.y} r={r * 0.82} fill={color} stroke="#ffffff" strokeWidth={dim ? 0.18 : 0.26} />
+          <circle cx={p.x} cy={p.y} r={r * 0.82} fill={color} stroke="#ffffff" strokeWidth={0.26} />
         )
       ) : p.outcome === 'winner' ? (
         <rect
@@ -470,17 +500,17 @@ function Marker({ p: pt, rotation, dim = false }: { p: Point; rotation: CourtRot
           rx={0.22}
           fill="var(--win)"
           stroke="var(--mark-outline)"
-          strokeWidth={dim ? 0.24 : 0.32}
+          strokeWidth={0.32}
           transform={`rotate(45 ${p.x} ${p.y})`}
         />
       ) : (
-        <circle cx={p.x} cy={p.y} r={r} fill={color} stroke={p.forced ? 'var(--mark-outline)' : 'none'} strokeWidth={p.forced ? (dim ? 0.28 : 0.36) : 0} />
+        <circle cx={p.x} cy={p.y} r={r} fill={color} stroke={p.forced ? 'var(--mark-outline)' : 'none'} strokeWidth={p.forced ? 0.36 : 0} />
       )}
-      {p.outcome !== 'placement' && (
+      {p.outcome !== 'placement' && !net && (
       <text
         x={p.x}
-        y={p.y + (dim ? 0.38 : 0.54)}
-        fontSize={dim ? 1.1 : 1.55}
+        y={p.y + 0.54}
+        fontSize={1.55}
         fontWeight={800}
         textAnchor="middle"
         fill={p.outcome === 'winner' ? 'var(--win-ink)' : ink}

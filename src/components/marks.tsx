@@ -17,7 +17,7 @@ import { ERROR_LABEL, ERROR_TYPES, STROKE_LABEL, STROKE_SHORT, STROKES, isErrorT
  */
 
 /** The icon for an error type is its initial — the short form of the word it stands for. */
-export const ERROR_LETTER: Record<ErrorType, string> = { long: 'L', net: 'N', wide: 'W' }
+export const ERROR_LETTER: Record<ErrorType, string> = { long: 'L', net: '×', wide: 'W' }
 
 /** Plain-language name of a mark, for tooltips and screen readers. */
 export function markLabel(stroke: PlacementStroke | '', error: ErrorType | '', forced: boolean, outcome: Outcome = 'error', out = false, placementResult?: PlacementResult | null): string {
@@ -109,6 +109,10 @@ export function MarkLegend({ className = '', mode = 'errors' }: { className?: st
           <span className="ml-item">
             <MarkDot stroke="fh" error="" forced={false} outcome="placement" out size={14} />
             Landed out
+          </span>
+          <span className="ml-item">
+            <MarkDot stroke="fh" error="net" forced={false} outcome="error" size={14} />
+            Net error
           </span>
         </span>
       ) : (

@@ -20,6 +20,11 @@ export const CloseIcon = () => (
     <path d="M18 6L6 18M6 6l12 12" />
   </svg>
 )
+export const FullscreenIcon = () => (
+  <svg {...base}>
+    <path d="M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5" />
+  </svg>
+)
 /** Turn a view clockwise by one quarter turn. */
 export const Rotate90Icon = () => (
   <svg {...base}>

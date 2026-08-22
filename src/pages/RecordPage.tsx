@@ -5,7 +5,7 @@ import { useIsDesktop, usePlayer } from '../components/hooks'
 import { shortDate } from '../lib/format'
 import { Court, type CourtRotation } from '../components/Court'
 import { StatsFilters, StatsPanel, type StatsFilterState } from '../components/StatsPanel'
-import { BackIcon, ChartIcon, ListIcon, PencilIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
+import { BackIcon, ChartIcon, CloseIcon, FullscreenIcon, ListIcon, PencilIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
 import { ShotPopover } from '../components/ShotPopover'
 import { store, useAppState } from '../data/app'
 import { livePointsForSession } from '../data/store'
@@ -42,7 +42,7 @@ export function RecordPage() {
   const points = useMemo(
     // Placement sessions also retain net strikes on the court: they are errors, but the net is
     // part of the placement workflow and should not vanish immediately after being recorded.
-    () => allPoints.filter((p) => placementMode ? p.outcome === 'placement' || (p.outcome === 'error' && p.error_type === 'net') : p.outcome !== 'placement'),
+    () => allPoints.filter((p) => placementMode ? p.outcome === 'placement' || p.error_type === 'net' : p.outcome !== 'placement'),
     [allPoints, placementMode],
   )
   // the tally counts what the court and the log show: the marks of the mode being recorded
@@ -57,6 +57,8 @@ export function RecordPage() {
   })
   const [pending, setPending] = useState<{ x: number; y: number; at: { clientX: number; clientY: number }; surface: 'court' | 'net' } | null>(null)
   const courtRef = useRef<HTMLDivElement>(null)
+  const rotationBeforeFullscreen = useRef<CourtRotation | null>(null)
+  const [courtFullscreen, setCourtFullscreen] = useState(false)
   const [forced, setForced] = useState(false)
   const [toast, setToast] = useState<ToastState | null>(null)
   const [logOpen, setLogOpen] = useState(() => localStorage.getItem(LOG_KEY) !== '0')
@@ -79,6 +81,52 @@ export function RecordPage() {
   useEffect(() => {
     setPending(null)
   }, [placementMode])
+
+  const finishCourtFullscreen = useCallback(() => {
+    setCourtFullscreen(false)
+    const previous = rotationBeforeFullscreen.current
+    if (previous !== null) {
+      setRotation(previous)
+      rotationBeforeFullscreen.current = null
+    }
+    try {
+      const orientation = screen.orientation as ScreenOrientation & { unlock?: () => void }
+      orientation.unlock?.()
+    } catch {
+      /* orientation locking is best-effort and unsupported on iOS Safari */
+    }
+  }, [])
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      if (courtFullscreen && !document.fullscreenElement) finishCourtFullscreen()
+    }
+    document.addEventListener('fullscreenchange', onFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange)
+  }, [courtFullscreen, finishCourtFullscreen])
+
+  const enterCourtFullscreen = async () => {
+    if (courtFullscreen) return
+    rotationBeforeFullscreen.current = rotation
+    setRotation(rotation === 90 || rotation === 270 ? rotation : 90)
+    setCourtFullscreen(true)
+    try {
+      await courtRef.current?.requestFullscreen?.()
+      const orientation = screen.orientation as ScreenOrientation & { lock?: (value: 'landscape') => Promise<void> }
+      await orientation.lock?.('landscape')
+    } catch {
+      // The fixed-position fallback still provides a full-screen court. Users can rotate iPhones manually.
+    }
+  }
+
+  const exitCourtFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen()
+    } catch {
+      /* the state cleanup below also exits the CSS fallback */
+    }
+    finishCourtFullscreen()
+  }
 
   const onTap = useCallback((x: number, y: number, at: { clientX: number; clientY: number }, surface: 'court' | 'net' = 'court') => {
     if (performance.now() < ignoreUntil.current) return
@@ -113,7 +161,8 @@ export function RecordPage() {
 
   const pick = (stroke: Stroke, error: ErrorType) => {
     const net = pending?.surface === 'net'
-    logPoint(stroke, net ? '' : error, placementMode ? 'placement' : 'error', placementMode ? (net ? 'net' : placementResultFor(pending!.x, pending!.y)) : null)
+    if (placementMode && net) logPoint(stroke, 'net', 'error')
+    else logPoint(stroke, error, placementMode ? 'placement' : 'error', placementMode ? placementResultFor(pending!.x, pending!.y) : null)
   }
   /** The opponent hit a winner past her: one tap, nothing of hers to attribute. */
   const logWinner = () => logPoint('', '', 'winner')
@@ -123,8 +172,8 @@ export function RecordPage() {
     (x: number, y: number, stroke: PlacementStroke, surface: 'court' | 'net' = 'court') => {
       if (performance.now() < ignoreUntil.current) return
       const net = surface === 'net'
-      const placement_result = net ? 'net' : stroke === 'serve' ? 'unknown' : placementResultFor(x, y)
-      const p = store.addPoint({ session_id: id, x, y, stroke, error_type: '', forced: false, outcome: 'placement', placement_result })
+      const placement_result = stroke === 'serve' ? 'unknown' : placementResultFor(x, y)
+      const p = store.addPoint({ session_id: id, x, y, stroke, error_type: net ? 'net' : '', forced: false, outcome: net ? 'error' : 'placement', placement_result: net ? null : placement_result })
       ignoreUntil.current = performance.now() + AFTER_SAVE_IGNORE_MS
       try {
         navigator.vibrate?.(12)
@@ -133,7 +182,7 @@ export function RecordPage() {
       }
       setToast({
         id: Date.now(),
-        text: `${STROKE_SHORT[stroke]} · ${placement_result === 'unknown' ? 'serve landing' : placement_result === 'in' ? describeMark(p.x, p.y, 'placement').toLowerCase() : placement_result}`,
+        text: net ? `${STROKE_SHORT[stroke]} net error` : `${STROKE_SHORT[stroke]} · ${placement_result === 'unknown' ? 'serve landing' : placement_result === 'in' ? describeMark(p.x, p.y, 'placement').toLowerCase() : placement_result}`,
         actionLabel: 'Undo',
         onAction: () => store.deletePoint(p.id),
       })
@@ -143,7 +192,7 @@ export function RecordPage() {
 
   const undo = () => {
     // only the marks this mode shows: a placement session must never quietly drop an error mark
-    const p = store.undoLastPoint(id, (q) => ((q.outcome ?? 'error') === 'placement') === placementMode)
+    const p = store.undoLastPoint(id, (q) => placementMode ? (q.outcome ?? 'error') === 'placement' || q.error_type === 'net' : (q.outcome ?? 'error') !== 'placement')
     if (!p) return
     setToast({
       id: Date.now(),
@@ -200,7 +249,7 @@ export function RecordPage() {
   )
 
   return (
-    <div key={id} className={`record page-in${statsMode ? ' stats' : ''}`}>
+    <div key={id} className={`record page-in${statsMode ? ' stats' : ''}${courtFullscreen ? ' court-fullscreen' : ''}`}>
       <header className="record-head">
         <Link to="/" className="icon-btn" aria-label="Back to sessions">
           <BackIcon />
@@ -229,11 +278,27 @@ export function RecordPage() {
         >
           <Rotate90Icon />
         </button>
+        {!isDesktop && (
+          <button
+            type="button"
+            className="flip-fab fullscreen-fab"
+            onClick={() => void enterCourtFullscreen()}
+            aria-label="Open full-screen landscape court"
+            title="Full-screen landscape court"
+          >
+            <FullscreenIcon />
+          </button>
+        )}
       </header>
 
       <div className="record-court">
         {statsMode && !placementMode && <StatsFilters value={filters} onChange={setFilters} />}
         <div className="court-box" ref={courtRef}>
+          {courtFullscreen && (
+            <button type="button" className="court-fullscreen-exit" onClick={() => void exitCourtFullscreen()} aria-label="Exit full-screen court" title="Exit full screen">
+              <CloseIcon />
+            </button>
+          )}
           {statsMode ? (
             <Court
               rotation={rotation}

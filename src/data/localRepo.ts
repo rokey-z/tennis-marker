@@ -106,9 +106,16 @@ function upgradePoints(points: Record<string, Point>): Record<string, Point> {
     // opponent's shot still carry one of her strokes — drop it, there is nothing to attribute
     const needsOutcome = typeof p?.outcome !== 'string'
     const staleStroke = p?.outcome === 'winner' && p.stroke !== ''
-    if (!needsOutcome && !staleStroke) continue
+    const legacyNet = p?.outcome === 'placement' && p.placement_result === 'net'
+    if (!needsOutcome && !staleStroke && !legacyNet) continue
     if (out === points) out = { ...points }
-    out[id] = { ...p, outcome: needsOutcome ? 'error' : p.outcome, stroke: staleStroke ? '' : p.stroke }
+    out[id] = {
+      ...p,
+      outcome: legacyNet || needsOutcome ? 'error' : p.outcome,
+      stroke: staleStroke ? '' : p.stroke,
+      error_type: legacyNet ? 'net' : p.error_type,
+      placement_result: legacyNet ? null : p.placement_result,
+    }
   }
   return out
 }

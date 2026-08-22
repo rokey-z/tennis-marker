@@ -48,10 +48,12 @@ export function sanitizePoint(raw: unknown): Point | null {
   const y = num(r.y)
   const created = isoOrNull(r.created_at)
   if (!id || !session_id || x === null || y === null || !created) return null
-  const outcome = isOutcome(r.outcome) ? r.outcome : 'error'
+  const rawOutcome = isOutcome(r.outcome) ? r.outcome : 'error'
+  const legacyNet = rawOutcome === 'placement' && r.placement_result === 'net'
+  const outcome = legacyNet ? 'error' : rawOutcome
   // an opponent winner has neither stroke nor error type; anything else must name a stroke
   if (outcome !== 'winner' && !(outcome === 'placement' ? isPlacementStroke(r.stroke) : isStroke(r.stroke))) return null
-  if (outcome === 'error' && !isErrorType(r.error_type)) return null
+  if (outcome === 'error' && !legacyNet && !isErrorType(r.error_type)) return null
   const c = clampToView(x, y)
   return {
     id,
@@ -60,7 +62,7 @@ export function sanitizePoint(raw: unknown): Point | null {
     x: roundFeet(c.x),
     y: roundFeet(c.y),
     stroke: outcome === 'winner' ? '' : (r.stroke as Stroke),
-    error_type: outcome === 'error' ? (r.error_type as Point['error_type']) : '',
+    error_type: legacyNet ? 'net' : outcome === 'error' ? (r.error_type as Point['error_type']) : '',
     outcome,
     placement_result: outcome === 'placement' ? (isPlacementResult(r.placement_result) ? r.placement_result : 'unknown') : null,
     forced: outcome === 'error' && (r.forced === true || r.forced === 'true' || r.forced === 1),

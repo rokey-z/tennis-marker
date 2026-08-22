@@ -33,6 +33,14 @@ describe('sanitizePoint', () => {
   it('clamps coordinates into the court view', () => {
     expect(sanitizePoint({ ...good, x: 999, y: -5 })).toMatchObject({ x: 24, y: 0 })
   })
+
+  it('upgrades a legacy placement net strike to an error', () => {
+    expect(sanitizePoint({ ...good, outcome: 'placement', error_type: '', placement_result: 'net' })).toMatchObject({
+      outcome: 'error',
+      error_type: 'net',
+      placement_result: null,
+    })
+  })
 })
 
 describe('sanitizeSession', () => {

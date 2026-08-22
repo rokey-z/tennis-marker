@@ -67,7 +67,9 @@ function normalizeSession(r: Record<string, unknown>): Session {
  * a placement that came back as an error would move the mark to the wrong half of the court.
  */
 export function normalizePoint(r: Record<string, unknown>): Point {
-  const outcome: Outcome = isOutcome(r.outcome) ? r.outcome : 'error'
+  const rawOutcome: Outcome = isOutcome(r.outcome) ? r.outcome : 'error'
+  const legacyNet = rawOutcome === 'placement' && r.placement_result === 'net'
+  const outcome: Outcome = legacyNet ? 'error' : rawOutcome
   return {
     id: String(r.id),
     user_id: r.user_id === null || r.user_id === undefined ? null : String(r.user_id),
@@ -76,7 +78,7 @@ export function normalizePoint(r: Record<string, unknown>): Point {
     y: Number(r.y),
     // a winner is the opponent's shot: no stroke of hers, no error type, never forced
     stroke: outcome === 'winner' ? '' : r.stroke === 'serve' ? 'serve' : r.stroke === 'bh' ? 'bh' : 'fh',
-    error_type: outcome === 'error' ? (r.error_type === 'net' ? 'net' : r.error_type === 'wide' ? 'wide' : 'long') : '',
+    error_type: legacyNet ? 'net' : outcome === 'error' ? (r.error_type === 'net' ? 'net' : r.error_type === 'wide' ? 'wide' : 'long') : '',
     outcome,
     placement_result: outcome === 'placement' ? (isPlacementResult(r.placement_result) ? r.placement_result : 'unknown') : null,
     forced: outcome === 'error' && Boolean(r.forced),

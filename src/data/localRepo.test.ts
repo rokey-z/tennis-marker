@@ -82,6 +82,13 @@ describe('load/save', () => {
     expect(loadState(st).points.p1.outcome).toBe('error')
   })
 
+  it('upgrades legacy placement net strikes to errors', () => {
+    const st = memoryStorage()
+    const net = pt({ outcome: 'placement', error_type: '', placement_result: 'net' })
+    st.setItem(STORAGE_KEY, JSON.stringify({ sessions: {}, points: { p1: net }, dirty: { sessions: [], points: [] }, meta: {} }))
+    expect(loadState(st).points.p1).toMatchObject({ outcome: 'error', error_type: 'net', placement_result: null })
+  })
+
   it('round-trips and dedupes dirty ids', () => {
     const st = memoryStorage()
     const s: RepoState = {
