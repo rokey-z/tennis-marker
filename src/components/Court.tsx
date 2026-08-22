@@ -233,7 +233,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
           id: `in-${id}`,
           r: { x: cols[colIndex], y: rows[rowIndex], width: cols[colIndex + 1] - cols[colIndex], height: rows[rowIndex + 1] - rows[rowIndex] },
           n,
-          fill: heatColor(n / max),
+          fill: placementHeatColor(row === 'net' ? 'short' : row, n / max),
           a: n === 0 ? 0 : 0.52 + 0.36 * (n / max),
         }
       }),
@@ -245,7 +245,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
         id: `long-${id}`,
         r: { x: cols[colIndex], y: COURT.halfLength, width: cols[colIndex + 1] - cols[colIndex], height: DRAW_MAX_Y - COURT.halfLength },
         n,
-        fill: heatColor(n / max),
+        fill: placementHeatColor('long', n / max),
         a: n === 0 ? 0 : 0.52 + 0.36 * (n / max),
       }
     })
@@ -258,10 +258,10 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
       ].map(({ col, x, width }) => {
         const id = zoneId({ row, col })
         const n = placementHeat.wide[id] ?? 0
-        return { id: `wide-${id}`, r: { x, y, width, height }, n, fill: heatColor(n / max), a: n === 0 ? 0 : 0.52 + 0.36 * (n / max) }
+        return { id: `wide-${id}`, r: { x, y, width, height }, n, fill: placementHeatColor('wide', n / max), a: n === 0 ? 0 : 0.52 + 0.36 * (n / max) }
       })
     })
-    const netCell = { id: 'net', r: { x: -COURT.singlesHalfWidth, y: -NET_BAND, width: 2 * COURT.singlesHalfWidth, height: NET_BAND }, n: placementHeat.net, fill: heatColor(placementHeat.net / max), a: placementHeat.net === 0 ? 0 : 0.52 + 0.36 * (placementHeat.net / max) }
+    const netCell = { id: 'net', r: { x: -COURT.singlesHalfWidth, y: -NET_BAND, width: 2 * COURT.singlesHalfWidth, height: NET_BAND }, n: placementHeat.net, fill: placementHeatColor('net', placementHeat.net / max), a: placementHeat.net === 0 ? 0 : 0.52 + 0.36 * (placementHeat.net / max) }
     return [...cells, ...longCells, ...wideCells, netCell]
   }, [placementHeat])
 
@@ -568,6 +568,24 @@ function heatColor(t: number): string {
   const b = [232, 89, 12] // #e8590c
   const k = Math.max(0, Math.min(1, t))
   const c = a.map((v, i) => Math.round(v + (b[i] - v) * k))
+  return `rgb(${c[0]}, ${c[1]}, ${c[2]})`
+}
+
+/** The analysis map reuses the same region language as the marking court. */
+function placementHeatColor(area: 'short' | 'net' | 'mid' | 'baseline' | 'wide' | 'long', t: number): string {
+  const base: Record<typeof area, [number, number, number]> = {
+    short: [114, 184, 151],
+    net: [241, 166, 92],
+    mid: [105, 161, 203],
+    baseline: [124, 146, 206],
+    wide: [248, 202, 145],
+    long: [245, 184, 117],
+  }
+  const source = base[area]
+  const k = Math.max(0, Math.min(1, t))
+  const pale = source.map((v) => Math.round(242 + (v - 242) * 0.48))
+  const deep = source.map((v) => Math.round(v * 0.72))
+  const c = pale.map((v, i) => Math.round(v + (deep[i] - v) * k))
   return `rgb(${c[0]}, ${c[1]}, ${c[2]})`
 }
 
