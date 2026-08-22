@@ -254,7 +254,10 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
 
         {/* Placement mode makes the ways a ball can miss unmistakable: the net is a Net error;
             everything beyond the singles lines or baseline is an out landing. */}
-        {interactive && half === 'opposite' && (
+        {/* Keep the placement result areas visible in analysis too: the heat layer then shows
+            where balls landed, while the court itself still explains whether that area is in,
+            wide, or long. */}
+        {(interactive || heat) && half === 'opposite' && (
           <g pointerEvents="none">
             {/* The three playable landing depths. */}
             <rect x={-COURT.singlesHalfWidth} y={0} width={2 * COURT.singlesHalfWidth} height={ZONE_ROW_SPLITS[0]} fill="rgba(114, 184, 151, 0.18)" />
