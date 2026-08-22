@@ -512,8 +512,8 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
               const textColor = c.id === 'net' ? '#ffffff' : inCourt ? '#155d32' : '#8b220f'
               return (
                 <g key={c.id} transform={uprightAt(cx, cy, half === 'opposite', rotation)}>
-                  <text x={cx} y={cy + 0.7} fontSize={c.id === 'net' ? 3.4 : 4.6} fill={textColor}>{c.n}</text>
-                  {pctLabel && <text x={cx} y={cy + (c.id === 'net' ? 2.2 : 3.1)} fontSize={c.id === 'net' ? 1.4 : 2} fill={textColor} opacity={0.88}>{pctLabel}</text>}
+                  <text x={cx} y={cy + 0.7} fontSize={c.id === 'net' ? 3.4 : 4.6} fill={textColor}>{pctLabel}</text>
+                  <text x={cx} y={cy + (c.id === 'net' ? 2.2 : 3.1)} fontSize={c.id === 'net' ? 1.4 : 2} fill={textColor} opacity={0.88}>{c.n} {c.n === 1 ? 'mark' : 'marks'}</text>
                 </g>
               )
             })}
