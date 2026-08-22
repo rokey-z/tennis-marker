@@ -134,9 +134,17 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
           </div>
         </div>
         <div className="card">
-          <div className="section-title">Stroke × result</div>
+          <div className="section-title">In / out by placement type</div>
           <table className="matrix">
-            <thead><tr><th /><th>In</th><th>Net</th><th>Wide</th><th>Long</th><th>Total</th></tr></thead>
+            <thead>
+              <tr>
+                <th rowSpan={2} />
+                <th colSpan={1} scope="colgroup">In court</th>
+                <th colSpan={3} scope="colgroup">Out / errors</th>
+                <th rowSpan={2}>Total</th>
+              </tr>
+              <tr><th>In</th><th>Net</th><th>Wide</th><th>Long</th></tr>
+            </thead>
             <tbody>
               {PLACEMENT_STROKES.map((stroke) => (
                 <tr key={stroke}>
