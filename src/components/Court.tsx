@@ -113,14 +113,14 @@ function ErrorDragWheel({ x, y, radius, rotation, selected, winner }: { x: numbe
           <g key={`${sector.stroke}-${sector.error}`} opacity={dimmed ? 0.24 : 1}>
             <path
               d={wheelSectorPath(x, y, radius, sector.start, sector.end)}
-              fill={active ? `var(--${sector.stroke})` : '#ffffff'}
-              stroke="#73777c"
+              fill={`var(--${sector.stroke})`}
+              stroke="rgba(255,255,255,0.72)"
               strokeWidth={0.22}
             />
-            <text x={label.x} y={label.y - 0.25} textAnchor="middle" fill={active ? '#ffffff' : '#15191f'} fontFamily="var(--font)" fontSize={1.15} fontWeight={700}>
+            <text x={label.x} y={label.y - 0.25} textAnchor="middle" fill="rgba(255,255,255,0.62)" fontFamily="var(--font)" fontSize={1.15} fontWeight={700}>
               {sector.stroke.toUpperCase()}
             </text>
-            <text x={label.x} y={label.y + 1.25} textAnchor="middle" fill={active ? '#ffffff' : '#15191f'} fontFamily="var(--font)" fontSize={1.65} fontWeight={850}>
+            <text x={label.x} y={label.y + 1.25} textAnchor="middle" fill="#ffffff" fontFamily="var(--font)" fontSize={1.65} fontWeight={850}>
               {sector.error.toUpperCase()}
             </text>
           </g>
