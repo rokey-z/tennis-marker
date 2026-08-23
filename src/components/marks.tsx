@@ -178,11 +178,6 @@ export function ShotGrid({
   }
   return (
     <div className="shot-grid">
-      {GRID_COLUMNS.map((stroke) => (
-        <div key={stroke} className="sg-head">
-          <StrokeTag stroke={stroke} />
-        </div>
-      ))}
       {ERROR_TYPES.map((err) =>
         GRID_COLUMNS.map((stroke) => {
           const sel = current?.outcome !== 'winner' && current?.stroke === stroke && current?.error === err
@@ -196,7 +191,8 @@ export function ShotGrid({
               title={markLabel(stroke, err, forced)}
               onClick={() => onPick(stroke, err)}
             >
-              {ERROR_LABEL[err]}
+              <span className="sg-stroke">{STROKE_SHORT[stroke]}</span>
+              <span>{ERROR_LABEL[err]}</span>
             </button>
           )
         }),
