@@ -2316,6 +2316,26 @@ span
 }
 
 /* ---------- point sheet (tap a log row) ---------- */
+.point-edit-pop {
+  position: fixed;
+  right: max(8px, env(safe-area-inset-right));
+  bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 65;
+  width: min(260px, calc(100vw - 16px));
+  max-height: calc(100dvh - 16px);
+  overflow: auto;
+  padding: 9px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28), 0 0 0 1px var(--line);
+  animation: pop-in 0.12s ease-out;
+}
+.point-edit-title {
+  padding: 1px 30px 7px 2px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
 .point-sheet .ps-head {
   display: flex;
   align-items: center;
@@ -2335,7 +2355,7 @@ span
   font-size: var(--fs-meta);
   color: var(--muted);
 }
-.point-sheet .point-sheet .ps-delete {
+.point-sheet .ps-delete {
   margin-top: 14px;
 }
 .point-list li.row-btn {

@@ -1,8 +1,8 @@
+import { useEffect } from 'react'
 import { describeMark, isOut } from '../domain/court'
 import { SHOT_TYPE_LABEL, isShotType, type ErrorType, type Point, type Stroke } from '../domain/types'
 import { formatTime } from '../lib/format'
-import { Modal } from './Bits'
-import { TrashIcon } from './Icons'
+import { CloseIcon, TrashIcon } from './Icons'
 import { MarkDot, ShotGrid, markLabel } from './marks'
 
 export interface PointSheetProps {
@@ -29,8 +29,20 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
     onClose()
   }
 
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
   return (
-    <Modal title={`Point ${index}`} onClose={onClose}>
+    <div className="point-edit-pop" role="dialog" aria-label={`Change point ${index}`}>
+      <button type="button" className="pop-close" aria-label="Close point editor" onClick={onClose}>
+        <CloseIcon />
+      </button>
+      <div className="point-edit-title">Point {index}</div>
       <div className="point-sheet">
         <div className="ps-head">
           <MarkDot stroke={point.stroke} error={point.error_type} forced={point.forced} outcome={point.outcome} out={out} size={34} />
@@ -48,7 +60,7 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
               onClick={() => onChange({ forced: !point.forced })}
               title="Mark as a forced error"
             >
-              Forced
+              {point.forced ? 'Forced' : 'Unforced'}
             </button>
           )}
         </div>
@@ -68,6 +80,6 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
           <TrashIcon /> Delete this point
         </button>
       </div>
-    </Modal>
+    </div>
   )
 }

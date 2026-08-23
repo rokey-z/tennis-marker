@@ -370,7 +370,7 @@ export function RecordPage() {
               dragNetOnly={!placementMode}
               half={placementMode ? 'opposite' : 'own'}
               sideLabel={sideLabel}
-              disabled={finished || !!pending}
+              disabled={finished || !!pending || !!openPoint}
               points={points}
               highlightedPointId={openPoint?.id}
               emphasizeLast={!finished}
