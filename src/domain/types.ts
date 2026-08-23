@@ -4,7 +4,7 @@ export type PlacementStroke = Stroke | 'serve'
 export type PlacementResult = 'in' | 'net' | 'wide' | 'long' | 'unknown'
 export type ErrorType = 'long' | 'net' | 'wide'
 /** The kind of ball attempted when an error was made. */
-export type ShotType = 'ground' | 'slice' | 'approach' | 'volley' | 'overhead' | 'lob' | 'drop'
+export type ShotType = 'ground' | 'slice' | 'approach' | 'volley' | 'swing_volley' | 'overhead' | 'lob' | 'drop'
 export type SessionKind = 'match' | 'practice'
 /** What a session records: her errors on her own half, or where her balls landed on the far half. */
 export type SessionMode = 'errors' | 'placement'
@@ -19,8 +19,8 @@ export const STROKES: Stroke[] = ['fh', 'bh']
 export const PLACEMENT_STROKES: PlacementStroke[] = ['fh', 'bh', 'serve']
 export const ERROR_TYPES: ErrorType[] = ['long', 'net', 'wide']
 export const SHOT_TYPE_GROUPS: ShotType[][] = [
-  ['ground', 'slice'],
-  ['approach', 'volley', 'overhead'],
+  ['ground', 'approach', 'slice'],
+  ['volley', 'swing_volley', 'overhead'],
   ['lob', 'drop'],
 ]
 export const OUTCOMES: Outcome[] = ['error', 'winner', 'placement']
@@ -33,6 +33,7 @@ export const SHOT_TYPE_LABEL: Record<ShotType, string> = {
   slice: 'Slice',
   approach: 'Approach',
   volley: 'Volley',
+  swing_volley: 'Swing volley',
   overhead: 'Overhead',
   lob: 'Lob',
   drop: 'Drop shot',
@@ -51,7 +52,7 @@ export const isStroke = (v: unknown): v is Stroke => v === 'fh' || v === 'bh'
 export const isPlacementStroke = (v: unknown): v is PlacementStroke => isStroke(v) || v === 'serve'
 export const isPlacementResult = (v: unknown): v is PlacementResult => v === 'in' || v === 'net' || v === 'wide' || v === 'long' || v === 'unknown'
 export const isErrorType = (v: unknown): v is ErrorType => v === 'long' || v === 'net' || v === 'wide'
-export const isShotType = (v: unknown): v is ShotType => v === 'ground' || v === 'slice' || v === 'approach' || v === 'volley' || v === 'overhead' || v === 'lob' || v === 'drop'
+export const isShotType = (v: unknown): v is ShotType => v === 'ground' || v === 'slice' || v === 'approach' || v === 'volley' || v === 'swing_volley' || v === 'overhead' || v === 'lob' || v === 'drop'
 export const isOutcome = (v: unknown): v is Outcome => v === 'error' || v === 'winner' || v === 'placement'
 export const isSessionKind = (v: unknown): v is SessionKind => v === 'match' || v === 'practice'
 export const isSessionMode = (v: unknown): v is SessionMode => v === 'errors' || v === 'placement'
