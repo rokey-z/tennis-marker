@@ -234,6 +234,8 @@ describe('perSessionCounts', () => {
       point({ session_id: 'p', stroke: 'bh', error_type: '', outcome: 'placement' }),
       // recorded before the session was switched to Placement: hidden on the court, so not counted
       point({ session_id: 'p', stroke: 'fh', error_type: 'long' }),
+      // winners record player position in Errors mode and never belong in Placement counts
+      point({ session_id: 'p', stroke: '', error_type: '', outcome: 'winner' }),
       point({ session_id: 'e', stroke: 'fh', error_type: 'net' }),
       point({ session_id: 'e', stroke: 'fh', error_type: '', outcome: 'placement' }),
     ]

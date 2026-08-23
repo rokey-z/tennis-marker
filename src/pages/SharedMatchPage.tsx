@@ -24,8 +24,11 @@ export function SharedMatchPage() {
 
   const { session, points } = shared
   const placement = session.mode === 'placement'
-  const summary = summarize(points)
-  const mapPoints = placement ? points : points.filter((point) => point.outcome !== 'winner')
+  // Match the private record view exactly: a placement map contains only ball landings and net
+  // strikes. Historical errors and winners from another mode are neither counted nor drawn.
+  const visiblePoints = points.filter((point) => placement ? point.outcome === 'placement' || point.error_type === 'net' : point.outcome !== 'placement')
+  const summary = summarize(visiblePoints)
+  const mapPoints = placement ? visiblePoints : visiblePoints.filter((point) => point.outcome !== 'winner')
   return (
     <main className="public-share">
       <section className="shared-match page-in">
@@ -49,8 +52,13 @@ export function SharedMatchPage() {
             showZones
           />
         </div>
+        {!placement && (
+          <div className="stats-map-winners" aria-label={`${summary.winners} opponent winners`}>
+            <span aria-hidden="true">★</span> Winners <strong>{summary.winners}</strong>
+          </div>
+        )}
         <MarkLegend mode={placement ? 'placement' : 'errors'} />
-        <StatsPanel summary={summary} count={points.length} mode={placement ? 'placement' : 'errors'} showExports={false} />
+        <StatsPanel summary={summary} count={visiblePoints.length} mode={placement ? 'placement' : 'errors'} showExports={false} />
         {session.notes && <div className="card shared-notes"><div className="section-title">Notes</div>{session.notes}</div>}
       </section>
     </main>

@@ -297,6 +297,20 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
     )
   }, [heat])
 
+  /** Visible FH/BH distribution for every error-map zone; winners and placements never enter it. */
+  const heatStrokes = useMemo(() => {
+    const counts = new Map<string, { fh: number; bh: number }>()
+    if (!heat) return counts
+    for (const p of points ?? []) {
+      if ((p.outcome ?? 'error') !== 'error' || (p.stroke !== 'fh' && p.stroke !== 'bh')) continue
+      const id = zoneId(zoneFor(p.x, p.y))
+      const row = counts.get(id) ?? { fh: 0, bh: 0 }
+      row[p.stroke]++
+      counts.set(id, row)
+    }
+    return counts
+  }, [heat, points])
+
   const placementSplit = useMemo(() => {
     if (!placementHeat) return null
     const sum = (values: Record<string, number>) => Object.values(values).reduce((total, count) => total + count, 0)
@@ -379,7 +393,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
         const zone = zoneId(zoneFor(p.x, p.y))
         if (result === 'in' || result === 'long' || result === 'wide') id = `${result}-${zone}`
         else if (result === 'net') id = 'net'
-      } else if (p.error_type === 'net') {
+      } else if (outcome === 'error' && p.error_type === 'net') {
         id = 'net'
       }
       if (!id) continue
@@ -603,7 +617,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
         })()}
 
         {/* The net itself is a deliberately large target in both recording modes. */}
-        {interactive && (
+        {(interactive || heat || placementHeat) && (
           <g pointerEvents="none">
             <defs>
               <pattern id="net-error-mesh" width="1.2" height="1.2" patternUnits="userSpaceOnUse">
@@ -627,14 +641,23 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
               const cx = c.r.x + c.r.width / 2
               const cy = c.r.y + c.r.height / 2
               const pctLabel = heatTotal > 0 && c.n > 0 ? `${Math.round((c.n / heatTotal) * 100)}%` : ''
+              const strokes = heatStrokes.get(c.id) ?? { fh: 0, bh: 0 }
+              const strokeTotal = strokes.fh + strokes.bh
               return (
                 <g key={c.id} transform={uprightAt(cx, cy, half === 'opposite', rotation)}>
-                  <text x={cx} y={cy + 0.6} fontSize={3.4} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.7)'}>
+                  <text x={cx} y={cy - 0.1} fontSize={3.1} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.7)'}>
                     {c.n}
                   </text>
                   {pctLabel && (
-                    <text x={cx} y={cy + 3.4} fontSize={1.8} fill="#14181d" opacity={0.8}>
+                    <text x={cx} y={cy + 2.25} fontSize={1.45} fill="#14181d" opacity={0.8}>
                       {pctLabel}
+                    </text>
+                  )}
+                  {strokeTotal > 0 && (
+                    <text x={cx} y={cy + 3.85} fontSize={0.92}>
+                      <tspan fill="var(--fh-text)">FH {Math.round((strokes.fh / strokeTotal) * 100)}%</tspan>
+                      <tspan fill="#5b6672"> · </tspan>
+                      <tspan fill="var(--bh-text)">BH {Math.round((strokes.bh / strokeTotal) * 100)}%</tspan>
                     </text>
                   )}
                 </g>
@@ -651,10 +674,19 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
               const pctLabel = parentTotal > 0 ? `${Math.round((c.n / parentTotal) * 100)}%` : ''
               const inCourt = c.id.startsWith('in-')
               const textColor = c.id === 'net' ? '#ffffff' : inCourt ? '#155d32' : '#8b220f'
+              const strokes = placementHeatStrokes.get(c.id) ?? { fh: 0, bh: 0 }
+              const strokeTotal = strokes.fh + strokes.bh
               return (
                 <g key={c.id} transform={uprightAt(cx, cy, half === 'opposite', rotation)}>
-                  <text x={cx} y={cy + 0.32} fontSize={c.id === 'net' ? 1.5 : 1.9} fill={textColor}>{pctLabel}</text>
-                  <text x={cx} y={cy + (c.id === 'net' ? 1 : 1.25)} fontSize={c.id === 'net' ? 0.6 : 0.68} fill={textColor} opacity={0.8}>{c.n} {c.n === 1 ? 'mark' : 'marks'}</text>
+                  <text x={cx} y={cy - 0.05} fontSize={c.id === 'net' ? 1.35 : 1.75} fill={textColor}>{pctLabel}</text>
+                  <text x={cx} y={cy + (c.id === 'net' ? 0.82 : 1.08)} fontSize={c.id === 'net' ? 0.56 : 0.64} fill={textColor} opacity={0.8}>{c.n} {c.n === 1 ? 'mark' : 'marks'}</text>
+                  {strokeTotal > 0 && (
+                    <text x={cx} y={cy + (c.id === 'net' ? 1.7 : 2.05)} fontSize={c.id === 'net' ? 0.55 : 0.65}>
+                      <tspan fill="var(--fh-text)">FH {Math.round((strokes.fh / strokeTotal) * 100)}%</tspan>
+                      <tspan fill={c.id === 'net' ? '#ffffff' : '#5b6672'}> · </tspan>
+                      <tspan fill="var(--bh-text)">BH {Math.round((strokes.bh / strokeTotal) * 100)}%</tspan>
+                    </text>
+                  )}
                 </g>
               )
             })}
