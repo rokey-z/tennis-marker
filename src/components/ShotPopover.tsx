@@ -91,21 +91,15 @@ export function ShotPopover({ anchor, containerRef, where, forced, onForcedChang
           <CloseIcon />
         </button>
         {!strokeOnly && (
-          // one control, two states — the segment that is filled is the one you are recording
-          <div className="seg-toggle" role="group" aria-label="Forced or unforced">
-            <button type="button" className={forced ? '' : 'on'} aria-pressed={!forced} onClick={() => onForcedChange(false)}>
-              Unforced
-            </button>
-            <button
-              type="button"
-              className={forced ? 'on' : ''}
-              aria-pressed={forced}
-              onClick={() => onForcedChange(true)}
-              title={`${capitalise(player.subject)} was forced into this error`}
-            >
-              Forced
-            </button>
-          </div>
+          <button
+            type="button"
+            className={`forced-toggle${forced ? ' on' : ''}`}
+            aria-pressed={forced}
+            onClick={() => onForcedChange(!forced)}
+            title={forced ? 'Change to an unforced error' : `${capitalise(player.subject)} was forced into this error`}
+          >
+            {forced ? 'Forced' : 'Unforced'}
+          </button>
         )}
         {errorPick ? (
           <div className="shot-type-step">

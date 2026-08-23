@@ -1171,29 +1171,6 @@ textarea.input {
   box-shadow: 0 0 0 1px var(--line), var(--shadow);
   z-index: 2;
 }
-/* unforced | forced: one track, two segments, so the state is visible without reading a label */
-.seg-toggle {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 3px;
-  padding: 3px;
-  border-radius: 999px;
-  background: var(--surface-2);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-.seg-toggle button {
-  min-height: 30px;
-  border-radius: 999px;
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 800;
-}
-.seg-toggle button.on {
-  background: var(--mark-outline);
-  color: #fff;
-}
 .shot-type-step {
   margin-top: 7px;
 }
