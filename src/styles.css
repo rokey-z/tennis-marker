@@ -1194,8 +1194,9 @@ textarea.input {
   font-weight: 800;
 }
 .shot-type-group {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 5px;
   padding: 6px 0;
 }
@@ -1203,10 +1204,12 @@ textarea.input {
   border-top: 1px solid var(--line);
 }
 .shot-type-btn {
-  min-height: 38px;
-  padding: 4px 7px;
+  width: 64px;
+  min-width: 64px;
+  height: 64px;
+  padding: 5px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 50%;
   background: var(--surface-2);
   color: var(--ink);
   font-size: 13px;

@@ -31,7 +31,7 @@ export const ERROR_LABEL: Record<ErrorType, string> = { long: 'Long', net: 'Net'
 export const SHOT_TYPE_LABEL: Record<ShotType, string> = {
   ground: 'Ground',
   slice: 'Slice',
-  approach: 'Approaching',
+  approach: 'Approach',
   volley: 'Volley',
   overhead: 'Overhead',
   lob: 'Lob',
