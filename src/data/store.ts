@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { roundFeet } from '../domain/court'
 import { compareSessionDesc } from '../domain/stats'
-import type { NewPoint, Point, Session } from '../domain/types'
+import { isShotType, type NewPoint, type Point, type Session } from '../domain/types'
 import { cleanOpponent, opponentFromLegacyTitle, opponentKey } from '../domain/session'
 import { todayLocalISO } from '../lib/format'
 import { isUuid, sanitizePoint, sanitizeSession } from '../domain/validate'
@@ -47,7 +47,7 @@ export interface Store {
   deletedSessions(): Session[]
   addPoint(input: NewPoint): Point
   /** Correct a logged point (wrong stroke, wrong error, forced) without moving it. */
-  updatePoint(id: string, patch: Partial<Pick<Point, 'stroke' | 'error_type' | 'forced' | 'outcome'>>): void
+  updatePoint(id: string, patch: Partial<Pick<Point, 'stroke' | 'error_type' | 'forced' | 'outcome' | 'shot_type'>>): void
   deletePoint(id: string): void
   /** Bring back a soft-deleted point (undo of a delete). */
   restorePoint(id: string): void
@@ -286,6 +286,7 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
         error_type: input.outcome === 'winner' ? '' : input.error_type,
         outcome: input.outcome ?? 'error',
         placement_result: input.outcome === 'placement' ? (input.placement_result ?? 'unknown') : null,
+        shot_type: (input.outcome ?? 'error') === 'error' && isShotType(input.shot_type) ? input.shot_type : null,
         forced: input.outcome === 'winner' ? false : !!input.forced,
         created_at: t,
         updated_at: t,
@@ -298,6 +299,7 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
       const p = state.points[id]
       if (!p || p.deleted_at) return
       const next: Point = { ...p, ...patch, updated_at: iso() }
+      if (next.outcome !== 'error' || !isShotType(next.shot_type)) next.shot_type = null
       set(markDirty({ ...state, points: { ...state.points, [id]: next } }, 'points', [id]))
     },
     deletePoint(id) {

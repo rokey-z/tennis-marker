@@ -6,7 +6,8 @@ const t = '2026-08-15T10:00:00.000Z'
 describe('sanitizePoint', () => {
   const good = { id: 'p1', session_id: 's1', x: 10, y: 40, stroke: 'fh', error_type: 'long', forced: false, created_at: t, updated_at: t, deleted_at: null }
   it('accepts a valid row and canonicalises it', () => {
-    expect(sanitizePoint({ ...good, x: '12.34', forced: 'true', updated_at: '2026-08-15T10:00:00+00:00' })).toMatchObject({ x: 12.3, forced: true, updated_at: t, user_id: null })
+    expect(sanitizePoint({ ...good, x: '12.34', forced: 'true', shot_type: 'volley', updated_at: '2026-08-15T10:00:00+00:00' })).toMatchObject({ x: 12.3, forced: true, shot_type: 'volley', updated_at: t, user_id: null })
+    expect(sanitizePoint({ ...good, shot_type: 'serve' })?.shot_type).toBeNull()
   })
   it('rejects unknown enums, bad coords and bad timestamps', () => {
     expect(sanitizePoint({ ...good, stroke: 'volley' })).toBeNull()

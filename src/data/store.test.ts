@@ -79,11 +79,11 @@ describe('store', () => {
     const s = store.createSession()
     const w = store.addPoint({ session_id: s.id, x: 5, y: 30, stroke: 'bh', error_type: 'long', forced: true, outcome: 'winner' })
     expect(w).toMatchObject({ outcome: 'winner', stroke: '', error_type: '', forced: false })
-    const e = store.addPoint({ session_id: s.id, x: 5, y: 30, stroke: 'fh', error_type: 'net', forced: true })
-    expect(e).toMatchObject({ outcome: 'error', error_type: 'net', forced: true })
+    const e = store.addPoint({ session_id: s.id, x: 5, y: 30, stroke: 'fh', error_type: 'net', shot_type: 'volley', forced: true })
+    expect(e).toMatchObject({ outcome: 'error', error_type: 'net', shot_type: 'volley', forced: true })
     // an error can be corrected into a winner and back
     store.updatePoint(e.id, { outcome: 'winner', stroke: '', error_type: '', forced: false })
-    expect(store.getState().points[e.id]).toMatchObject({ outcome: 'winner', stroke: '', error_type: '' })
+    expect(store.getState().points[e.id]).toMatchObject({ outcome: 'winner', stroke: '', error_type: '', shot_type: null })
   })
 
   it('undo can be narrowed to the marks in view, so a hidden one is never dropped', () => {

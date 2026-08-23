@@ -1,5 +1,5 @@
 import { describeMark, isOut } from '../domain/court'
-import type { ErrorType, Point, Stroke } from '../domain/types'
+import { SHOT_TYPE_LABEL, isShotType, type ErrorType, type Point, type Stroke } from '../domain/types'
 import { formatTime } from '../lib/format'
 import { Modal } from './Bits'
 import { TrashIcon } from './Icons'
@@ -9,7 +9,7 @@ export interface PointSheetProps {
   point: Point
   /** 1-based position in the session, as shown in the log */
   index: number
-  onChange: (patch: Partial<Pick<Point, 'stroke' | 'error_type' | 'forced' | 'outcome'>>) => void
+  onChange: (patch: Partial<Pick<Point, 'stroke' | 'error_type' | 'forced' | 'outcome' | 'shot_type'>>) => void
   onDelete: () => void
   onClose: () => void
 }
@@ -35,7 +35,7 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
         <div className="ps-head">
           <MarkDot stroke={point.stroke} error={point.error_type} forced={point.forced} outcome={point.outcome} out={out} size={34} />
           <div className="grow">
-            <div className="ps-now">{markLabel(point.stroke, point.error_type, point.forced, point.outcome, out, point.placement_result)}</div>
+            <div className="ps-now">{markLabel(point.stroke, point.error_type, point.forced, point.outcome, out, point.placement_result)}{isShotType(point.shot_type) ? ` · ${SHOT_TYPE_LABEL[point.shot_type]}` : ''}</div>
             <div className="ps-meta">
               {describeMark(point.x, point.y, point.outcome)} · {formatTime(point.created_at)}
             </div>

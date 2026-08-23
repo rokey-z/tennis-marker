@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { isOutcome, isPlacementResult, type Outcome, type Point, type Session } from '../domain/types'
+import { isOutcome, isPlacementResult, isShotType, type Outcome, type Point, type Session } from '../domain/types'
 import type { Remote, RemoteError } from './syncEngine'
 
 export const SUPABASE_URL: string | undefined = import.meta.env.VITE_SUPABASE_URL
@@ -25,7 +25,7 @@ const PAGE = 1000
 
 /** Columns added after 0001; dropped from the payload until the matching migration is applied. */
 const OPTIONAL_SESSION_COLUMNS = ['opponent', 'venue', 'mode', 'finished_at', 'self_rating'] as const
-const OPTIONAL_POINT_COLUMNS = ['outcome'] as const
+const OPTIONAL_POINT_COLUMNS = ['outcome', 'shot_type'] as const
 const missingColumns = new Set<string>()
 
 function stripMissing(row: Session | Point): Record<string, unknown> {
@@ -83,6 +83,7 @@ export function normalizePoint(r: Record<string, unknown>): Point {
     error_type: legacyNet ? 'net' : outcome === 'error' ? (r.error_type === 'net' ? 'net' : r.error_type === 'wide' ? 'wide' : 'long') : '',
     outcome,
     placement_result: outcome === 'placement' ? (isPlacementResult(r.placement_result) ? r.placement_result : 'unknown') : null,
+    shot_type: outcome === 'error' && isShotType(r.shot_type) ? r.shot_type : null,
     forced: outcome === 'error' && Boolean(r.forced),
     created_at: toIso(r.created_at),
     updated_at: toIso(r.updated_at),

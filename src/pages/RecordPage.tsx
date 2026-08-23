@@ -20,7 +20,7 @@ import { filterPoints, summarize } from '../domain/stats'
 import { pointsToCsv, safeFilename, toExportBundle } from '../domain/export'
 import { encodeSharedMatch } from '../domain/share'
 import { downloadText } from '../lib/format'
-import { ERROR_LABEL, KIND_LABEL, MODE_HINT, MODE_LABEL, SESSION_MODES, STROKE_SHORT, type ErrorType, type Outcome, type PlacementStroke, type Point, type Session, type Stroke } from '../domain/types'
+import { ERROR_LABEL, KIND_LABEL, MODE_HINT, MODE_LABEL, SESSION_MODES, SHOT_TYPE_LABEL, STROKE_SHORT, type ErrorType, type Outcome, type PlacementStroke, type Point, type Session, type ShotType, type Stroke } from '../domain/types'
 
 const LOG_KEY = 'tennis-marker.logOpen'
 const ROTATE_90_KEY = 'tennis-marker.rotate90'
@@ -133,9 +133,9 @@ export function RecordPage() {
 
   const cancel = useCallback(() => setPending(null), [])
 
-  const logPoint = (stroke: PlacementStroke | '', error: ErrorType | '', outcome: Outcome, placementResult: Point['placement_result'] = null) => {
+  const logPoint = (stroke: PlacementStroke | '', error: ErrorType | '', outcome: Outcome, placementResult: Point['placement_result'] = null, shotType: ShotType | null = null) => {
     if (!pending) return
-    const p = store.addPoint({ session_id: id, x: pending.x, y: pending.y, stroke, error_type: error, forced: outcome === 'error' && forced, outcome, placement_result: placementResult })
+    const p = store.addPoint({ session_id: id, x: pending.x, y: pending.y, stroke, error_type: error, forced: outcome === 'error' && forced, outcome, placement_result: placementResult, shot_type: shotType })
     setPending(null)
     ignoreUntil.current = performance.now() + AFTER_SAVE_IGNORE_MS
     try {
@@ -150,16 +150,16 @@ export function RecordPage() {
           ? `${STROKE_SHORT[stroke as Stroke]} landed ${describeMark(p.x, p.y, 'placement').toLowerCase()}`
           : outcome === 'winner'
           ? `Opponent winner · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
-          : `${STROKE_SHORT[stroke as Stroke]} ${ERROR_LABEL[error as ErrorType].toLowerCase()} · ${forced ? 'forced' : 'unforced'} · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`,
+          : `${STROKE_SHORT[stroke as Stroke]} ${ERROR_LABEL[error as ErrorType].toLowerCase()} · ${shotType ? SHOT_TYPE_LABEL[shotType] : 'ball'} · ${forced ? 'forced' : 'unforced'} · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`,
       actionLabel: 'Undo',
       onAction: () => store.deletePoint(p.id),
     })
   }
 
-  const pick = (stroke: Stroke, error: ErrorType) => {
+  const pick = (stroke: Stroke, error: ErrorType, shotType?: ShotType) => {
     const net = pending?.surface === 'net'
     if (placementMode && net) logPoint(stroke, 'net', 'error')
-    else logPoint(stroke, error, placementMode ? 'placement' : 'error', placementMode ? placementResultFor(pending!.x, pending!.y) : null)
+    else logPoint(stroke, error, placementMode ? 'placement' : 'error', placementMode ? placementResultFor(pending!.x, pending!.y) : null, shotType ?? null)
   }
   /** The opponent hit a winner past her: one tap, nothing of hers to attribute. */
   const logWinner = () => logPoint('', '', 'winner')

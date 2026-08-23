@@ -26,6 +26,7 @@ const p1: Point = {
   stroke: 'fh',
   error_type: 'long',
   outcome: 'error',
+  shot_type: 'ground',
   forced: false,
   created_at: t0,
   updated_at: t0,
@@ -46,9 +47,9 @@ describe('csv', () => {
     const csv = pointsToCsv([p1, { ...p1, id: 'p2', deleted_at: t0 }], { s1 })
     const lines = csv.trimEnd().split('\r\n')
     expect(lines).toHaveLength(2)
-    expect(lines[0]).toBe('session,opponent,session_date,session_kind,point_time,outcome,x_ft,y_ft,zone,stroke,placement_result,error_type,forced')
+    expect(lines[0]).toBe('session,opponent,session_date,session_kind,point_time,outcome,x_ft,y_ft,zone,stroke,placement_result,error_type,shot_type,forced')
     expect(lines[1]).toBe(
-      `"vs Emma ""Fast"" Lee","Emma ""Fast"" Lee",2026-08-15,match,${t0},error,10.5,41,Baseline · deuce side,fh,,long,unforced`,
+      `"vs Emma ""Fast"" Lee","Emma ""Fast"" Lee",2026-08-15,match,${t0},error,10.5,41,Baseline · deuce side,fh,,long,ground,unforced`,
     )
   })
 })
@@ -58,7 +59,7 @@ describe('winners in the csv', () => {
     const w: Point = { ...p1, id: 'w1', outcome: 'winner', error_type: '', forced: false }
     const line = pointsToCsv([w], { s1 }).trimEnd().split('\r\n')[1]
     expect(line).toContain(',winner,')
-    expect(line.endsWith(',fh,,,unforced')).toBe(true)
+    expect(line.endsWith(',fh,,,,unforced')).toBe(true)
   })
 })
 

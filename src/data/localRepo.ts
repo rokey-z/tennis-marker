@@ -1,4 +1,4 @@
-import type { Point, Session } from '../domain/types'
+import { isShotType, type Point, type Session } from '../domain/types'
 
 /** Minimal Storage interface so the repo is testable without a DOM. */
 export interface StorageLike {
@@ -109,7 +109,8 @@ function upgradePoints(points: Record<string, Point>): Record<string, Point> {
     const needsOutcome = typeof p?.outcome !== 'string'
     const staleStroke = p?.outcome === 'winner' && p.stroke !== ''
     const legacyNet = p?.outcome === 'placement' && p.placement_result === 'net'
-    if (!needsOutcome && !staleStroke && !legacyNet) continue
+    const needsShotType = !('shot_type' in p) || p.shot_type !== null && !isShotType(p.shot_type)
+    if (!needsOutcome && !staleStroke && !legacyNet && !needsShotType) continue
     if (out === points) out = { ...points }
     out[id] = {
       ...p,
@@ -117,6 +118,7 @@ function upgradePoints(points: Record<string, Point>): Record<string, Point> {
       stroke: staleStroke ? '' : p.stroke,
       error_type: legacyNet ? 'net' : p.error_type,
       placement_result: legacyNet ? null : p.placement_result,
+      shot_type: isShotType(p.shot_type) ? p.shot_type : null,
     }
   }
   return out

@@ -7,14 +7,14 @@ const session: Session = {
   created_at: '2026-08-22T14:00:00.000Z', updated_at: '2026-08-22T15:00:00.000Z', deleted_at: null,
 }
 const point: Point = {
-  id: 'point-1', user_id: 'owner', session_id: session.id, x: 6, y: 25, stroke: 'fh', error_type: '', forced: false, outcome: 'placement', placement_result: 'in',
+  id: 'point-1', user_id: 'owner', session_id: session.id, x: 6, y: 25, stroke: 'fh', error_type: 'wide', forced: false, outcome: 'error', placement_result: null, shot_type: 'lob',
   created_at: '2026-08-22T14:15:00.000Z', updated_at: '2026-08-22T14:15:00.000Z', deleted_at: null,
 }
 
 describe('shared match links', () => {
   it('round-trips match metadata and live marks without account identifiers', () => {
     const shared = decodeSharedMatch(encodeSharedMatch(session, [point]))
-    expect(shared).toMatchObject({ session: { kind: 'match', opponent: 'Sam', user_id: null, self_rating: 84 }, points: [{ user_id: null, x: 6, outcome: 'placement' }] })
+    expect(shared).toMatchObject({ session: { kind: 'match', opponent: 'Sam', user_id: null, self_rating: 84 }, points: [{ user_id: null, x: 6, outcome: 'error', shot_type: 'lob' }] })
   })
 
   it('rejects malformed links', () => {
