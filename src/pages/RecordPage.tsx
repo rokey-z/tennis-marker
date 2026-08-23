@@ -387,11 +387,6 @@ export function RecordPage() {
       {isDesktop ? (
         <aside className="record-side">
           {!statsMode && (
-            <div className="card">
-              <Tally s={summary} mode={placementMode ? 'placement' : 'errors'} />
-            </div>
-          )}
-          {!statsMode && (
             <div className="record-hint">
               {finished
                 ? 'Session finished and locked. Unlock it to record or edit points.'
@@ -405,7 +400,10 @@ export function RecordPage() {
             <StatsPanel summary={statsSummary} count={shownPoints.length} mode={placementMode ? 'placement' : 'errors'} onExportCsv={exportCsv} onExportJson={exportJson} />
           ) : (
             <div className="card side-list">
-              <div className="section-title">Points</div>
+              <div className="side-list-head">
+                <div className="section-title">Points</div>
+                <Tally s={summary} mode={placementMode ? 'placement' : 'errors'} />
+              </div>
               <PointList points={points} onOpen={finished ? undefined : (p, index) => setOpenPoint({ id: p.id, index })} onDelete={finished ? undefined : deletePoint} />
             </div>
           )}
@@ -420,13 +418,12 @@ export function RecordPage() {
       ) : (
         <>
           <div className="record-bottom">
-            <Tally s={summary} mode={placementMode ? 'placement' : 'errors'} />
             {actions}
           </div>
           <section className={`record-log${logOpen ? ' open' : ''}`} aria-label="Logged points">
             <button type="button" className="log-head" onClick={() => setLogOpen((v) => !v)} aria-expanded={logOpen}>
               <ListIcon />
-              <span className="grow">Log · {points.length} {points.length === 1 ? 'point' : 'points'}</span>
+              <Tally s={summary} mode={placementMode ? 'placement' : 'errors'} />
               <span className="chev" aria-hidden="true">{logOpen ? '▾' : '▴'}</span>
             </button>
             {logOpen && (

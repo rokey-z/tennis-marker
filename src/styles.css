@@ -1191,6 +1191,11 @@ textarea.input {
 .log-head svg {
   width: 18px;
   height: 18px;
+  flex-shrink: 0;
+}
+.log-head .tally {
+  flex: 1;
+  min-width: 0;
 }
 .log-head .chev {
   font-size: 12px;
@@ -1205,6 +1210,14 @@ textarea.input {
 }
 .log-body .point-list li {
   padding: 4px 0;
+}
+.side-list-head {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.side-list-head .section-title {
+  margin-bottom: 0;
 }
 .record-hint {
   font-size: 14px;
