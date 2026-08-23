@@ -57,7 +57,7 @@ export function RecordPage() {
     // Versions before multi-turn rotation stored "1" for a single 90° turn.
     return saved === 1 ? 90 : [0, 90, 180, 270].includes(saved) ? saved as CourtRotation : 0
   })
-  const [pending, setPending] = useState<{ x: number; y: number; at: { clientX: number; clientY: number }; surface: 'court' | 'net' } | null>(null)
+  const [pending, setPending] = useState<{ x: number; y: number; at: { clientX: number; clientY: number }; surface: 'court' | 'net'; selection?: { stroke: Stroke; error: ErrorType } } | null>(null)
   const courtRef = useRef<HTMLDivElement>(null)
   const rotationBeforeFullscreen = useRef<CourtRotation | null>(null)
   const [courtFullscreen, setCourtFullscreen] = useState(false)
@@ -133,6 +133,12 @@ export function RecordPage() {
 
   const cancel = useCallback(() => setPending(null), [])
 
+  const onErrorDrag = useCallback((x: number, y: number, stroke: Stroke, error: ErrorType, at: { clientX: number; clientY: number }) => {
+    if (performance.now() < ignoreUntil.current) return
+    setForced(false)
+    setPending({ x, y, at, surface: 'court', selection: { stroke, error } })
+  }, [])
+
   const logPoint = (stroke: PlacementStroke | '', error: ErrorType | '', outcome: Outcome, placementResult: Point['placement_result'] = null, shotType: ShotType | null = null) => {
     if (!pending) return
     const p = store.addPoint({ session_id: id, x: pending.x, y: pending.y, stroke, error_type: error, forced: outcome === 'error' && forced, outcome, placement_result: placementResult, shot_type: shotType })
@@ -180,27 +186,6 @@ export function RecordPage() {
       setToast({
         id: Date.now(),
         text: net ? `${STROKE_SHORT[stroke]} net error` : `${STROKE_SHORT[stroke]} · ${placement_result === 'unknown' ? 'serve landing' : placement_result === 'in' ? describeMark(p.x, p.y, 'placement').toLowerCase() : placement_result}`,
-        actionLabel: 'Undo',
-        onAction: () => store.deletePoint(p.id),
-      })
-    },
-    [id],
-  )
-
-  /** Errors mode: dragging left/right directly on the net logs BH/FH × Net in one gesture. */
-  const onNetStrokeDrag = useCallback(
-    (x: number, y: number, stroke: PlacementStroke, surface: 'court' | 'net' = 'court') => {
-      if (surface !== 'net' || stroke === 'serve') return
-      const p = store.addPoint({ session_id: id, x, y, stroke, error_type: 'net', forced: false, outcome: 'error', placement_result: null })
-      ignoreUntil.current = performance.now() + AFTER_SAVE_IGNORE_MS
-      try {
-        navigator.vibrate?.(12)
-      } catch {
-        /* ignore */
-      }
-      setToast({
-        id: Date.now(),
-        text: `${STROKE_SHORT[stroke]} net error`,
         actionLabel: 'Undo',
         onAction: () => store.deletePoint(p.id),
       })
@@ -366,8 +351,8 @@ export function RecordPage() {
             <Court
               rotation={rotation}
               onTap={finished ? undefined : onTap}
-              onStrokeDrag={!finished ? (placementMode ? onStrokeDrag : onNetStrokeDrag) : undefined}
-              dragNetOnly={!placementMode}
+              onStrokeDrag={!finished && placementMode ? onStrokeDrag : undefined}
+              onErrorSelect={!finished && !placementMode ? onErrorDrag : undefined}
               half={placementMode ? 'opposite' : 'own'}
               sideLabel={sideLabel}
               disabled={finished || !!pending || !!openPoint}
@@ -387,6 +372,7 @@ export function RecordPage() {
             forced={forced}
             onForcedChange={setForced}
             strokeOnly={placementMode}
+            initialErrorPick={pending.selection}
             onPick={pick}
             onWinner={logWinner}
             player={player}
@@ -409,7 +395,7 @@ export function RecordPage() {
                 ? 'Session finished and locked. Unlock it to record or edit points.'
                 : placementMode
                 ? `Click where the ball landed, then pick the stroke ${player.name ? `${player.name} hit it with` : 'she hit it with'}. Swipe up to record a serve; mark the net for a Net error.`
-                : `Click the court where ${player.subject} lost the point, then pick FH/BH × Long/Net/Wide right there.`}
+                : `Press where ${player.subject} lost the point, drag toward FH/BH × Wide/Long/Net, then choose the ball type. Tap for button selection.`}
             </div>
           )}
           {actions}

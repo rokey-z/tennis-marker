@@ -14,7 +14,8 @@ import {
   zoneId,
   zoneRect,
 } from '../domain/court'
-import { isErrorType, isPlacementResult, isPlacementStroke, type PlacementStroke, type Point } from '../domain/types'
+import { isErrorType, isPlacementResult, isPlacementStroke, type ErrorType, type PlacementStroke, type Point, type Stroke } from '../domain/types'
+import { errorDragChoice, type ErrorDragChoice } from '../domain/errorWheel'
 import { ERROR_LETTER, markLabel } from './marks'
 
 /** Extra headroom above the net line so the net band is visible (presentational only). */
@@ -76,6 +77,58 @@ interface DragState {
   net: boolean
 }
 
+const ERROR_WHEEL_SECTORS: Array<ErrorDragChoice & { start: number; end: number }> = [
+  { stroke: 'bh', error: 'wide', start: -135, end: -90 },
+  { stroke: 'fh', error: 'wide', start: -90, end: -45 },
+  { stroke: 'fh', error: 'long', start: -45, end: 45 },
+  { stroke: 'fh', error: 'net', start: 45, end: 90 },
+  { stroke: 'bh', error: 'net', start: 90, end: 135 },
+  { stroke: 'bh', error: 'long', start: 135, end: 225 },
+]
+
+function polarPoint(cx: number, cy: number, radius: number, degrees: number) {
+  const radians = degrees * Math.PI / 180
+  return { x: cx + radius * Math.cos(radians), y: cy + radius * Math.sin(radians) }
+}
+
+function wheelSectorPath(cx: number, cy: number, radius: number, start: number, end: number): string {
+  const a = polarPoint(cx, cy, radius, start)
+  const b = polarPoint(cx, cy, radius, end)
+  return `M ${cx} ${cy} L ${a.x} ${a.y} A ${radius} ${radius} 0 ${end - start > 180 ? 1 : 0} 1 ${b.x} ${b.y} Z`
+}
+
+function ErrorDragWheel({ x, y, rotation, selected }: { x: number; y: number; rotation: CourtRotation; selected: ErrorDragChoice | null }) {
+  const radius = 8.4
+  return (
+    <g transform={uprightAt(x, y, false, rotation)} pointerEvents="none">
+      <circle cx={x} cy={y} r={radius + 0.3} fill="#171b21" opacity={0.96} stroke="#ffffff" strokeWidth={0.34} />
+      {ERROR_WHEEL_SECTORS.map((sector) => {
+        const active = selected?.stroke === sector.stroke && selected.error === sector.error
+        const dimmed = !!selected && !active
+        const mid = (sector.start + sector.end) / 2
+        const label = polarPoint(x, y, radius * 0.62, mid)
+        return (
+          <g key={`${sector.stroke}-${sector.error}`} opacity={dimmed ? 0.24 : 1}>
+            <path
+              d={wheelSectorPath(x, y, radius, sector.start, sector.end)}
+              fill={active ? `var(--${sector.stroke})` : '#ffffff'}
+              stroke="#73777c"
+              strokeWidth={0.22}
+            />
+            <text x={label.x} y={label.y - 0.25} textAnchor="middle" fill={active ? '#ffffff' : '#15191f'} fontFamily="var(--font)" fontSize={1.15} fontWeight={700}>
+              {sector.stroke.toUpperCase()}
+            </text>
+            <text x={label.x} y={label.y + 1.25} textAnchor="middle" fill={active ? '#ffffff' : '#15191f'} fontFamily="var(--font)" fontSize={1.65} fontWeight={850}>
+              {sector.error.toUpperCase()}
+            </text>
+          </g>
+        )
+      })}
+      <circle cx={x} cy={y} r={0.48} fill="#73777c" stroke="#ffffff" strokeWidth={0.18} />
+    </g>
+  )
+}
+
 export interface CourtProps {
   /** Rotate the court clockwise by a quarter-turn increment. */
   rotation?: CourtRotation
@@ -96,6 +149,8 @@ export interface CourtProps {
   sideLabel?: string
   /** Placement mode: press where the ball landed and drag left for backhand, right for forehand. */
   onStrokeDrag?: (x: number, y: number, stroke: PlacementStroke, surface?: 'court' | 'net') => void
+  /** Errors mode: drag from the mark into one of six FH/BH × Wide/Long/Net wheel sectors. */
+  onErrorSelect?: (x: number, y: number, stroke: Stroke, error: ErrorType, at: { clientX: number; clientY: number }) => void
   /** Only start the stroke gesture on the net; ordinary court taps remain taps. */
   dragNetOnly?: boolean
   pending?: { x: number; y: number } | null
@@ -108,7 +163,7 @@ export interface CourtProps {
   className?: string
 }
 
-export function Court({ rotation = 0, onTap, disabled = false, points, highlightedPointId = null, emphasizeLast = false, compactMarks, half = 'own', sideLabel, onStrokeDrag, dragNetOnly = false, pending, showZones = false, heat, placementHeat, heatTotal = 0, className }: CourtProps) {
+export function Court({ rotation = 0, onTap, disabled = false, points, highlightedPointId = null, emphasizeLast = false, compactMarks, half = 'own', sideLabel, onStrokeDrag, onErrorSelect, dragNetOnly = false, pending, showZones = false, heat, placementHeat, heatTotal = 0, className }: CourtProps) {
   const gRef = useRef<SVGGElement>(null)
   const down = useRef<{ id: number; x: number; y: number; t: number } | null>(null)
   // the ref is authoritative (pointer events can arrive faster than React re-renders); state drives the drawing
@@ -117,6 +172,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
   const [hoveredPlacementCell, setHoveredPlacementCell] = useState<string | null>(null)
   const [placementHoverClient, setPlacementHoverClient] = useState<{ x: number; y: number } | null>(null)
   const interactive = !!onTap
+  const hasDrag = !!onStrokeDrag || !!onErrorSelect
 
   const toCourt = useCallback((clientX: number, clientY: number): { x: number; y: number; net: boolean } | null => {
     const g = gRef.current
@@ -135,9 +191,9 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
   // We only remember where the pointer went down to reject mouse drags (mouse fires click regardless).
   const onPointerDown = (e: ReactPointerEvent<SVGSVGElement>) => {
     down.current = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() }
-    if (!onStrokeDrag || disabled) return
+    if (!hasDrag || disabled) return
     const c = toCourt(e.clientX, e.clientY)
-    if (!c || (dragNetOnly && !c.net)) return
+    if (!c || (!onErrorSelect && dragNetOnly && !c.net)) return
     try {
       e.currentTarget.setPointerCapture(e.pointerId)
     } catch {
@@ -165,9 +221,15 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
     setDrag(null)
     down.current = null
     const dy = e.clientY - d.at.y
-    if (Math.max(Math.abs(dx), Math.abs(dy)) < STROKE_DRAG_PX) {
+    const dragDistance = onErrorSelect ? Math.hypot(dx, dy) : Math.max(Math.abs(dx), Math.abs(dy))
+    if (dragDistance < STROKE_DRAG_PX) {
       // too short to mean a direction — fall back to the tap chooser
       onTap?.(d.start.x, d.start.y, { clientX: d.at.x, clientY: d.at.y }, d.net ? 'net' : 'court')
+      return
+    }
+    if (onErrorSelect) {
+      const choice = errorDragChoice(dx, dy)
+      if (choice) onErrorSelect(d.start.x, d.start.y, choice.stroke, choice.error, { clientX: d.at.x, clientY: d.at.y })
       return
     }
     const stroke: PlacementStroke = !d.net && dy < -STROKE_DRAG_PX && Math.abs(dy) > Math.abs(dx) ? 'serve' : dx < 0 ? 'bh' : 'fh'
@@ -182,7 +244,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
   const onClick = (e: ReactMouseEvent<SVGSVGElement>) => {
     // Placement mode handles short taps at pointer-up. In errors mode only the net owns a drag,
     // so a regular court press still falls through to the normal tap chooser.
-    if (!interactive || disabled || (onStrokeDrag && (!dragNetOnly || down.current === null))) return
+    if (!interactive || disabled || (hasDrag && (onErrorSelect || !dragNetOnly || down.current === null))) return
     const d = down.current
     down.current = null
     if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) > DRAG_PX) return
@@ -310,11 +372,11 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
       role={interactive ? 'button' : 'img'}
       aria-label={interactive ? 'Half tennis court — tap where the point was lost' : 'Half tennis court'}
       onPointerDown={onPointerDown}
-      onPointerMove={onStrokeDrag ? onPointerMove : undefined}
-      onPointerUp={onStrokeDrag ? endDrag : undefined}
+      onPointerMove={hasDrag ? onPointerMove : undefined}
+      onPointerUp={hasDrag ? endDrag : undefined}
       onPointerCancel={onPointerCancel}
       onClick={onClick}
-      style={onStrokeDrag ? { touchAction: dragNetOnly ? 'pan-y' : 'none' } : undefined}
+      style={hasDrag ? { touchAction: !onErrorSelect && dragNetOnly ? 'pan-y' : 'none' } : undefined}
       onContextMenu={(e) => e.preventDefault()}
     >
       <g ref={gRef} transform={viewTransform}>
@@ -419,7 +481,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
         )}
 
         {/* live drag: the press point is the placement, the direction picks the stroke */}
-        {drag && (
+        {drag && onStrokeDrag && !onErrorSelect && (
           <g pointerEvents="none">
             <line
               x1={drag.start.x}
@@ -574,6 +636,16 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
               />
             ))}
           </g>
+        )}
+
+        {/* Error selection stays above the court, net, and existing marks while the finger moves. */}
+        {drag && onErrorSelect && (
+          <ErrorDragWheel
+            x={drag.start.x}
+            y={drag.start.y}
+            rotation={rotation}
+            selected={errorDragChoice(drag.dx, drag.dy)}
+          />
         )}
 
         {/* pending (ghost) marker */}
