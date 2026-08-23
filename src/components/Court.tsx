@@ -469,7 +469,14 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
 
         {/* net */}
         <g>
-          <rect x={-COURT.netPostX} y={-NET_BAND} width={2 * COURT.netPostX} height={NET_BAND} fill="#1c1f26" opacity={0.85} />
+          <rect
+            x={-COURT.netPostX}
+            y={-NET_BAND}
+            width={2 * COURT.netPostX}
+            height={NET_BAND}
+            fill={heat || placementHeat ? '#f1a65c' : '#1c1f26'}
+            opacity={heat || placementHeat ? 1 : 0.85}
+          />
           <line x1={-COURT.netPostX} y1={-NET_BAND} x2={COURT.netPostX} y2={-NET_BAND} stroke="#ffffff" strokeWidth={0.45} />
           <rect x={-COURT.netPostX - 0.4} y={-NET_BAND - 0.3} width={0.8} height={NET_BAND + 0.6} fill="#1c1f26" />
           <rect x={COURT.netPostX - 0.4} y={-NET_BAND - 0.3} width={0.8} height={NET_BAND + 0.6} fill="#1c1f26" />

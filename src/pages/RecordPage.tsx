@@ -277,9 +277,11 @@ export function RecordPage() {
 
   const actions = (
     <div className="record-actions">
-      <button type="button" className="btn" onClick={undo} disabled={finished || points.length === 0}>
-        <UndoIcon /> Undo
-      </button>
+      {!statsMode && (
+        <button type="button" className="btn" onClick={undo} disabled={finished || points.length === 0}>
+          <UndoIcon /> Undo
+        </button>
+      )}
       <button type="button" className={`btn${statsMode ? ' primary' : ''}`} onClick={() => setView((v) => (v === 'stats' ? 'court' : 'stats'))} aria-pressed={statsMode}>
         <ChartIcon /> {statsMode ? 'Court' : 'Stats'}
       </button>
