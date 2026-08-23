@@ -18,7 +18,6 @@ import { OpponentPicker } from '../components/OpponentPicker'
 import { VenuePicker } from '../components/VenuePicker'
 import { filterPoints, summarize } from '../domain/stats'
 import { pointsToCsv, safeFilename, toExportBundle } from '../domain/export'
-import { encodeSharedMatch } from '../domain/share'
 import { downloadText } from '../lib/format'
 import { ERROR_LABEL, KIND_LABEL, MODE_HINT, MODE_LABEL, SESSION_MODES, SHOT_TYPE_LABEL, STROKE_SHORT, type ErrorType, type Outcome, type PlacementStroke, type Point, type Session, type ShotType, type Stroke } from '../domain/types'
 
@@ -250,18 +249,6 @@ export function RecordPage() {
     const bundle = toExportBundle(Object.values(state.sessions), Object.values(state.points))
     downloadText(safeFilename('tennis-marker-backup', 'json'), JSON.stringify(bundle, null, 2), 'application/json')
   }
-  const copyMatchLink = async () => {
-    if (!session || session.kind !== 'match') return
-    const payload = encodeSharedMatch(session, points)
-    const url = `${window.location.origin}${window.location.pathname}#/share/${payload}`
-    try {
-      await navigator.clipboard.writeText(url)
-      setToast({ id: Date.now(), text: 'Match link copied — anyone with it can view this match.' })
-    } catch {
-      setToast({ id: Date.now(), text: 'Could not copy the link. Try again from a secure browser tab.' })
-    }
-  }
-
   if (!session || session.deleted_at) {
     return (
       <div className="shell">
@@ -290,11 +277,6 @@ export function RecordPage() {
       <button type="button" className={`btn${finished ? ' primary' : ''}`} onClick={openFinish} aria-pressed={finished} title={finished ? 'Edit rating or unlock this session' : 'Finish, rate, and lock this session'}>
         <LockIcon /> {finished && session.self_rating ? `${session.self_rating}/100` : 'Finish'}
       </button>
-      {session.kind === 'match' && (
-        <button type="button" className="btn" onClick={() => void copyMatchLink()} title="Copy a read-only match link">
-          Copy link
-        </button>
-      )}
     </div>
   )
 
