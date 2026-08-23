@@ -640,19 +640,17 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
             {heatCells.map((c) => {
               const cx = c.r.x + c.r.width / 2
               const cy = c.r.y + c.r.height / 2
-              const pctLabel = heatTotal > 0 && c.n > 0 ? `${Math.round((c.n / heatTotal) * 100)}%` : ''
+              const pctLabel = heatTotal > 0 ? `${Math.round((c.n / heatTotal) * 100)}%` : '0%'
               const strokes = heatStrokes.get(c.id) ?? { fh: 0, bh: 0 }
               const strokeTotal = strokes.fh + strokes.bh
               return (
                 <g key={c.id} transform={uprightAt(cx, cy, half === 'opposite', rotation)}>
                   <text x={cx} y={cy - 0.1} fontSize={3.1} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.7)'}>
-                    {c.n}
+                    {pctLabel}
                   </text>
-                  {pctLabel && (
-                    <text x={cx} y={cy + 2.25} fontSize={1.45} fill="#14181d" opacity={0.8}>
-                      {pctLabel}
-                    </text>
-                  )}
+                  <text x={cx} y={cy + 2.25} fontSize={1.25} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.7)'} opacity={0.8}>
+                    {c.n} {c.n === 1 ? 'mark' : 'marks'}
+                  </text>
                   {strokeTotal > 0 && (
                     <text x={cx} y={cy + 3.85} fontSize={0.92}>
                       <tspan fill="var(--fh-text)">FH {Math.round((strokes.fh / strokeTotal) * 100)}%</tspan>
