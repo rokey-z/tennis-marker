@@ -1657,6 +1657,49 @@ textarea.input {
 }
 
 /* ---------- settings ---------- */
+.login-gate {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: max(20px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+  background: var(--bg);
+}
+.login-window {
+  width: min(100%, 400px);
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.login-window h1 {
+  margin: 3px 0 6px;
+  font-size: 25px;
+  line-height: 1.15;
+}
+.login-window p {
+  margin: 0;
+}
+.login-brand {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.login-brand svg {
+  width: 32px;
+  height: 32px;
+}
+.login-public-note {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
 .status-line {
   display: flex;
   align-items: center;
