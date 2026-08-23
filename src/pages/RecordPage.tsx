@@ -139,6 +139,23 @@ export function RecordPage() {
     setPending({ x, y, at, surface: 'court', selection: { stroke, error } })
   }, [])
 
+  const onErrorWinner = useCallback((x: number, y: number) => {
+    if (performance.now() < ignoreUntil.current) return
+    const p = store.addPoint({ session_id: id, x, y, stroke: '', error_type: '', forced: false, outcome: 'winner', placement_result: null, shot_type: null })
+    ignoreUntil.current = performance.now() + AFTER_SAVE_IGNORE_MS
+    try {
+      navigator.vibrate?.(12)
+    } catch {
+      /* ignore */
+    }
+    setToast({
+      id: Date.now(),
+      text: `Opponent winner · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`,
+      actionLabel: 'Undo',
+      onAction: () => store.deletePoint(p.id),
+    })
+  }, [id])
+
   const logPoint = (stroke: PlacementStroke | '', error: ErrorType | '', outcome: Outcome, placementResult: Point['placement_result'] = null, shotType: ShotType | null = null) => {
     if (!pending) return
     const p = store.addPoint({ session_id: id, x: pending.x, y: pending.y, stroke, error_type: error, forced: outcome === 'error' && forced, outcome, placement_result: placementResult, shot_type: shotType })
@@ -353,6 +370,7 @@ export function RecordPage() {
               onTap={finished ? undefined : onTap}
               onStrokeDrag={!finished && placementMode ? onStrokeDrag : undefined}
               onErrorSelect={!finished && !placementMode ? onErrorDrag : undefined}
+              onErrorWinner={!finished && !placementMode ? onErrorWinner : undefined}
               half={placementMode ? 'opposite' : 'own'}
               sideLabel={sideLabel}
               disabled={finished || !!pending || !!openPoint}
@@ -395,7 +413,7 @@ export function RecordPage() {
                 ? 'Session finished and locked. Unlock it to record or edit points.'
                 : placementMode
                 ? `Click where the ball landed, then pick the stroke ${player.name ? `${player.name} hit it with` : 'she hit it with'}. Swipe up to record a serve; mark the net for a Net error.`
-                : `Press where ${player.subject} lost the point, drag toward FH/BH × Wide/Long/Net, then choose the ball type. Tap for button selection.`}
+                : `Press where ${player.subject} lost the point, drag toward FH/BH × Wide/Long/Net, then choose the ball type. Drag beyond the wheel for a winner; tap for buttons.`}
             </div>
           )}
           {actions}

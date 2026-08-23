@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { errorDragChoice } from '../domain/errorWheel'
+import { errorDragChoice, errorWheelSelection } from '../domain/errorWheel'
 
 describe('error drag wheel', () => {
   it.each([
@@ -15,5 +15,10 @@ describe('error drag wheel', () => {
 
   it('requires a deliberate drag before selecting a sector', () => {
     expect(errorDragChoice(10, 10)).toBeNull()
+  })
+
+  it('turns a drag beyond the visible circle into a winner', () => {
+    expect(errorWheelSelection(101, 0, 100)).toEqual({ winner: true })
+    expect(errorWheelSelection(50, 0, 100)).toEqual({ stroke: 'fh', error: 'long' })
   })
 })

@@ -43,7 +43,7 @@ export const KIND_PLURAL: Record<SessionKind, string> = { match: 'Matches', prac
 export const SESSION_MODES: SessionMode[] = ['errors', 'placement']
 export const MODE_LABEL: Record<SessionMode, string> = { errors: 'Errors', placement: 'Placement' }
 export const MODE_HINT: Record<SessionMode, string> = {
-  errors: 'Press where she lost the point, drag into the FH/BH × Wide/Long/Net wheel, then choose the ball type.',
+  errors: 'Press where she lost the point, drag into the FH/BH × Wide/Long/Net wheel, or beyond it for a winner.',
   placement: 'Shows the far half: drag left for backhand, right for forehand, or up for a serve landing. Mark the net to log a Net error.',
 }
 

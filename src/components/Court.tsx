@@ -15,7 +15,7 @@ import {
   zoneRect,
 } from '../domain/court'
 import { isErrorType, isPlacementResult, isPlacementStroke, type ErrorType, type PlacementStroke, type Point, type Stroke } from '../domain/types'
-import { errorDragChoice, type ErrorDragChoice } from '../domain/errorWheel'
+import { errorWheelSelection, type ErrorDragChoice } from '../domain/errorWheel'
 import { ERROR_LETTER, markLabel } from './marks'
 
 /** Extra headroom above the net line so the net band is visible (presentational only). */
@@ -48,6 +48,7 @@ const drawY = (y: number) => Math.min(DRAW_MAX_Y - 1.4, Math.max(VB_MIN_Y + 1.4,
 const DRAG_PX = 12
 /** Horizontal travel that turns a placement drag into a stroke choice: left = backhand, right = forehand. */
 const STROKE_DRAG_PX = 26
+const ERROR_WHEEL_RADIUS = 8.4
 
 export type CourtRotation = 0 | 90 | 180 | 270
 
@@ -75,6 +76,8 @@ interface DragState {
   at: { x: number; y: number }
   /** A placement that struck the net is still an error, not a landing. */
   net: boolean
+  /** Visible wheel radius converted through the current SVG transform. */
+  wheelRadiusPx: number
 }
 
 const ERROR_WHEEL_SECTORS: Array<ErrorDragChoice & { start: number; end: number }> = [
@@ -97,14 +100,14 @@ function wheelSectorPath(cx: number, cy: number, radius: number, start: number, 
   return `M ${cx} ${cy} L ${a.x} ${a.y} A ${radius} ${radius} 0 ${end - start > 180 ? 1 : 0} 1 ${b.x} ${b.y} Z`
 }
 
-function ErrorDragWheel({ x, y, rotation, selected }: { x: number; y: number; rotation: CourtRotation; selected: ErrorDragChoice | null }) {
-  const radius = 8.4
+function ErrorDragWheel({ x, y, rotation, selected, winner }: { x: number; y: number; rotation: CourtRotation; selected: ErrorDragChoice | null; winner: boolean }) {
+  const radius = ERROR_WHEEL_RADIUS
   return (
     <g transform={uprightAt(x, y, false, rotation)} pointerEvents="none">
       <circle cx={x} cy={y} r={radius + 0.3} fill="#171b21" opacity={0.96} stroke="#ffffff" strokeWidth={0.34} />
       {ERROR_WHEEL_SECTORS.map((sector) => {
         const active = selected?.stroke === sector.stroke && selected.error === sector.error
-        const dimmed = !!selected && !active
+        const dimmed = winner || !!selected && !active
         const mid = (sector.start + sector.end) / 2
         const label = polarPoint(x, y, radius * 0.62, mid)
         return (
@@ -125,6 +128,13 @@ function ErrorDragWheel({ x, y, rotation, selected }: { x: number; y: number; ro
         )
       })}
       <circle cx={x} cy={y} r={0.48} fill="#73777c" stroke="#ffffff" strokeWidth={0.18} />
+      {winner && (
+        <g>
+          <circle cx={x} cy={y} r={radius + 0.55} fill="none" stroke="var(--win)" strokeWidth={0.72} />
+          <rect x={x - 3.5} y={y - 1.15} width={7} height={2.3} rx={1.15} fill="var(--win)" stroke="#ffffff" strokeWidth={0.18} />
+          <text x={x} y={y + 0.48} textAnchor="middle" fill="var(--win-ink)" fontFamily="var(--font)" fontSize={1.18} fontWeight={850}>★ WINNER</text>
+        </g>
+      )}
     </g>
   )
 }
@@ -151,6 +161,8 @@ export interface CourtProps {
   onStrokeDrag?: (x: number, y: number, stroke: PlacementStroke, surface?: 'court' | 'net') => void
   /** Errors mode: drag from the mark into one of six FH/BH × Wide/Long/Net wheel sectors. */
   onErrorSelect?: (x: number, y: number, stroke: Stroke, error: ErrorType, at: { clientX: number; clientY: number }) => void
+  /** Errors mode: releasing beyond the wheel records an opponent winner. */
+  onErrorWinner?: (x: number, y: number) => void
   /** Only start the stroke gesture on the net; ordinary court taps remain taps. */
   dragNetOnly?: boolean
   pending?: { x: number; y: number } | null
@@ -163,7 +175,7 @@ export interface CourtProps {
   className?: string
 }
 
-export function Court({ rotation = 0, onTap, disabled = false, points, highlightedPointId = null, emphasizeLast = false, compactMarks, half = 'own', sideLabel, onStrokeDrag, onErrorSelect, dragNetOnly = false, pending, showZones = false, heat, placementHeat, heatTotal = 0, className }: CourtProps) {
+export function Court({ rotation = 0, onTap, disabled = false, points, highlightedPointId = null, emphasizeLast = false, compactMarks, half = 'own', sideLabel, onStrokeDrag, onErrorSelect, onErrorWinner, dragNetOnly = false, pending, showZones = false, heat, placementHeat, heatTotal = 0, className }: CourtProps) {
   const gRef = useRef<SVGGElement>(null)
   const down = useRef<{ id: number; x: number; y: number; t: number } | null>(null)
   // the ref is authoritative (pointer events can arrive faster than React re-renders); state drives the drawing
@@ -199,7 +211,9 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
     } catch {
       /* capture is a nicety, not a requirement */
     }
-    const next: DragState = { start: c, dx: 0, dy: 0, at: { x: e.clientX, y: e.clientY }, cur: c, net: c.net }
+    const matrix = gRef.current?.getScreenCTM()
+    const scale = matrix ? Math.hypot(matrix.a, matrix.b) : 1
+    const next: DragState = { start: c, dx: 0, dy: 0, at: { x: e.clientX, y: e.clientY }, cur: c, net: c.net, wheelRadiusPx: ERROR_WHEEL_RADIUS * scale }
     dragRef.current = next
     setDrag(next)
   }
@@ -228,8 +242,9 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
       return
     }
     if (onErrorSelect) {
-      const choice = errorDragChoice(dx, dy)
-      if (choice) onErrorSelect(d.start.x, d.start.y, choice.stroke, choice.error, { clientX: d.at.x, clientY: d.at.y })
+      const selection = errorWheelSelection(dx, dy, d.wheelRadiusPx)
+      if (selection && 'winner' in selection) onErrorWinner?.(d.start.x, d.start.y)
+      else if (selection) onErrorSelect(d.start.x, d.start.y, selection.stroke, selection.error, { clientX: d.at.x, clientY: d.at.y })
       return
     }
     const stroke: PlacementStroke = !d.net && dy < -STROKE_DRAG_PX && Math.abs(dy) > Math.abs(dx) ? 'serve' : dx < 0 ? 'bh' : 'fh'
@@ -640,12 +655,12 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
 
         {/* Error selection stays above the court, net, and existing marks while the finger moves. */}
         {drag && onErrorSelect && (
-          <ErrorDragWheel
-            x={drag.start.x}
-            y={drag.start.y}
-            rotation={rotation}
-            selected={errorDragChoice(drag.dx, drag.dy)}
-          />
+          (() => {
+            const selection = errorWheelSelection(drag.dx, drag.dy, drag.wheelRadiusPx)
+            const winner = !!selection && 'winner' in selection
+            const selected = selection && !('winner' in selection) ? selection : null
+            return <ErrorDragWheel x={drag.start.x} y={drag.start.y} rotation={rotation} selected={selected} winner={winner} />
+          })()
         )}
 
         {/* pending (ghost) marker */}
