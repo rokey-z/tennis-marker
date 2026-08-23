@@ -17,8 +17,8 @@ export function SessionsPage() {
   const player = usePlayer()
   const nav = useNavigate()
   const [kind, setKind] = useState<KindFilter>('all')
-  // oldest first, so the newest session sits at the bottom — next to the thumb, next to the buttons
-  const all = useMemo(() => perSessionCounts(liveSessions(state), Object.values(state.points)).reverse(), [state])
+  // Sessions are newest first, so the one just created or played is always immediately visible.
+  const all = useMemo(() => perSessionCounts(liveSessions(state), Object.values(state.points)), [state])
   const summaries = useMemo(() => new Map(all.map(({ session }) => [session.id, summarize(livePointsForSession(state, session.id))])), [all, state])
   const rows = useMemo(() => (kind === 'all' ? all : all.filter((r) => r.session.kind === kind)), [all, kind])
   const countFor = (k: KindFilter) => (k === 'all' ? all.length : all.filter((r) => r.session.kind === k).length)
