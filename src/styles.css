@@ -701,6 +701,22 @@ textarea.input {
   font-size: 11px;
   flex-shrink: 0;
 }
+.record-head-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.header-finish {
+  min-height: 40px;
+  height: 40px;
+  padding: 0 11px;
+  border-radius: 12px;
+}
+.header-finish svg {
+  width: 18px;
+  height: 18px;
+}
 .flip-fab {
   width: 40px;
   height: 40px;
@@ -1091,8 +1107,11 @@ textarea.input {
 }
 .record-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+}
+.record-actions.stats-only {
+  grid-template-columns: minmax(0, 1fr);
 }
 .record-actions .btn {
   min-height: 50px;
@@ -1680,9 +1699,6 @@ textarea.input {
   }
   .record-log {
     display: none;
-  }
-  .record-actions {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .side-list {
     flex: 1;

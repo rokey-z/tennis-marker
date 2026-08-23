@@ -265,7 +265,7 @@ export function RecordPage() {
   const where = pending ? pending.surface === 'net' ? 'Net' : describeZone(zoneFor(pending.x, pending.y)) : ''
 
   const actions = (
-    <div className="record-actions">
+    <div className={`record-actions${statsMode ? ' stats-only' : ''}`}>
       {!statsMode && (
         <button type="button" className="btn" onClick={undo} disabled={finished || points.length === 0}>
           <UndoIcon /> Undo
@@ -273,9 +273,6 @@ export function RecordPage() {
       )}
       <button type="button" className={`btn${statsMode ? ' primary' : ''}`} onClick={() => setView((v) => (v === 'stats' ? 'court' : 'stats'))} aria-pressed={statsMode}>
         <ChartIcon /> {statsMode ? 'Court' : 'Stats'}
-      </button>
-      <button type="button" className={`btn${finished ? ' primary' : ''}`} onClick={openFinish} aria-pressed={finished} title={finished ? 'Edit rating or unlock this session' : 'Finish, rate, and lock this session'}>
-        <LockIcon /> {finished && session.self_rating ? `${session.self_rating}/100` : 'Finish'}
       </button>
     </div>
   )
@@ -302,27 +299,32 @@ export function RecordPage() {
             <SyncBadge compact interactive={false} />
           </span>
         </button>
-        <button
-          type="button"
-          className={`flip-fab${rotation ? ' on' : ''}`}
-          onClick={() => setRotation((value) => ((value + 90) % 360) as CourtRotation)}
-          aria-pressed={rotation !== 0}
-          aria-label={`Rotate court 90 degrees clockwise (currently ${rotation} degrees)`}
-          title={`Rotate 90° clockwise (currently ${rotation}°)`}
-        >
-          <Rotate90Icon />
-        </button>
-        {!isDesktop && (
+        <div className="record-head-actions">
           <button
             type="button"
-            className="flip-fab fullscreen-fab"
-            onClick={() => void enterCourtFullscreen()}
-            aria-label="Open full-screen landscape court"
-            title="Full-screen landscape court"
+            className={`flip-fab${rotation ? ' on' : ''}`}
+            onClick={() => setRotation((value) => ((value + 90) % 360) as CourtRotation)}
+            aria-pressed={rotation !== 0}
+            aria-label={`Rotate court 90 degrees clockwise (currently ${rotation} degrees)`}
+            title={`Rotate 90° clockwise (currently ${rotation}°)`}
           >
-            <FullscreenIcon />
+            <Rotate90Icon />
           </button>
-        )}
+          {!isDesktop && (
+            <button
+              type="button"
+              className="flip-fab fullscreen-fab"
+              onClick={() => void enterCourtFullscreen()}
+              aria-label="Open full-screen landscape court"
+              title="Full-screen landscape court"
+            >
+              <FullscreenIcon />
+            </button>
+          )}
+          <button type="button" className={`btn header-finish${finished ? ' primary' : ''}`} onClick={openFinish} aria-pressed={finished} title={finished ? 'Edit rating or unlock this session' : 'Finish, rate, and lock this session'}>
+            <LockIcon /> {finished && session.self_rating ? `${session.self_rating}/100` : 'Finish'}
+          </button>
+        </div>
       </header>
 
       <div className="record-court">
