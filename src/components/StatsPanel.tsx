@@ -213,10 +213,10 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
       )}
       <div className="tiles">
         <div className="tile">
-          <div className="label">Points lost</div>
+          <div className="label">Errors</div>
           <div className="value">
-            {summary.lost}
-            {summary.winners > 0 && <small>{summary.total} errors</small>}
+            {summary.total}
+            {summary.winners > 0 && <small>{summary.winners} {summary.winners === 1 ? 'winner' : 'winners'}</small>}
           </div>
         </div>
         <div className="tile">
@@ -237,7 +237,7 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
           <div className="label">Forced</div>
           <div className="value">
             {summary.byForced.forced}
-            <small>{pct(summary.byForced.forced, summary.total)}%</small>
+            <small>{pct(summary.byForced.forced, summary.lost)}%</small>
           </div>
         </div>
       </div>

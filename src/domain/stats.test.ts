@@ -61,11 +61,11 @@ describe('filterPoints', () => {
     expect(filterPoints(pts, { stroke: 'bh', error: 'wide', sessionId: 's1' })).toHaveLength(0)
   })
 
-  it('never calls a winner or a placement "unforced" — forced is a question about her errors', () => {
+  it('counts a winner as forced and never calls a placement forced or unforced', () => {
     const mixed = [...pts, point({ stroke: '', error_type: '', outcome: 'winner' }), point({ stroke: 'fh', error_type: '', outcome: 'placement' })]
     expect(filterPoints(mixed)).toHaveLength(5)
     expect(filterPoints(mixed, { forced: 'unforced' })).toHaveLength(2) // the two unforced errors, nothing else
-    expect(filterPoints(mixed, { forced: 'forced' })).toHaveLength(1)
+    expect(filterPoints(mixed, { forced: 'forced' })).toHaveLength(2)
     expect(filterPoints(mixed, { outcome: 'winner' })).toHaveLength(1)
   })
 })
@@ -102,12 +102,13 @@ describe('summarize', () => {
     expect(s.byStroke).toEqual({ fh: 1, bh: 1 })
     expect(s.byError).toEqual({ long: 1, net: 1, wide: 0 })
     expect(s.winners).toBe(2)
+    expect(s.byForced).toEqual({ forced: 3, unforced: 1 })
     // a winner is still a point she lost, so it counts in the headline — but not in the breakdowns
     expect(s.lost).toBe(4)
-    // a winner never lands in the error breakdowns, but it is still a spot on her half
+    // a winner never lands in the error breakdowns or the placement map
     expect(s.matrix.fh).toEqual({ long: 1, net: 0, wide: 0 })
     expect(s.byStroke).toEqual({ fh: 1, bh: 1 })
-    expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(4)
+    expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(2)
   })
 
   it('keeps a landing map of its own, separate from the error zones', () => {
@@ -167,8 +168,8 @@ describe('summarize', () => {
     expect(s.placements).toBe(2)
     expect(s.placementsByStroke).toEqual({ fh: 1, bh: 1, serve: 0 })
     expect(s.winners).toBe(1)
-    // placements never enter the error views; the error and the winner both mark her half
-    expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(2)
+    // placements and winners never enter the error placement map
+    expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(1)
     expect(s.byStroke).toEqual({ fh: 1, bh: 0 })
   })
 

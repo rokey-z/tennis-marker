@@ -109,9 +109,9 @@ describe('sessionStats outcomes', () => {
       pt({ session_id: 's1', error_type: '', outcome: 'placement', stroke: 'fh' }),
     ]
     const row = sessionStats([sess()], points)[0]
-    expect(row).toMatchObject({ total: 2, fh: 1, bh: 1, long: 1, net: 1, forced: 1, unforced: 1, winners: 1, lost: 3, placements: 2 })
-    // the zone map is where she lost points from: 2 errors + 1 winner, placements excluded
-    expect(Object.values(row.byZone).reduce((a, b) => a + b, 0)).toBe(3)
+    expect(row).toMatchObject({ total: 2, fh: 1, bh: 1, long: 1, net: 1, forced: 2, unforced: 1, winners: 1, lost: 3, placements: 2 })
+    // only errors have meaningful placement on this map; winners and placements are excluded
+    expect(Object.values(row.byZone).reduce((a, b) => a + b, 0)).toBe(2)
   })
 })
 

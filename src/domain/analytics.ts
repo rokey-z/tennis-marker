@@ -124,10 +124,8 @@ export function sessionStats(sessions: Session[], points: Iterable<Point>): Sess
     for (const p of pts) {
       const outcome = p.outcome ?? 'error'
       if (outcome === 'winner') {
-        // she was standing somewhere when the opponent hit past her: it belongs on the zone map
         row.winners++
-        const wz = zoneId(zoneFor(p.x, p.y))
-        row.byZone[wz] = (row.byZone[wz] ?? 0) + 1
+        row.forced++
         continue
       }
       if (outcome === 'placement') {
@@ -289,7 +287,7 @@ export function summarizeKind(stats: SessionStat[], kind: SessionKind): KindSumm
     errors,
     perSession: rows.length ? errors / rows.length : 0,
     fhPct: pct(fh, errors),
-    forcedPct: pct(forced, errors),
+    forcedPct: pct(forced, rows.reduce((a, r) => a + r.lost, 0)),
   }
 }
 
@@ -387,8 +385,8 @@ export function buildInsights(stats: SessionStat[], summary: Summary): Insight[]
     })
   }
   // forced share (lowest information — last so it never crowds out the derived insights)
-  if (total >= 5) {
-    out.push({ id: 'forced', tone: 'neutral', text: `${pct(summary.byForced.forced, total)}% of errors were forced (${summary.byForced.forced} of ${total}).` })
+  if (summary.lost >= 5) {
+    out.push({ id: 'forced', tone: 'neutral', text: `${pct(summary.byForced.forced, summary.lost)}% of lost points were forced or opponent winners (${summary.byForced.forced} of ${summary.lost}).` })
   }
   return out.slice(0, 7)
 }

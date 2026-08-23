@@ -354,7 +354,7 @@ export function RecordPage() {
           {statsMode ? (
             <Court
               rotation={rotation}
-              points={shownPoints}
+              points={placementMode ? shownPoints : shownPoints.filter((point) => point.outcome !== 'winner')}
               highlightedPointId={openPoint?.id}
               compactMarks={finished ? 'overview' : 'analysis'}
               half={placementMode ? 'opposite' : 'own'}

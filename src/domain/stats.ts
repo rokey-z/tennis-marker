@@ -23,11 +23,13 @@ export function filterPoints(points: Iterable<Point>, f: Filters = {}): Point[] 
     if (f.sessionId && f.sessionId !== 'all' && p.session_id !== f.sessionId) continue
     if (f.stroke && f.stroke !== 'all' && p.stroke !== f.stroke) continue
     if (f.error && f.error !== 'all' && p.error_type !== f.error) continue
-    // forced/unforced is a question about her errors — winners and placements are neither
+    // An opponent winner is treated as forced; placements are neither forced nor unforced.
     if (f.forced && f.forced !== 'all') {
-      if ((p.outcome ?? 'error') !== 'error') continue
-      if (f.forced === 'forced' && !p.forced) continue
-      if (f.forced === 'unforced' && p.forced) continue
+      const outcome = p.outcome ?? 'error'
+      if (outcome === 'placement') continue
+      const forced = outcome === 'winner' || p.forced
+      if (f.forced === 'forced' && !forced) continue
+      if (f.forced === 'unforced' && forced) continue
     }
     if (f.outcome && f.outcome !== 'all' && (p.outcome ?? 'error') !== f.outcome) continue
     out.push(p)
@@ -48,7 +50,7 @@ export interface Summary {
   byStrokeForced: Record<Stroke, number>
   /**
    * Points she lost: her errors plus the winners the opponent hit past her. The breakdowns below
-   * stay on `total` (errors only), since a winner has no stroke or error type to break down.
+   * stay on `total` (errors only), except `byForced`, where an opponent winner counts as forced.
    */
   lost: number
   /** winners and placements are counted apart — neither is an error */
@@ -105,11 +107,11 @@ export function summarize(points: Iterable<Point>): Summary {
     if (p.deleted_at) continue
     const outcome = p.outcome ?? 'error'
     if (outcome === 'winner') {
-      // the opponent's shot — nothing of hers to break down, but she was standing somewhere and
-      // she lost the point, so it counts in the total and on the zone map
+      // The opponent forced the result. Its recorded tap location is not a meaningful ball
+      // placement, so winners stay out of every zone/map count.
       s.winners++
       s.lost++
-      countZone(s, p)
+      s.byForced.forced++
       continue
     }
     if (outcome === 'placement') {
