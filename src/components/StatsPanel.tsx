@@ -75,7 +75,7 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
   if (mode === 'placement') {
     const resultTotal = (result: 'in' | 'net' | 'wide' | 'long') => PLACEMENT_STROKES.reduce((n, stroke) => n + summary.placementMatrix[stroke][result], 0)
     const inCourt = resultTotal('in')
-    const net = summary.byError.net
+    const net = summary.placementNet
     const wideLong = resultTotal('wide') + resultTotal('long')
     // A net strike is an error outcome too. Keep it with the other misses so the
     // headline answers the useful question: what share of attempts landed in?
@@ -83,19 +83,21 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
     const scoredLandings = inCourt + errors
     const inDepth = (row: 'net' | 'mid' | 'baseline') =>
       Object.entries(summary.placementInZones).reduce((total, [id, count]) => total + (id.startsWith(`${row}-`) ? count : 0), 0)
-    const placementAreas = [
-      { label: 'Short', count: inDepth('net'), kind: 'in' },
-      { label: 'Mid', count: inDepth('mid'), kind: 'in' },
-      { label: 'Deep', count: inDepth('baseline'), kind: 'in' },
-      { label: 'Wide', count: resultTotal('wide'), kind: 'out' },
-      { label: 'Long', count: resultTotal('long'), kind: 'out' },
-      { label: 'Net', count: net, kind: 'out' },
+    const inAreas = [
+      { label: 'Short', count: inDepth('net') },
+      { label: 'Mid', count: inDepth('mid') },
+      { label: 'Deep', count: inDepth('baseline') },
+    ]
+    const outAreas = [
+      { label: 'Wide', count: resultTotal('wide') },
+      { label: 'Long', count: resultTotal('long') },
+      { label: 'Net', count: net },
     ]
     const resultLabels: Record<PlacementResult, string> = { in: 'In', net: 'Net', wide: 'Wide', long: 'Long', unknown: 'Unrated' }
     const misses: { stroke: typeof PLACEMENT_STROKES[number]; result: Exclude<PlacementResult, 'in' | 'unknown'>; count: number }[] = []
     for (const stroke of PLACEMENT_STROKES) {
       for (const result of ['net', 'wide', 'long'] as const) {
-        const count = result === 'net' ? (stroke === 'serve' ? 0 : summary.matrix[stroke].net) : summary.placementMatrix[stroke][result]
+        const count = result === 'net' ? (stroke === 'serve' ? 0 : summary.matrix[stroke].net + summary.placementMatrix[stroke].net) : summary.placementMatrix[stroke][result]
         misses.push({ stroke, result, count })
       }
     }
@@ -122,7 +124,7 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
             </div>
           </div>
           <div className="tile">
-            <div className="label">Errors</div>
+            <div className="label">Out</div>
             <div className="value">
               {pct(errors, scoredLandings)}%
               <small>{errors} {errors === 1 ? 'ball' : 'balls'}</small>
@@ -144,15 +146,27 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
           </div>
         </div>
         <div className="card">
-          <div className="section-title">Placement areas</div>
+          <div className="section-title">In types · {pct(inCourt, scoredLandings)}% overall</div>
           <div className="bars">
-            {placementAreas.map((area) => (
+            {inAreas.map((area) => (
               <div className="bar-row" key={area.label}>
-                <span>{area.label}{area.kind === 'out' ? ' miss' : ''}</span>
+                <span>{area.label}</span>
                 <div className="track">
-                  <div className={`fill${area.kind === 'out' ? ' out' : ''}`} style={{ width: `${pct(area.count, scoredLandings)}%` }} />
+                  <div className="fill" style={{ width: `${pct(area.count, inCourt)}%` }} />
                 </div>
-                <span className="val">{pct(area.count, scoredLandings)}%</span>
+                <span className="val">{area.count} · {pct(area.count, inCourt)}%</span>
+              </div>
+            ))}
+          </div>
+          <div className="section-title">Out types · {pct(errors, scoredLandings)}% overall</div>
+          <div className="bars">
+            {outAreas.map((area) => (
+              <div className="bar-row" key={area.label}>
+                <span>{area.label}</span>
+                <div className="track">
+                  <div className="fill out" style={{ width: `${pct(area.count, errors)}%` }} />
+                </div>
+                <span className="val">{area.count} · {pct(area.count, errors)}%</span>
               </div>
             ))}
           </div>
@@ -174,7 +188,7 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
                 <tr key={stroke}>
                   <td><span className={`pill ${stroke}`}>{STROKE_SHORT[stroke]}</span> {STROKE_LABEL[stroke]}</td>
                   {(['in', 'net', 'wide', 'long'] as const).map((result) => (
-                    <td className="big" key={result}>{result === 'net' ? (stroke === 'serve' ? 0 : summary.matrix[stroke].net) : summary.placementMatrix[stroke][result]}</td>
+                    <td className="big" key={result}>{result === 'net' ? (stroke === 'serve' ? 0 : summary.matrix[stroke].net + summary.placementMatrix[stroke].net) : summary.placementMatrix[stroke][result]}</td>
                   ))}
                   <td className="big">{summary.placementsByStroke[stroke] + (stroke === 'serve' ? 0 : summary.matrix[stroke].net)}</td>
                 </tr>

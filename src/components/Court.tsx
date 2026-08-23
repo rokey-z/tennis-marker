@@ -297,6 +297,27 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
     )
   }, [heat])
 
+  const placementSplit = useMemo(() => {
+    if (!placementHeat) return null
+    const sum = (values: Record<string, number>) => Object.values(values).reduce((total, count) => total + count, 0)
+    const inTotal = sum(placementHeat.in)
+    const wide = sum(placementHeat.wide)
+    const long = sum(placementHeat.long)
+    const outTotal = wide + long + placementHeat.net
+    const inDepth = (row: 'net' | 'mid' | 'baseline') => Object.entries(placementHeat.in).reduce((total, [id, count]) => total + (id.startsWith(`${row}-`) ? count : 0), 0)
+    return {
+      inTotal,
+      outTotal,
+      scored: inTotal + outTotal,
+      short: inDepth('net'),
+      mid: inDepth('mid'),
+      deep: inDepth('baseline'),
+      wide,
+      long,
+      net: placementHeat.net,
+    }
+  }, [placementHeat])
+
   // Placement maps are deliberately not a generic 3 × 3 heat map: made balls belong inside the
   // singles lines, while long balls live above the baseline. Wide and net misses remain visible as
   // their × marks in their own areas rather than being blended into an in-court cell.
@@ -626,7 +647,8 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
             {placementHeatCells.filter((c) => c.n > 0).map((c) => {
               const cx = c.r.x + c.r.width / 2
               const cy = c.r.y + c.r.height / 2
-              const pctLabel = heatTotal > 0 ? `${Math.round((c.n / heatTotal) * 100)}%` : ''
+              const parentTotal = c.id.startsWith('in-') ? placementSplit?.inTotal ?? 0 : placementSplit?.outTotal ?? 0
+              const pctLabel = parentTotal > 0 ? `${Math.round((c.n / parentTotal) * 100)}%` : ''
               const inCourt = c.id.startsWith('in-')
               const textColor = c.id === 'net' ? '#ffffff' : inCourt ? '#155d32' : '#8b220f'
               return (
@@ -676,6 +698,22 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
       </g>
 
     </svg>
+    {placementSplit && placementSplit.scored > 0 && (
+      <div className="placement-split" aria-label="In and out placement breakdown">
+        <div className="placement-split-group in">
+          <div><span>IN</span><strong>{Math.round((placementSplit.inTotal / placementSplit.scored) * 100)}%</strong></div>
+          <small>
+            Short {placementSplit.inTotal ? Math.round((placementSplit.short / placementSplit.inTotal) * 100) : 0}% · Mid {placementSplit.inTotal ? Math.round((placementSplit.mid / placementSplit.inTotal) * 100) : 0}% · Deep {placementSplit.inTotal ? Math.round((placementSplit.deep / placementSplit.inTotal) * 100) : 0}%
+          </small>
+        </div>
+        <div className="placement-split-group out">
+          <div><span>OUT</span><strong>{Math.round((placementSplit.outTotal / placementSplit.scored) * 100)}%</strong></div>
+          <small>
+            Wide {placementSplit.outTotal ? Math.round((placementSplit.wide / placementSplit.outTotal) * 100) : 0}% · Long {placementSplit.outTotal ? Math.round((placementSplit.long / placementSplit.outTotal) * 100) : 0}% · Net {placementSplit.outTotal ? Math.round((placementSplit.net / placementSplit.outTotal) * 100) : 0}%
+          </small>
+        </div>
+      </div>
+    )}
     {hoveredPlacement && placementHoverClient && (
       <div className="court-hover-tooltip" style={{ left: placementHoverClient.x + 14, top: placementHoverClient.y + 14 }}>
         <div>
