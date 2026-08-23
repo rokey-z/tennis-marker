@@ -941,6 +941,45 @@ textarea.input {
   flex-direction: column;
   gap: 6px;
 }
+
+/* ---------- public match viewer ---------- */
+.shared-match {
+  display: grid;
+  gap: 12px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+.shared-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.shared-head h1 {
+  margin: 2px 0 3px;
+  font-size: clamp(22px, 5vw, 30px);
+}
+.shared-head .muted {
+  margin: 0;
+}
+.eyebrow {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.shared-court {
+  display: flex;
+  justify-content: center;
+  min-height: 0;
+}
+.shared-court .court-svg {
+  max-height: min(68dvh, 720px);
+}
+.shared-notes {
+  white-space: pre-wrap;
+}
 .tally {
   display: flex;
   gap: 6px;
