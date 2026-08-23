@@ -100,8 +100,7 @@ function wheelSectorPath(cx: number, cy: number, radius: number, start: number, 
   return `M ${cx} ${cy} L ${a.x} ${a.y} A ${radius} ${radius} 0 ${end - start > 180 ? 1 : 0} 1 ${b.x} ${b.y} Z`
 }
 
-function ErrorDragWheel({ x, y, rotation, selected, winner }: { x: number; y: number; rotation: CourtRotation; selected: ErrorDragChoice | null; winner: boolean }) {
-  const radius = ERROR_WHEEL_RADIUS
+function ErrorDragWheel({ x, y, radius, rotation, selected, winner }: { x: number; y: number; radius: number; rotation: CourtRotation; selected: ErrorDragChoice | null; winner: boolean }) {
   return (
     <g transform={uprightAt(x, y, false, rotation)} pointerEvents="none">
       <circle cx={x} cy={y} r={radius + 0.3} fill="#171b21" opacity={0.96} stroke="#ffffff" strokeWidth={0.34} />
@@ -185,6 +184,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
   const [placementHoverClient, setPlacementHoverClient] = useState<{ x: number; y: number } | null>(null)
   const interactive = !!onTap
   const hasDrag = !!onStrokeDrag || !!onErrorSelect
+  const errorWheelRadius = typeof window !== 'undefined' && window.innerWidth <= 600 ? ERROR_WHEEL_RADIUS * 1.15 : ERROR_WHEEL_RADIUS
 
   const toCourt = useCallback((clientX: number, clientY: number): { x: number; y: number; net: boolean } | null => {
     const g = gRef.current
@@ -213,7 +213,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
     }
     const matrix = gRef.current?.getScreenCTM()
     const scale = matrix ? Math.hypot(matrix.a, matrix.b) : 1
-    const next: DragState = { start: c, dx: 0, dy: 0, at: { x: e.clientX, y: e.clientY }, cur: c, net: c.net, wheelRadiusPx: ERROR_WHEEL_RADIUS * scale }
+    const next: DragState = { start: c, dx: 0, dy: 0, at: { x: e.clientX, y: e.clientY }, cur: c, net: c.net, wheelRadiusPx: errorWheelRadius * scale }
     dragRef.current = next
     setDrag(next)
   }
@@ -659,7 +659,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
             const selection = errorWheelSelection(drag.dx, drag.dy, drag.wheelRadiusPx)
             const winner = !!selection && 'winner' in selection
             const selected = selection && !('winner' in selection) ? selection : null
-            return <ErrorDragWheel x={drag.start.x} y={drag.start.y} rotation={rotation} selected={selected} winner={winner} />
+            return <ErrorDragWheel x={drag.start.x} y={drag.start.y} radius={errorWheelRadius} rotation={rotation} selected={selected} winner={winner} />
           })()
         )}
 
