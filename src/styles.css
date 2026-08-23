@@ -999,6 +999,15 @@ textarea.input {
 }
 
 /* ---------- public match viewer ---------- */
+.public-share {
+  min-height: 100dvh;
+  padding: max(16px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  background: var(--bg);
+}
+.public-share-invalid {
+  display: grid;
+  place-items: center;
+}
 .shared-match {
   display: grid;
   gap: 12px;
@@ -1018,6 +1027,22 @@ textarea.input {
 .shared-head .muted {
   margin: 0;
 }
+.shared-rating {
+  display: flex;
+  align-items: baseline;
+  padding: 7px 10px;
+  border-radius: 11px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.shared-rating strong {
+  font-size: 22px;
+}
+.shared-rating span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
 .eyebrow {
   color: var(--muted);
   font-size: 11px;
@@ -1035,6 +1060,9 @@ textarea.input {
 }
 .shared-notes {
   white-space: pre-wrap;
+}
+.shared-match .stats-panel {
+  padding-bottom: 0;
 }
 .tally {
   display: flex;

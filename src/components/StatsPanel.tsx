@@ -55,13 +55,15 @@ export interface StatsPanelProps {
   count: number
   /** what the scope records; placement scopes have no errors to break down */
   mode?: 'errors' | 'placement'
-  onExportCsv: () => void
-  onExportJson: () => void
+  onExportCsv?: () => void
+  onExportJson?: () => void
+  /** Public shared stats suppress every data/export action. */
+  showExports?: boolean
 }
 
 /** KPI tiles, "where the ball went", stroke × error matrix, export — for one scope of points. */
-export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExportJson }: StatsPanelProps) {
-  const exportRow = (
+export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExportJson, showExports = true }: StatsPanelProps) {
+  const exportRow = showExports && onExportCsv && onExportJson ? (
     <div className="row wrap">
       <button type="button" className="btn" onClick={onExportCsv} disabled={count === 0}>
         <DownloadIcon /> CSV ({count})
@@ -70,7 +72,7 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
         <DownloadIcon /> Backup (JSON)
       </button>
     </div>
-  )
+  ) : null
   // a placement scope counts balls and where they landed: none of the error breakdowns apply
   if (mode === 'placement') {
     const resultTotal = (result: 'in' | 'net' | 'wide' | 'long') => PLACEMENT_STROKES.reduce((n, stroke) => n + summary.placementMatrix[stroke][result], 0)

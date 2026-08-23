@@ -361,7 +361,7 @@ export function RecordPage() {
               sideLabel={sideLabel}
               heat={placementMode ? null : statsSummary.byZone}
               placementHeat={placementMode ? { in: statsSummary.placementInZones, long: statsSummary.placementLongZones, wide: statsSummary.placementWideZones, net: statsSummary.placementNet } : null}
-              heatTotal={placementMode ? statsSummary.placements : statsSummary.lost}
+              heatTotal={placementMode ? statsSummary.placements : statsSummary.total}
               showZones
             />
           ) : (
