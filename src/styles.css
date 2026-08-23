@@ -2330,6 +2330,10 @@ span
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28), 0 0 0 1px var(--line);
   animation: pop-in 0.12s ease-out;
 }
+.point-edit-pop .pop-close {
+  top: 8px;
+  right: 8px;
+}
 .point-edit-title {
   padding: 1px 30px 7px 2px;
   color: var(--muted);
