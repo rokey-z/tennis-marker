@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useMemo, useRef, useState, type FormEvent } from 'react'
 import { downloadText, formatDate, formatTime } from '../lib/format'
 import { DownloadIcon, RefreshIcon } from '../components/Icons'
 import { Shell } from '../components/Shell'
 import { usePlayer } from '../components/hooks'
 import { auth, isCloudConfigured, store, sync, useAppState, useAuthUser, useSyncStatus } from '../data/app'
-import { livePointsForSession, liveSessions, pendingCount } from '../data/store'
+import { pendingCount } from '../data/store'
 import { parseExportBundle, safeFilename, toExportBundle } from '../domain/export'
-import { encodeSharedMatch } from '../domain/share'
 import { checkForUpdate, reinstallApp } from '../data/appUpdate'
 import { cleanOpponent, opponentRowsWithRoster, sessionLabel, type OpponentRow } from '../domain/session'
 import { KIND_LABEL, MODE_LABEL } from '../domain/types'
@@ -24,30 +23,10 @@ export function SettingsPage() {
   const [error, setError] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
-  const matches = useMemo(() => liveSessions(state).filter((session) => session.kind === 'match'), [state])
-  const [shareMatchId, setShareMatchId] = useState(() => matches[0]?.id ?? '')
-  const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'error'>('idle')
   const fileRef = useRef<HTMLInputElement>(null)
   const pending = pendingCount(state)
   const foreign = store.foreignCount()
   const unsyncable = store.unsyncableCount()
-
-  useEffect(() => {
-    if (!matches.some((match) => match.id === shareMatchId)) setShareMatchId(matches[0]?.id ?? '')
-  }, [matches, shareMatchId])
-
-  const copyMatchLink = async () => {
-    const match = state.sessions[shareMatchId]
-    if (!match || match.deleted_at || match.kind !== 'match') return
-    const payload = encodeSharedMatch(match, livePointsForSession(state, match.id))
-    const url = `${window.location.origin}${window.location.pathname}#/share/${payload}`
-    try {
-      await navigator.clipboard.writeText(url)
-      setShareStatus('copied')
-    } catch {
-      setShareStatus('error')
-    }
-  }
 
   const signIn = async (e: FormEvent) => {
     e.preventDefault()
@@ -186,40 +165,6 @@ export function SettingsPage() {
         <AppVersion />
 
         <Opponents />
-
-        <section className="card">
-          <div className="section-title">Public match link</div>
-          {matches.length === 0 ? (
-            <p className="muted">Record a match to create a public, read-only stats link.</p>
-          ) : (
-            <div className="stack">
-              <label className="field">
-                <span>Match</span>
-                <select
-                  className="input"
-                  value={shareMatchId}
-                  onChange={(event) => {
-                    setShareMatchId(event.target.value)
-                    setShareStatus('idle')
-                  }}
-                >
-                  {matches.map((match) => (
-                    <option key={match.id} value={match.id}>
-                      {sessionLabel(match)} · {formatDate(match.date)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="row wrap">
-                <button type="button" className="btn primary" onClick={() => void copyMatchLink()}>
-                  {shareStatus === 'copied' ? 'Link copied' : 'Copy link'}
-                </button>
-              </div>
-              <p className="kbd-hint">Anyone with the link can view only this match’s read-only statistics—no account or app access.</p>
-              {shareStatus === 'error' && <div className="notice err">Could not copy the link. Try again from a secure browser tab.</div>}
-            </div>
-          )}
-        </section>
 
         <section className="card">
           <div className="section-title">Data</div>

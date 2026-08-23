@@ -18,6 +18,7 @@ import { OpponentPicker } from '../components/OpponentPicker'
 import { VenuePicker } from '../components/VenuePicker'
 import { filterPoints, summarize } from '../domain/stats'
 import { pointsToCsv, safeFilename, toExportBundle } from '../domain/export'
+import { encodeSharedMatch } from '../domain/share'
 import { downloadText } from '../lib/format'
 import { ERROR_LABEL, KIND_LABEL, MODE_HINT, MODE_LABEL, SESSION_MODES, SHOT_TYPE_LABEL, STROKE_SHORT, type ErrorType, type Outcome, type PlacementStroke, type Point, type Session, type ShotType, type Stroke } from '../domain/types'
 
@@ -249,6 +250,17 @@ export function RecordPage() {
     const bundle = toExportBundle(Object.values(state.sessions), Object.values(state.points))
     downloadText(safeFilename('tennis-marker-backup', 'json'), JSON.stringify(bundle, null, 2), 'application/json')
   }
+  const copyMatchLink = async (match: Session) => {
+    if (match.kind !== 'match') return false
+    const payload = encodeSharedMatch(match, allPoints)
+    const url = `${window.location.origin}${window.location.pathname}#/share/${payload}`
+    try {
+      await navigator.clipboard.writeText(url)
+      return true
+    } catch {
+      return false
+    }
+  }
   if (!session || session.deleted_at) {
     return (
       <div className="shell">
@@ -467,6 +479,7 @@ export function RecordPage() {
         <SessionDetails
           session={session}
           isNew={justCreated}
+          onCopyLink={copyMatchLink}
           onClose={() => setShowDetails(false)}
           onDeleted={() => {
             setShowDetails(false)
@@ -529,7 +542,7 @@ function FinishSessionModal({ session, onClose }: { session: Session; onClose: (
   )
 }
 
-function SessionDetails({ session, isNew = false, onClose, onDeleted }: { session: Session; isNew?: boolean; onClose: () => void; onDeleted: () => void }) {
+function SessionDetails({ session, isNew = false, onCopyLink, onClose, onDeleted }: { session: Session; isNew?: boolean; onCopyLink: (match: Session) => Promise<boolean>; onClose: () => void; onDeleted: () => void }) {
   const state = useAppState()
   const [mode, setMode] = useState(session.mode)
   const [opponent, setOpponent] = useState(session.opponent ?? '')
@@ -538,6 +551,7 @@ function SessionDetails({ session, isNew = false, onClose, onDeleted }: { sessio
   const [kind, setKind] = useState(session.kind)
   const [notes, setNotes] = useState(session.notes)
   const [confirm, setConfirm] = useState(false)
+  const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'error'>('idle')
   const known = useMemo(() => opponentRowsWithRoster(Object.values(state.sessions), state.meta.roster), [state.sessions, state.meta.roster])
   const venues = useMemo(() => venueRows(Object.values(state.sessions)), [state.sessions])
 
@@ -578,6 +592,23 @@ function SessionDetails({ session, isNew = false, onClose, onDeleted }: { sessio
         <span>Notes</span>
         <textarea className="input" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Conditions, what to work on…" />
       </label>
+      {kind === 'match' && (
+        <div className="field">
+          <span>Public stats link</span>
+          <button
+            type="button"
+            className="btn ghost block"
+            onClick={async () => {
+              const draft = { ...session, opponent, venue, date, kind, mode, notes }
+              setShareStatus(await onCopyLink(draft) ? 'copied' : 'error')
+            }}
+          >
+            {shareStatus === 'copied' ? 'Link copied' : 'Copy link'}
+          </button>
+          <p className="kbd-hint" style={{ marginTop: 6 }}>Anyone with the link can view only this match’s read-only statistics.</p>
+          {shareStatus === 'error' && <div className="notice err" style={{ marginTop: 8 }}>Could not copy the link. Try again from a secure browser tab.</div>}
+        </div>
+      )}
       <div className="row">
         <button type="button" className="btn primary grow" onClick={save}>
           {isNew ? 'Start recording' : 'Save'}
