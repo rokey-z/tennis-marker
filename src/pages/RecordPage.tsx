@@ -351,6 +351,7 @@ export function RecordPage() {
             <Court
               rotation={rotation}
               points={shownPoints}
+              highlightedPointId={openPoint?.id}
               compactMarks={finished ? 'overview' : 'analysis'}
               half={placementMode ? 'opposite' : 'own'}
               sideLabel={sideLabel}
@@ -369,6 +370,7 @@ export function RecordPage() {
               sideLabel={sideLabel}
               disabled={finished || !!pending}
               points={points}
+              highlightedPointId={openPoint?.id}
               emphasizeLast={!finished}
               compactMarks={finished ? 'overview' : undefined}
               pending={pending}

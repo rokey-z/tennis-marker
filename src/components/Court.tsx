@@ -84,6 +84,8 @@ export interface CourtProps {
   /** Ignore input (e.g. while the shot sheet is open). */
   disabled?: boolean
   points?: Point[]
+  /** Point selected from the log; its map mark is restored to full size and ringed. */
+  highlightedPointId?: string | null
   /** Recording view: the newest mark stays full size, earlier ones shrink and fade back. */
   emphasizeLast?: boolean
   /** Compact all marks for analysis, or show a brighter compact overview after finishing. */
@@ -106,7 +108,7 @@ export interface CourtProps {
   className?: string
 }
 
-export function Court({ rotation = 0, onTap, disabled = false, points, emphasizeLast = false, compactMarks, half = 'own', sideLabel, onStrokeDrag, dragNetOnly = false, pending, showZones = false, heat, placementHeat, heatTotal = 0, className }: CourtProps) {
+export function Court({ rotation = 0, onTap, disabled = false, points, highlightedPointId = null, emphasizeLast = false, compactMarks, half = 'own', sideLabel, onStrokeDrag, dragNetOnly = false, pending, showZones = false, heat, placementHeat, heatTotal = 0, className }: CourtProps) {
   const gRef = useRef<SVGGElement>(null)
   const down = useRef<{ id: number; x: number; y: number; t: number } | null>(null)
   // the ref is authoritative (pointer events can arrive faster than React re-renders); state drives the drawing
@@ -561,6 +563,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, emphasize
                 p={p}
                 rotation={rotation}
                 compact={compactMarks ?? (newestId !== null && p.id !== newestId ? 'past' : undefined)}
+                selected={p.id === highlightedPointId}
               />
             ))}
           </g>
@@ -628,7 +631,7 @@ function clampRect(r: { x: number; y: number; width: number; height: number }) {
   return { x, y, width: Math.min(DRAW_MAX_X, r.x + r.width) - x, height: Math.min(DRAW_MAX_Y, r.y + r.height) - y }
 }
 
-function Marker({ p: pt, rotation, compact }: { p: Point; rotation: CourtRotation; compact?: 'past' | 'analysis' | 'overview' }) {
+function Marker({ p: pt, rotation, compact, selected = false }: { p: Point; rotation: CourtRotation; compact?: 'past' | 'analysis' | 'overview'; selected?: boolean }) {
   const p = { ...pt, x: drawX(pt.x), y: drawY(pt.y) }
   const stroke = isPlacementStroke(p.stroke) ? p.stroke : 'fh'
   const error = isErrorType(p.error_type) ? p.error_type : 'long'
@@ -642,7 +645,7 @@ function Marker({ p: pt, rotation, compact }: { p: Point; rotation: CourtRotatio
 
   // Previous points are positional context only. Keep them visible without letting their symbols,
   // letters, or outlines compete with the newest mark.
-  if (compact) {
+  if (compact && !selected) {
     const overview = compact === 'overview'
     const compactRadius = overview ? 0.58 : 0.42
     const compactOpacity = overview ? 0.58 : 0.34
@@ -666,6 +669,14 @@ function Marker({ p: pt, rotation, compact }: { p: Point; rotation: CourtRotatio
   return (
     <g transform={uprightAt(p.x, p.y, false, rotation)}>
       <title>{label}</title>
+      {selected && (
+        <g aria-hidden="true">
+          <circle cx={p.x} cy={p.y} r={2.45} fill="rgba(255,255,255,0.42)" stroke="#ffffff" strokeWidth={0.42}>
+            <animate attributeName="r" values="2.15;2.75;2.15" dur="1.05s" repeatCount="indefinite" />
+          </circle>
+          <circle cx={p.x} cy={p.y} r={2.8} fill="none" stroke="var(--mark-outline)" strokeWidth={0.22} />
+        </g>
+      )}
       {/* colour carries her stroke; a dark outline marks a forced error. A winner is the opponent's
           shot, so it is a green diamond with no stroke colour at all. */}
       {net ? (
