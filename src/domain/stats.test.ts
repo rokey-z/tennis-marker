@@ -44,8 +44,8 @@ function point(over: Partial<Point> = {}): Point {
 
 describe('filterPoints', () => {
   const pts = [
-    point({ stroke: 'fh', error_type: 'long' }),
-    point({ stroke: 'bh', error_type: 'net', forced: true }),
+    point({ stroke: 'fh', error_type: 'long', shot_type: 'ground' }),
+    point({ stroke: 'bh', error_type: 'net', forced: true, shot_type: 'volley' }),
     point({ stroke: 'bh', error_type: 'wide', session_id: 's2' }),
     point({ deleted_at: t0 }),
   ]
@@ -54,10 +54,12 @@ describe('filterPoints', () => {
     expect(filterPoints(pts)).toHaveLength(3)
     expect(filterPoints(pts, { stroke: 'bh' })).toHaveLength(2)
     expect(filterPoints(pts, { error: 'net' })).toHaveLength(1)
+    expect(filterPoints(pts, { shotType: 'ground' })).toHaveLength(1)
+    expect(filterPoints(pts, { shotType: 'volley', stroke: 'bh' })).toHaveLength(1)
     expect(filterPoints(pts, { forced: 'forced' })).toHaveLength(1)
     expect(filterPoints(pts, { forced: 'unforced' })).toHaveLength(2)
     expect(filterPoints(pts, { sessionId: 's2' })).toHaveLength(1)
-    expect(filterPoints(pts, { sessionId: 'all', stroke: 'all', error: 'all', forced: 'all' })).toHaveLength(3)
+    expect(filterPoints(pts, { sessionId: 'all', stroke: 'all', error: 'all', shotType: 'all', forced: 'all' })).toHaveLength(3)
     expect(filterPoints(pts, { stroke: 'bh', error: 'wide', sessionId: 's1' })).toHaveLength(0)
   })
 

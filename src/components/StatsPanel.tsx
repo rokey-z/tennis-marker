@@ -7,6 +7,7 @@ import { DownloadIcon } from './Icons'
 export interface StatsFilterState {
   stroke: Stroke | 'all'
   error: ErrorType | 'all'
+  shotType: NonNullable<Filters['shotType']>
   forced: NonNullable<Filters['forced']>
 }
 
@@ -34,6 +35,16 @@ export function StatsFilters({ value, points, onChange }: { value: StatsFilterSt
         {ERROR_TYPES.map((e) => (
           <Chip key={e} on={value.error === e} onClick={() => set({ error: e })}>
             {label(ERROR_LABEL[e], count({ error: e }))}
+          </Chip>
+        ))}
+      </div>
+      <div className="chip-group" role="group" aria-label="Ball type">
+        <Chip on={value.shotType === 'all'} onClick={() => set({ shotType: 'all' })}>
+          {label('All types', count({ shotType: 'all' }))}
+        </Chip>
+        {SHOT_TYPES.map((type) => (
+          <Chip key={type} on={value.shotType === type} onClick={() => set({ shotType: type })}>
+            {label(SHOT_TYPE_LABEL[type], count({ shotType: type }))}
           </Chip>
         ))}
       </div>

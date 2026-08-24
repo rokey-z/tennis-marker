@@ -8,12 +8,13 @@ export interface Filters {
   sessionId?: string | 'all'
   stroke?: Stroke | 'all'
   error?: ErrorType | 'all'
+  shotType?: ShotType | 'all'
   forced?: ForcedFilter
   /** 'error' (the default view), 'winner', or 'all' */
   outcome?: Outcome | 'all'
 }
 
-export const DEFAULT_FILTERS: Required<Filters> = { sessionId: 'all', stroke: 'all', error: 'all', forced: 'all', outcome: 'all' }
+export const DEFAULT_FILTERS: Required<Filters> = { sessionId: 'all', stroke: 'all', error: 'all', shotType: 'all', forced: 'all', outcome: 'all' }
 
 /** Live (non-deleted) points, optionally narrowed by filters. */
 export function filterPoints(points: Iterable<Point>, f: Filters = {}): Point[] {
@@ -23,6 +24,7 @@ export function filterPoints(points: Iterable<Point>, f: Filters = {}): Point[] 
     if (f.sessionId && f.sessionId !== 'all' && p.session_id !== f.sessionId) continue
     if (f.stroke && f.stroke !== 'all' && p.stroke !== f.stroke) continue
     if (f.error && f.error !== 'all' && p.error_type !== f.error) continue
+    if (f.shotType && f.shotType !== 'all' && p.shot_type !== f.shotType) continue
     // An opponent winner is treated as forced; placements are neither forced nor unforced.
     if (f.forced && f.forced !== 'all') {
       const outcome = p.outcome ?? 'error'
