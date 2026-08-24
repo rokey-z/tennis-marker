@@ -43,7 +43,10 @@ describe('StatsPanel error type summary', () => {
     for (const label of ['Long', 'Net', 'Wide', 'Winners']) expect(html).toContain(`<span>${label}</span><strong>1 · 25%</strong>`)
     expect(html.match(/class="ball-type-bubble(?: |")/g)).toHaveLength(1)
     expect(html).toContain('--bubble-size:112px')
-    expect(html).toContain('<strong>100%</strong><small>3 errors</small>')
+    expect(html).toContain('Error ball types')
+    expect(html).toContain('<strong>100%</strong><small class="ball-type-count">3</small>')
+    expect(html).toContain('<div class="ball-type-strokes"><span class="fh">FH 3</span><span class="bh">BH 0</span></div>')
+    expect(html).not.toContain('3 errors</small>')
     expect(html).not.toContain('<strong>0%</strong>')
   })
 

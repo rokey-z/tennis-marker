@@ -46,8 +46,12 @@ export interface Summary {
   byForced: { forced: number; unforced: number }
   /** Error counts by attempted ball type; winners and placements never enter this breakdown. */
   byShotType: Record<ShotType, number>
+  /** FH/BH split inside each attempted ball type. */
+  byShotTypeStroke: Record<ShotType, Record<Stroke, number>>
   /** Legacy errors recorded before ball type was introduced. */
   untypedErrors: number
+  /** FH/BH split for legacy errors without a selected ball type. */
+  untypedErrorsByStroke: Record<Stroke, number>
   /** zoneId → count */
   byZone: Record<string, number>
   maxZone: number
@@ -88,7 +92,9 @@ export function summarize(points: Iterable<Point>): Summary {
     byError: { long: 0, net: 0, wide: 0 },
     byForced: { forced: 0, unforced: 0 },
     byShotType: Object.fromEntries(SHOT_TYPES.map((type) => [type, 0])) as Record<ShotType, number>,
+    byShotTypeStroke: Object.fromEntries(SHOT_TYPES.map((type) => [type, { fh: 0, bh: 0 }])) as Record<ShotType, Record<Stroke, number>>,
     untypedErrors: 0,
+    untypedErrorsByStroke: { fh: 0, bh: 0 },
     byZone: {},
     maxZone: 0,
     matrix: { fh: { long: 0, net: 0, wide: 0 }, bh: { long: 0, net: 0, wide: 0 } },
@@ -157,8 +163,13 @@ export function summarize(points: Iterable<Point>): Summary {
     if (p.error_type === 'net') s.placementNet++
     if (p.forced) s.byForced.forced++
     else s.byForced.unforced++
-    if (isShotType(p.shot_type)) s.byShotType[p.shot_type]++
-    else s.untypedErrors++
+    if (isShotType(p.shot_type)) {
+      s.byShotType[p.shot_type]++
+      if (isStroke(p.stroke)) s.byShotTypeStroke[p.shot_type][p.stroke]++
+    } else {
+      s.untypedErrors++
+      if (isStroke(p.stroke)) s.untypedErrorsByStroke[p.stroke]++
+    }
     countZone(s, p)
     if (isStroke(p.stroke) && isErrorType(p.error_type)) s.matrix[p.stroke][p.error_type]++
   }

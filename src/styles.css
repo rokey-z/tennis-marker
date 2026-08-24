@@ -1910,12 +1910,16 @@ textarea.input {
   font-size: clamp(12px, 2vw, 18px);
   line-height: 1;
 }
-.ball-type-bubble small {
+.ball-type-bubble .ball-type-count {
   max-width: calc(var(--bubble-size) - 6px);
   margin-top: 3px;
+  min-width: 20px;
+  padding: 2px 6px;
   overflow: hidden;
-  font-size: clamp(8px, 1.1vw, 11px);
-  font-weight: 700;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: clamp(10px, 1.4vw, 14px);
+  font-weight: 800;
   line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1933,6 +1937,22 @@ textarea.input {
   font-size: 13px;
   font-weight: 750;
   line-height: 1.15;
+}
+.ball-type-strokes {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ball-type-strokes .fh {
+  color: var(--fh);
+}
+.ball-type-strokes .bh {
+  color: var(--bh);
 }
 .matrix {
   width: 100%;

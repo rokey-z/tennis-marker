@@ -124,9 +124,12 @@ describe('summarize', () => {
     ])
     expect(s.byShotType.ground).toBe(1)
     expect(s.byShotType.swing_volley).toBe(2)
+    expect(s.byShotTypeStroke.ground).toEqual({ fh: 1, bh: 0 })
+    expect(s.byShotTypeStroke.swing_volley).toEqual({ fh: 2, bh: 0 })
     expect(s.byShotType.lob).toBe(0)
     expect(s.byShotType.drop).toBe(0)
     expect(s.untypedErrors).toBe(1)
+    expect(s.untypedErrorsByStroke).toEqual({ fh: 1, bh: 0 })
   })
 
   it('keeps a landing map of its own, separate from the error zones', () => {

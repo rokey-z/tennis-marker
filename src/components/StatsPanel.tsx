@@ -229,10 +229,12 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
     { key: 'wide', label: 'Wide', count: summary.byError.wide, color: 'var(--err-wide)' },
     { key: 'winners', label: 'Winners', count: summary.winners, color: 'var(--win)' },
   ]
-  const ballTypeItems: Array<{ key: string; label: string; count: number; muted?: boolean }> = SHOT_TYPES
-    .map((type) => ({ key: type, label: SHOT_TYPE_LABEL[type], count: summary.byShotType[type] }))
+  const ballTypeItems: Array<{ key: string; label: string; count: number; fh: number; bh: number; muted?: boolean }> = SHOT_TYPES
+    .map((type) => ({ key: type, label: SHOT_TYPE_LABEL[type], count: summary.byShotType[type], ...summary.byShotTypeStroke[type] }))
     .filter((item) => item.count > 0)
-  if (summary.untypedErrors > 0) ballTypeItems.push({ key: 'untyped', label: 'Not selected', count: summary.untypedErrors, muted: true })
+  if (summary.untypedErrors > 0) {
+    ballTypeItems.push({ key: 'untyped', label: 'Not selected', count: summary.untypedErrors, ...summary.untypedErrorsByStroke, muted: true })
+  }
   ballTypeItems.sort((a, b) => b.count - a.count)
   return (
     <div className="stack stats-panel">
@@ -261,7 +263,7 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
             ))}
           </div>
         </div>
-        <div className="section-title">Ball types · {summary.total - summary.untypedErrors} tagged</div>
+        <div className="section-title">Error ball types</div>
         <div className="ball-type-bubbles">
           {ballTypeItems.map((item) => {
             const percentage = pct(item.count, summary.total)
@@ -277,10 +279,14 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
                     aria-label={`${item.label}: ${item.count} ${item.count === 1 ? 'error' : 'errors'}, ${percentage}%`}
                   >
                     <strong>{percentage}%</strong>
-                    <small>{item.count} {item.count === 1 ? 'error' : 'errors'}</small>
+                    <small className="ball-type-count">{item.count}</small>
                   </div>
                 </div>
                 <span>{item.label}</span>
+                <div className="ball-type-strokes">
+                  <span className="fh">FH {item.fh}</span>
+                  <span className="bh">BH {item.bh}</span>
+                </div>
               </div>
             )
           })}
