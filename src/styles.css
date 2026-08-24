@@ -952,6 +952,29 @@ textarea.input {
   pointer-events: none;
   user-select: none;
 }
+.long-press-countdown-bg {
+  fill: rgba(255,255,255,0.9);
+  stroke: rgba(20,24,29,0.3);
+  stroke-width: 0.3;
+}
+.long-press-countdown-ring {
+  fill: none;
+  stroke: var(--win);
+  stroke-width: 0.72;
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 0;
+  animation: long-press-countdown 550ms linear forwards;
+}
+.long-press-countdown-star {
+  fill: var(--win);
+  font-family: var(--font);
+  font-size: 2px;
+  font-weight: 900;
+}
+@keyframes long-press-countdown {
+  to { stroke-dashoffset: 100; }
+}
 .placement-split {
   position: absolute;
   top: 8px;

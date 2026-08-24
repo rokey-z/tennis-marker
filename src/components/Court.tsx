@@ -183,6 +183,7 @@ export function Court({ rotation = 0, onTap, onLongPress, disabled = false, poin
   const down = useRef<{ id: number; x: number; y: number; t: number } | null>(null)
   const longPressTimer = useRef<number | null>(null)
   const longPressFired = useRef(false)
+  const [longPressPreview, setLongPressPreview] = useState<{ x: number; y: number; id: number } | null>(null)
   // the ref is authoritative (pointer events can arrive faster than React re-renders); state drives the drawing
   const dragRef = useRef<DragState | null>(null)
   const [drag, setDrag] = useState<DragState | null>(null)
@@ -211,6 +212,7 @@ export function Court({ rotation = 0, onTap, onLongPress, disabled = false, poin
   const clearLongPress = () => {
     if (longPressTimer.current !== null) window.clearTimeout(longPressTimer.current)
     longPressTimer.current = null
+    setLongPressPreview(null)
   }
 
   useEffect(() => () => {
@@ -225,12 +227,14 @@ export function Court({ rotation = 0, onTap, onLongPress, disabled = false, poin
     longPressFired.current = false
     down.current = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() }
     const c = toCourt(e.clientX, e.clientY)
-    if (onLongPress && !disabled && c) {
+    if (onLongPress && !disabled && c && !c.net) {
       const pointerId = e.pointerId
       const at = { clientX: e.clientX, clientY: e.clientY }
+      setLongPressPreview({ x: c.x, y: c.y, id: performance.now() })
       longPressTimer.current = window.setTimeout(() => {
         if (down.current?.id !== pointerId) return
         longPressTimer.current = null
+        setLongPressPreview(null)
         longPressFired.current = true
         down.current = null
         dragRef.current = null
@@ -844,13 +848,22 @@ export function Court({ rotation = 0, onTap, onLongPress, disabled = false, poin
           </g>
         )}
         {/* Error selection stays above the court, net, and existing marks while the finger moves. */}
-        {drag && onErrorSelect && (
+        {drag && onErrorSelect && !longPressPreview && (
           (() => {
             const selection = errorWheelSelection(drag.dx, drag.dy, drag.wheelRadiusPx)
             const winner = !!selection && 'winner' in selection
             const selected = selection && !('winner' in selection) ? selection : null
             return <ErrorDragWheel x={drag.start.x} y={drag.start.y} radius={errorWheelRadius} rotation={rotation} selected={selected} winner={winner} />
           })()
+        )}
+
+        {/* Holding still drains this ring; releasing or beginning a drag cancels it. */}
+        {longPressPreview && (
+          <g key={longPressPreview.id} transform={uprightAt(longPressPreview.x, longPressPreview.y, false, rotation)} pointerEvents="none" aria-hidden="true">
+            <circle className="long-press-countdown-bg" cx={longPressPreview.x} cy={longPressPreview.y} r={2.45} />
+            <circle className="long-press-countdown-ring" cx={longPressPreview.x} cy={longPressPreview.y} r={2.45} pathLength={100} transform={`rotate(-90 ${longPressPreview.x} ${longPressPreview.y})`} />
+            <text className="long-press-countdown-star" x={longPressPreview.x} y={longPressPreview.y + 0.62} textAnchor="middle">★</text>
+          </g>
         )}
 
         {/* pending (ghost) marker */}
