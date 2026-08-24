@@ -810,19 +810,22 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
       return (
         <div className="court-hover-tooltip ball-type-tooltip" style={{ left: heatHoverClient.x + 14, top: heatHoverClient.y + 14 }}>
           <div className="zone-share-chart" aria-label="Percentage distribution across all court blocks">
-            {heatCells!.map((cell) => {
+            {heatCells!.filter((cell) => cell.n > 0).map((cell) => {
               const pct = heatTotal > 0 ? Math.round((cell.n / heatTotal) * 100) : 0
               const selected = cell.id === hoveredHeat.id
+              const [row, col] = cell.id.split('-')
+              const blockName = `${row === 'baseline' ? 'Base' : row === 'mid' ? 'Mid' : 'Net'} ${col === 'middle' ? 'Center' : col === 'deuce' ? 'Deuce' : 'Ad'}`
               return (
                 <div
                   className={`zone-share-bar${selected ? ' selected' : ' dimmed'}`}
                   key={cell.id}
-                  aria-label={`${cell.id}: ${pct}%${selected ? ', selected' : ''}`}
+                  aria-label={`${blockName}: ${pct}%${selected ? ', selected' : ''}`}
                 >
                   <span>{pct}%</span>
                   <i aria-hidden="true">
                     <b style={{ height: pct > 0 ? `${Math.max(2, pct * 0.32)}px` : 0, background: cell.fill }} />
                   </i>
+                  <em>{blockName}</em>
                 </div>
               )
             })}
