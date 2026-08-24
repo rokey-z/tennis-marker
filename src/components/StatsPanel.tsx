@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { filterPoints, pct, type Filters, type Summary } from '../domain/stats'
-import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, SHOT_TYPES, SHOT_TYPE_LABEL, STROKE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type PlacementResult, type PlacementStroke, type Point } from '../domain/types'
+import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, POINT_SHOT_TYPES, SHOT_TYPES, SHOT_TYPE_LABEL, STROKE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type PlacementResult, type PlacementStroke, type Point } from '../domain/types'
 import { Chip } from './Bits'
 import { DownloadIcon } from './Icons'
 
@@ -23,7 +23,7 @@ export function StatsFilters({ value, points, onChange }: { value: StatsFilterSt
   }
   const strokeCounts = Object.fromEntries(['all', ...PLACEMENT_STROKES].map((stroke) => [stroke, count({ stroke: stroke as StatsFilterState['stroke'] })])) as Record<StatsFilterState['stroke'], number>
   const errorCounts = Object.fromEntries(['all', ...ERROR_TYPES].map((error) => [error, count({ error: error as StatsFilterState['error'] })])) as Record<StatsFilterState['error'], number>
-  const shotTypeCounts = Object.fromEntries(['all', ...SHOT_TYPES].map((shotType) => [shotType, count({ shotType: shotType as StatsFilterState['shotType'] })])) as Record<StatsFilterState['shotType'], number>
+  const shotTypeCounts = Object.fromEntries(['all', ...POINT_SHOT_TYPES].map((shotType) => [shotType, count({ shotType: shotType as StatsFilterState['shotType'] })])) as Record<StatsFilterState['shotType'], number>
   return (
     <div className="stats-filters" role="group" aria-label="Filters">
       <div className="stats-filters-track">
@@ -49,7 +49,7 @@ export function StatsFilters({ value, points, onChange }: { value: StatsFilterSt
         <div className="stats-filters-row">
           {shotTypeCounts.all > 0 && <div className="chip-group" role="group" aria-label="Ball type">
             {shotTypeCounts.all > 0 && <Chip on={value.shotType === 'all'} onClick={() => set({ shotType: 'all' })}>{label('All types', shotTypeCounts.all)}</Chip>}
-            {SHOT_TYPES.map((type) => (
+            {POINT_SHOT_TYPES.map((type) => (
               shotTypeCounts[type] > 0 && <Chip key={type} on={value.shotType === type} onClick={() => set({ shotType: type })}>{label(SHOT_TYPE_LABEL[type], shotTypeCounts[type])}</Chip>
             ))}
           </div>}
@@ -226,7 +226,7 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
     ballTypeItems.push({ key: 'untyped', label: 'Not selected', count: summary.untypedErrors, ...summary.untypedErrorsByStroke, muted: true })
   }
   ballTypeItems.sort((a, b) => b.count - a.count)
-  const winnerBallTypes = SHOT_TYPES
+  const winnerBallTypes = POINT_SHOT_TYPES
     .map((type) => ({ key: type, label: SHOT_TYPE_LABEL[type], count: summary.playerWinnersByShotType[type] }))
     .filter((item) => item.count > 0)
     .sort((a, b) => b.count - a.count)

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { describeMark, isOut } from '../domain/court'
-import { SHOT_TYPE_GROUPS, SHOT_TYPE_LABEL, isPlacementStroke, isShotType, type ErrorType, type Point, type Stroke } from '../domain/types'
+import { SHOT_TYPE_GROUPS, SHOT_TYPE_LABEL, WINNER_SERVE_TYPES, isPlacementStroke, isPointShotType, isWinnerServeType, type ErrorType, type Point, type Stroke } from '../domain/types'
 import { formatTime } from '../lib/format'
 import { CloseIcon, TrashIcon } from './Icons'
 import { MarkDot, ShotGrid, markLabel } from './marks'
@@ -19,6 +19,8 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
   const winner = point.outcome === 'winner'
   const playerWinner = point.outcome === 'player_winner'
   const placement = point.outcome === 'placement'
+  const serveWinner = playerWinner && point.stroke === 'serve'
+  const shotTypeGroups = serveWinner ? [WINNER_SERVE_TYPES] : SHOT_TYPE_GROUPS
   const out = placement && point.stroke !== 'serve' && isOut(point.x, point.y)
   // a placement lives on the far half: the only thing to correct is which stroke played it
   const pick = (stroke: Stroke, error: ErrorType) => {
@@ -49,7 +51,7 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
         <div className="ps-head">
           <MarkDot stroke={point.stroke} error={point.error_type} forced={point.forced} outcome={point.outcome} out={out} size={34} />
           <div className="grow">
-            <div className="ps-now">{markLabel(point.stroke, point.error_type, point.forced, point.outcome, out, point.placement_result)}{isShotType(point.shot_type) ? ` · ${SHOT_TYPE_LABEL[point.shot_type]}` : ''}</div>
+            <div className="ps-now">{markLabel(point.stroke, point.error_type, point.forced, point.outcome, out, point.placement_result)}{isPointShotType(point.shot_type) ? ` · ${SHOT_TYPE_LABEL[point.shot_type]}` : ''}</div>
             <div className="ps-meta">
               {describeMark(point.x, point.y, point.outcome)} · {formatTime(point.created_at)}
             </div>
@@ -71,7 +73,7 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
         {playerWinner && (
           <WinnerStrokeToggle
             value={isPlacementStroke(point.stroke) ? point.stroke : 'fh'}
-            onChange={(stroke) => onChange(stroke === 'serve' ? { stroke, shot_type: null } : { stroke })}
+            onChange={(stroke) => onChange(stroke === 'serve' || isWinnerServeType(point.shot_type) ? { stroke, shot_type: null } : { stroke })}
           />
         )}
         {!winner && !playerWinner && (
@@ -82,10 +84,10 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
             onPick={pick}
           />
         )}
-        {!winner && !placement && (!playerWinner || point.stroke !== 'serve') && (
+        {!winner && !placement && (
           <div className="point-shot-types">
-            <div className="section-title">Ball type</div>
-            {SHOT_TYPE_GROUPS.map((group, index) => (
+            <div className="section-title">{serveWinner ? 'Serve result' : 'Ball type'}</div>
+            {shotTypeGroups.map((group, index) => (
               <div className="shot-type-group" key={index}>
                 {group.map((type) => {
                   const selected = point.shot_type === type

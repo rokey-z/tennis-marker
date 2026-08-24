@@ -21,12 +21,12 @@ import { pointsToCsv, safeFilename, toExportBundle } from '../domain/export'
 import { decodeLiveSharedMatch } from '../domain/share'
 import { downloadText } from '../lib/format'
 import { isUuid } from '../domain/validate'
-import { ERROR_LABEL, ERROR_TYPES, KIND_LABEL, MODE_HINT, MODE_LABEL, PLACEMENT_STROKES, SESSION_MODES, SHOT_TYPES, SHOT_TYPE_LABEL, STROKE_SHORT, type ErrorType, type Outcome, type PlacementStroke, type Point, type Session, type ShotType, type Stroke } from '../domain/types'
+import { ERROR_LABEL, ERROR_TYPES, KIND_LABEL, MODE_HINT, MODE_LABEL, PLACEMENT_STROKES, POINT_SHOT_TYPES, SESSION_MODES, SHOT_TYPE_LABEL, STROKE_SHORT, type ErrorType, type Outcome, type PlacementStroke, type Point, type PointShotType, type Session, type ShotType, type Stroke } from '../domain/types'
 
 const ROTATE_90_KEY = 'tennis-marker.rotate90'
 const AFTER_SAVE_IGNORE_MS = 300
 const DEFAULT_STATS_FILTERS: StatsFilterState = { stroke: 'all', error: 'all', shotType: 'all', forced: 'all' }
-type LogFilter = 'all' | `stroke:${PlacementStroke}` | `error:${ErrorType}` | `shot:${ShotType}` | 'forced' | 'opponent_winner' | 'player_winner' | 'placement:in' | 'placement:out'
+type LogFilter = 'all' | `stroke:${PlacementStroke}` | `error:${ErrorType}` | `shot:${PointShotType}` | 'forced' | 'opponent_winner' | 'player_winner' | 'placement:in' | 'placement:out'
 
 export function RecordPage() {
   const { id = '' } = useParams()
@@ -140,7 +140,7 @@ export function RecordPage() {
 
   useEffect(() => setStatsShareStatus('idle'), [id, statsMode])
 
-  const logPoint = (stroke: PlacementStroke | '', error: ErrorType | '', outcome: Outcome, placementResult: Point['placement_result'] = null, shotType: ShotType | null = null) => {
+  const logPoint = (stroke: PlacementStroke | '', error: ErrorType | '', outcome: Outcome, placementResult: Point['placement_result'] = null, shotType: PointShotType | null = null) => {
     if (!pending) return
     const p = store.addPoint({ session_id: id, x: pending.x, y: pending.y, stroke, error_type: error, forced: outcome === 'error' && forced, outcome, placement_result: placementResult, shot_type: shotType })
     setPending(null)
@@ -174,7 +174,7 @@ export function RecordPage() {
   const logWinner = () => logPoint('', '', 'winner')
 
   /** Lily hit a winner from this position; retain both her stroke and the selected ball type. */
-  const logPlayerWinner = (stroke: PlacementStroke, shotType: ShotType | null) => logPoint(stroke, '', 'player_winner', null, shotType)
+  const logPlayerWinner = (stroke: PlacementStroke, shotType: PointShotType) => logPoint(stroke, '', 'player_winner', null, shotType)
 
   /** Placement mode: one motion — press where the ball landed, drag left for BH or right for FH. */
   const onStrokeDrag = useCallback(
@@ -544,7 +544,7 @@ function LogFilterHeader({ points, mode, value, playerName, onChange }: { points
     )
   }
   const visibleMain = main.filter((item) => item.key === 'all' || count(item.key) > 0)
-  const types = SHOT_TYPES
+  const types = POINT_SHOT_TYPES
     .map((shotType) => ({ key: `shot:${shotType}` as LogFilter, label: SHOT_TYPE_LABEL[shotType] }))
     .filter((item) => count(item.key) > 0)
   const filterChip = (item: { key: LogFilter; label: string }) => (

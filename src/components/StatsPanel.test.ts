@@ -73,12 +73,14 @@ describe('StatsPanel error type summary', () => {
       point('winner-1', '', 'player_winner', 'volley'),
       point('winner-2', '', 'player_winner', 'volley'),
       point('winner-3', '', 'player_winner', 'lob'),
+      { ...point('winner-4', '', 'player_winner', 'ace'), stroke: 'serve' },
     ])
-    const html = renderToStaticMarkup(createElement(StatsPanel, { summary, count: 4, showExports: false }))
+    const html = renderToStaticMarkup(createElement(StatsPanel, { summary, count: 5, showExports: false }))
 
-    expect(html).toContain('Winner ball types · 3')
-    expect(html).toContain('<strong>67%</strong><span>Volley</span><small>2</small>')
-    expect(html).toContain('<strong>33%</strong><span>Lob</span><small>1</small>')
+    expect(html).toContain('Winner ball types · 4')
+    expect(html).toContain('<strong>50%</strong><span>Volley</span><small>2</small>')
+    expect(html).toContain('<strong>25%</strong><span>Lob</span><small>1</small>')
+    expect(html).toContain('<strong>25%</strong><span>ACE</span><small>1</small>')
     expect(summary.total).toBe(1)
   })
 })

@@ -1,6 +1,6 @@
 import { placementResultFor, zoneFor, zoneId } from './court'
-import type { ErrorType, Outcome, PlacementResult, PlacementStroke, Point, Session, ShotType, Stroke } from './types'
-import { SHOT_TYPES, isErrorType, isPlacementResult, isPlacementStroke, isShotType, isStroke } from './types'
+import type { ErrorType, Outcome, PlacementResult, PlacementStroke, Point, PointShotType, Session, ShotType, Stroke } from './types'
+import { POINT_SHOT_TYPES, SHOT_TYPES, isErrorType, isPlacementResult, isPlacementStroke, isPointShotType, isShotType, isStroke } from './types'
 
 export type ForcedFilter = 'all' | 'forced' | 'unforced'
 
@@ -8,7 +8,7 @@ export interface Filters {
   sessionId?: string | 'all'
   stroke?: PlacementStroke | 'all'
   error?: ErrorType | 'all'
-  shotType?: ShotType | 'all'
+  shotType?: PointShotType | 'all'
   forced?: ForcedFilter
   /** 'error' (the default view), 'winner', or 'all' */
   outcome?: Outcome | 'all'
@@ -68,7 +68,7 @@ export interface Summary {
   /** Winners hit by the player, kept apart from both errors and opponent winners. */
   playerWinners: number
   playerWinnersByStroke: Record<PlacementStroke, number>
-  playerWinnersByShotType: Record<ShotType, number>
+  playerWinnersByShotType: Record<PointShotType, number>
   placements: number
   /** Serves are recorded as landings but deliberately have no in/out result. */
   serveLandings: number
@@ -107,7 +107,7 @@ export function summarize(points: Iterable<Point>): Summary {
     winners: 0,
     playerWinners: 0,
     playerWinnersByStroke: { fh: 0, bh: 0, serve: 0 },
-    playerWinnersByShotType: Object.fromEntries(SHOT_TYPES.map((type) => [type, 0])) as Record<ShotType, number>,
+    playerWinnersByShotType: Object.fromEntries(POINT_SHOT_TYPES.map((type) => [type, 0])) as Record<PointShotType, number>,
     placements: 0,
     serveLandings: 0,
     placementsOut: 0,
@@ -138,7 +138,7 @@ export function summarize(points: Iterable<Point>): Summary {
     if (outcome === 'player_winner') {
       s.playerWinners++
       if (isPlacementStroke(p.stroke)) s.playerWinnersByStroke[p.stroke]++
-      if (isShotType(p.shot_type)) s.playerWinnersByShotType[p.shot_type]++
+      if (isPointShotType(p.shot_type)) s.playerWinnersByShotType[p.shot_type]++
       continue
     }
     if (outcome === 'placement') {

@@ -40,11 +40,13 @@ describe('sanitizePoint', () => {
       forced: false,
     })
     expect(sanitizePoint({ ...good, outcome: 'player_winner', stroke: '', error_type: '', shot_type: 'lob' })).toBeNull()
-    expect(sanitizePoint({ ...good, outcome: 'player_winner', stroke: 'serve', error_type: '', shot_type: null })).toMatchObject({
+    expect(sanitizePoint({ ...good, outcome: 'player_winner', stroke: 'serve', error_type: '', shot_type: 'ace' })).toMatchObject({
       outcome: 'player_winner',
       stroke: 'serve',
-      shot_type: null,
+      shot_type: 'ace',
     })
+    expect(sanitizePoint({ ...good, outcome: 'player_winner', stroke: 'serve', error_type: '', shot_type: 'winning_serve' })?.shot_type).toBe('winning_serve')
+    expect(sanitizePoint({ ...good, outcome: 'error', stroke: 'fh', error_type: 'long', shot_type: 'ace' })?.shot_type).toBeNull()
   })
 
   it('clamps coordinates into the court view', () => {

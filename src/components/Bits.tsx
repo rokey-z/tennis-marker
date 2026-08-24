@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { useSyncStatus } from '../data/app'
 import { describeMark, isOut } from '../domain/court'
-import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, SHOT_TYPE_LABEL, STROKE_LABEL, STROKES, isShotType, type Point } from '../domain/types'
+import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, SHOT_TYPE_LABEL, STROKE_LABEL, STROKES, isPointShotType, type Point } from '../domain/types'
 import type { Summary } from '../domain/stats'
 import { CloseIcon, TrashIcon } from './Icons'
 import { ErrorLetter, MarkChip, StrokeTag } from './marks'
@@ -176,14 +176,14 @@ export function PointList({ points, indexSource = points, onOpen, onDelete }: { 
               <span className="desc">
                   <MarkChip stroke={p.stroke} error={p.error_type} forced={p.forced} outcome={p.outcome} out={(p.outcome ?? 'error') === 'placement' && p.stroke !== 'serve' && isOut(p.x, p.y)} placementResult={p.placement_result} />
                 <small>
-                  {isShotType(p.shot_type) ? `${SHOT_TYPE_LABEL[p.shot_type]} · ` : ''}{describeMark(p.x, p.y, p.outcome ?? 'error')} · {formatTime(p.created_at)}
+                  {isPointShotType(p.shot_type) ? `${SHOT_TYPE_LABEL[p.shot_type]} · ` : ''}{describeMark(p.x, p.y, p.outcome ?? 'error')} · {formatTime(p.created_at)}
                 </small>
               </span>
             </button> : <div className="row-open">
               <span className="n">{index}</span>
               <span className="desc">
                 <MarkChip stroke={p.stroke} error={p.error_type} forced={p.forced} outcome={p.outcome} out={(p.outcome ?? 'error') === 'placement' && p.stroke !== 'serve' && isOut(p.x, p.y)} placementResult={p.placement_result} />
-                <small>{isShotType(p.shot_type) ? `${SHOT_TYPE_LABEL[p.shot_type]} · ` : ''}{describeMark(p.x, p.y, p.outcome ?? 'error')} · {formatTime(p.created_at)}</small>
+                <small>{isPointShotType(p.shot_type) ? `${SHOT_TYPE_LABEL[p.shot_type]} · ` : ''}{describeMark(p.x, p.y, p.outcome ?? 'error')} · {formatTime(p.created_at)}</small>
               </span>
             </div>}
             {onDelete && <button type="button" className="icon-btn row-del" aria-label={`Delete point ${index}`} onClick={() => onDelete(p)}>

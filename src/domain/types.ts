@@ -5,6 +5,10 @@ export type PlacementResult = 'in' | 'net' | 'wide' | 'long' | 'unknown'
 export type ErrorType = 'long' | 'net' | 'wide'
 /** The kind of ball attempted when an error was made. */
 export type ShotType = 'ground' | 'slice' | 'approach' | 'volley' | 'swing_volley' | 'overhead' | 'lob' | 'drop'
+/** The two serve outcomes available when the player hits a winner. */
+export type WinnerServeType = 'winning_serve' | 'ace'
+/** Any detail stored in points.shot_type. */
+export type PointShotType = ShotType | WinnerServeType
 export type SessionKind = 'match' | 'practice'
 /** What a session records: her errors on her own half, or where her balls landed on the far half. */
 export type SessionMode = 'errors' | 'placement'
@@ -24,12 +28,14 @@ export const SHOT_TYPE_GROUPS: ShotType[][] = [
   ['lob', 'drop'],
 ]
 export const SHOT_TYPES: ShotType[] = SHOT_TYPE_GROUPS.flat()
+export const WINNER_SERVE_TYPES: WinnerServeType[] = ['winning_serve', 'ace']
+export const POINT_SHOT_TYPES: PointShotType[] = [...SHOT_TYPES, ...WINNER_SERVE_TYPES]
 export const OUTCOMES: Outcome[] = ['error', 'winner', 'player_winner', 'placement']
 
 export const STROKE_LABEL: Record<PlacementStroke, string> = { fh: 'Forehand', bh: 'Backhand', serve: 'Serve' }
 export const STROKE_SHORT: Record<PlacementStroke, string> = { fh: 'FH', bh: 'BH', serve: 'S' }
 export const ERROR_LABEL: Record<ErrorType, string> = { long: 'Long', net: 'Net', wide: 'Wide' }
-export const SHOT_TYPE_LABEL: Record<ShotType, string> = {
+export const SHOT_TYPE_LABEL: Record<PointShotType, string> = {
   ground: 'Neutral',
   slice: 'Slice',
   approach: 'Attack',
@@ -38,6 +44,8 @@ export const SHOT_TYPE_LABEL: Record<ShotType, string> = {
   overhead: 'Overhead',
   lob: 'Lob',
   drop: 'Drop shot',
+  winning_serve: 'Winning serve',
+  ace: 'ACE',
 }
 /** Compact labels used where every ball type must fit inside a court-map zone. */
 export const SHOT_TYPE_SHORT: Record<ShotType, string> = {
@@ -65,6 +73,8 @@ export const isPlacementStroke = (v: unknown): v is PlacementStroke => isStroke(
 export const isPlacementResult = (v: unknown): v is PlacementResult => v === 'in' || v === 'net' || v === 'wide' || v === 'long' || v === 'unknown'
 export const isErrorType = (v: unknown): v is ErrorType => v === 'long' || v === 'net' || v === 'wide'
 export const isShotType = (v: unknown): v is ShotType => v === 'ground' || v === 'slice' || v === 'approach' || v === 'volley' || v === 'swing_volley' || v === 'overhead' || v === 'lob' || v === 'drop'
+export const isWinnerServeType = (v: unknown): v is WinnerServeType => v === 'winning_serve' || v === 'ace'
+export const isPointShotType = (v: unknown): v is PointShotType => isShotType(v) || isWinnerServeType(v)
 export const isOutcome = (v: unknown): v is Outcome => v === 'error' || v === 'winner' || v === 'player_winner' || v === 'placement'
 export const isSessionKind = (v: unknown): v is SessionKind => v === 'match' || v === 'practice'
 export const isSessionMode = (v: unknown): v is SessionMode => v === 'errors' || v === 'placement'
@@ -120,7 +130,7 @@ export interface Point {
   /** Placement-mode result; null for Errors and Winners. */
   placement_result?: PlacementResult | null
   /** Error-mode shot category selected after Long / Net / Wide, or for a winner she hit. */
-  shot_type?: ShotType | null
+  shot_type?: PointShotType | null
   /** Only meaningful for errors. */
   forced: boolean
   created_at: string
@@ -128,4 +138,4 @@ export interface Point {
   deleted_at: string | null
 }
 
-export type NewPoint = Pick<Point, 'session_id' | 'x' | 'y' | 'stroke' | 'error_type' | 'forced'> & { outcome?: Outcome; placement_result?: PlacementResult | null; shot_type?: ShotType | null }
+export type NewPoint = Pick<Point, 'session_id' | 'x' | 'y' | 'stroke' | 'error_type' | 'forced'> & { outcome?: Outcome; placement_result?: PlacementResult | null; shot_type?: PointShotType | null }

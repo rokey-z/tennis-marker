@@ -1,7 +1,7 @@
 import { clampToView, roundFeet } from './court'
 import { isValidIso, YMD_RE } from '../lib/format'
 import { cleanOpponent, cleanUtr } from './session'
-import { isErrorType, isOutcome, isPlacementResult, isPlacementStroke, isSessionKind, isSessionMode, isShotType, isStroke, type Point, type Session } from './types'
+import { isErrorType, isOutcome, isPlacementResult, isPlacementStroke, isPointShotType, isSessionKind, isSessionMode, isShotType, isStroke, isWinnerServeType, type Point, type Session } from './types'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -75,7 +75,12 @@ export function sanitizePoint(raw: unknown): Point | null {
     error_type: legacyNet ? 'net' : outcome === 'error' ? (r.error_type as Point['error_type']) : '',
     outcome,
     placement_result: outcome === 'placement' ? (isPlacementResult(r.placement_result) ? r.placement_result : 'unknown') : null,
-    shot_type: (outcome === 'error' || outcome === 'player_winner') && isShotType(r.shot_type) ? r.shot_type : null,
+    shot_type:
+      outcome === 'error' && isShotType(r.shot_type)
+        ? r.shot_type
+        : outcome === 'player_winner' && (r.stroke === 'serve' ? isWinnerServeType(r.shot_type) : isShotType(r.shot_type)) && isPointShotType(r.shot_type)
+          ? r.shot_type
+          : null,
     forced: outcome === 'error' && (r.forced === true || r.forced === 'true' || r.forced === 1),
     created_at: created,
     updated_at: isoOrNull(r.updated_at) ?? created,

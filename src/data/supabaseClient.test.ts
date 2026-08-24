@@ -47,10 +47,10 @@ describe('normalizePoint', () => {
       shot_type: 'lob',
       forced: false,
     })
-    expect(normalizePoint({ ...row, stroke: 'serve', error_type: '', outcome: 'player_winner', shot_type: null })).toMatchObject({
+    expect(normalizePoint({ ...row, stroke: 'serve', error_type: '', outcome: 'player_winner', shot_type: 'winning_serve' })).toMatchObject({
       outcome: 'player_winner',
       stroke: 'serve',
-      shot_type: null,
+      shot_type: 'winning_serve',
     })
   })
 
