@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { pct, type Filters, type Summary } from '../domain/stats'
 import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, SHOT_TYPES, SHOT_TYPE_LABEL, STROKE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type PlacementResult, type Stroke } from '../domain/types'
 import { Chip } from './Bits'
@@ -210,6 +211,12 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
     { key: 'wide', label: 'Wide', count: summary.byError.wide, color: 'var(--err-wide)' },
     { key: 'winners', label: 'Winners', count: summary.winners, color: 'var(--win)' },
   ]
+  const ballTypeItems: Array<{ key: string; label: string; count: number; muted?: boolean }> = SHOT_TYPES.map((type) => ({
+    key: type,
+    label: SHOT_TYPE_LABEL[type],
+    count: summary.byShotType[type],
+  }))
+  if (summary.untypedErrors > 0) ballTypeItems.push({ key: 'untyped', label: 'Not selected', count: summary.untypedErrors, muted: true })
   return (
     <div className="stack stats-panel">
       {errorFocus?.count > 0 && (
@@ -268,7 +275,7 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
           </div>
           <div className="error-types-values">
             {errorTypeParts.map((part) => (
-              <div key={part.key} className="error-types-value" style={{ '--part-color': part.color } as React.CSSProperties}>
+              <div key={part.key} className="error-types-value" style={{ '--part-color': part.color } as CSSProperties}>
                 <span>{part.label}</span>
                 <strong>{part.count} · {pct(part.count, summary.lost)}%</strong>
               </div>
@@ -276,27 +283,28 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
           </div>
         </div>
         <div className="section-title">Ball types · {summary.total - summary.untypedErrors} tagged</div>
-        <div className="bars">
-          {SHOT_TYPES.map((type) => (
-            <div className="bar-row" key={type}>
-              <span>{SHOT_TYPE_LABEL[type]}</span>
-              <div className="track">
-                <div className="fill" style={{ width: `${pct(summary.byShotType[type], summary.total)}%` }} />
+        <div className="ball-type-bubbles">
+          {ballTypeItems.map((item) => {
+            const percentage = pct(item.count, summary.total)
+            // The visible area above a 40px legibility floor tracks the value, up to 112px at 100%.
+            const size = Math.round(Math.sqrt(40 ** 2 + (112 ** 2 - 40 ** 2) * percentage / 100))
+            return (
+              <div className="ball-type-item" key={item.key}>
+                <div className="ball-type-stage">
+                  <div
+                    className={`ball-type-bubble${item.count === 0 ? ' empty' : ''}${item.muted ? ' untyped' : ''}`}
+                    style={{ '--bubble-size': `${size}px` } as CSSProperties}
+                    role="img"
+                    aria-label={`${item.label}: ${item.count} ${item.count === 1 ? 'error' : 'errors'}, ${percentage}%`}
+                  >
+                    <strong>{percentage}%</strong>
+                  </div>
+                </div>
+                <span>{item.label}</span>
+                <small>{item.count} {item.count === 1 ? 'error' : 'errors'}</small>
               </div>
-              <span className="val">
-                {summary.byShotType[type]} · {pct(summary.byShotType[type], summary.total)}%
-              </span>
-            </div>
-          ))}
-          {summary.untypedErrors > 0 && (
-            <div className="bar-row">
-              <span>Not selected</span>
-              <div className="track">
-                <div className="fill untyped" style={{ width: `${pct(summary.untypedErrors, summary.total)}%` }} />
-              </div>
-              <span className="val">{summary.untypedErrors} · {pct(summary.untypedErrors, summary.total)}%</span>
-            </div>
-          )}
+            )
+          })}
         </div>
         <div className="section-title">Stroke × error</div>
         <table className="matrix">
