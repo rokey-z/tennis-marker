@@ -1,6 +1,6 @@
 import { placementResultFor, zoneFor, zoneId } from './court'
-import type { ErrorType, Outcome, PlacementResult, PlacementStroke, Point, Session, Stroke } from './types'
-import { isErrorType, isPlacementResult, isPlacementStroke, isStroke } from './types'
+import type { ErrorType, Outcome, PlacementResult, PlacementStroke, Point, Session, ShotType, Stroke } from './types'
+import { SHOT_TYPES, isErrorType, isPlacementResult, isPlacementStroke, isShotType, isStroke } from './types'
 
 export type ForcedFilter = 'all' | 'forced' | 'unforced'
 
@@ -42,6 +42,10 @@ export interface Summary {
   byStroke: Record<Stroke, number>
   byError: Record<ErrorType, number>
   byForced: { forced: number; unforced: number }
+  /** Error counts by attempted ball type; winners and placements never enter this breakdown. */
+  byShotType: Record<ShotType, number>
+  /** Legacy errors recorded before ball type was introduced. */
+  untypedErrors: number
   /** zoneId → count */
   byZone: Record<string, number>
   maxZone: number
@@ -81,6 +85,8 @@ export function summarize(points: Iterable<Point>): Summary {
     byStroke: { fh: 0, bh: 0 },
     byError: { long: 0, net: 0, wide: 0 },
     byForced: { forced: 0, unforced: 0 },
+    byShotType: Object.fromEntries(SHOT_TYPES.map((type) => [type, 0])) as Record<ShotType, number>,
+    untypedErrors: 0,
     byZone: {},
     maxZone: 0,
     matrix: { fh: { long: 0, net: 0, wide: 0 }, bh: { long: 0, net: 0, wide: 0 } },
@@ -149,6 +155,8 @@ export function summarize(points: Iterable<Point>): Summary {
     if (p.error_type === 'net') s.placementNet++
     if (p.forced) s.byForced.forced++
     else s.byForced.unforced++
+    if (isShotType(p.shot_type)) s.byShotType[p.shot_type]++
+    else s.untypedErrors++
     countZone(s, p)
     if (isStroke(p.stroke) && isErrorType(p.error_type)) s.matrix[p.stroke][p.error_type]++
   }

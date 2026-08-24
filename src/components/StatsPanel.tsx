@@ -1,5 +1,5 @@
 import { pct, type Filters, type Summary } from '../domain/stats'
-import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, STROKE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type PlacementResult, type Stroke } from '../domain/types'
+import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, SHOT_TYPES, SHOT_TYPE_LABEL, STROKE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type PlacementResult, type Stroke } from '../domain/types'
 import { Chip } from './Bits'
 import { DownloadIcon } from './Icons'
 
@@ -258,6 +258,29 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
               </span>
             </div>
           ))}
+        </div>
+        <div className="section-title">Ball types · {summary.total - summary.untypedErrors} tagged</div>
+        <div className="bars">
+          {SHOT_TYPES.map((type) => (
+            <div className="bar-row" key={type}>
+              <span>{SHOT_TYPE_LABEL[type]}</span>
+              <div className="track">
+                <div className="fill" style={{ width: `${pct(summary.byShotType[type], summary.total)}%` }} />
+              </div>
+              <span className="val">
+                {summary.byShotType[type]} · {pct(summary.byShotType[type], summary.total)}%
+              </span>
+            </div>
+          ))}
+          {summary.untypedErrors > 0 && (
+            <div className="bar-row">
+              <span>Not selected</span>
+              <div className="track">
+                <div className="fill untyped" style={{ width: `${pct(summary.untypedErrors, summary.total)}%` }} />
+              </div>
+              <span className="val">{summary.untypedErrors} · {pct(summary.untypedErrors, summary.total)}%</span>
+            </div>
+          )}
         </div>
         <div className="section-title">Stroke × error</div>
         <table className="matrix">

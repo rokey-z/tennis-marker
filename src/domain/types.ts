@@ -23,6 +23,7 @@ export const SHOT_TYPE_GROUPS: ShotType[][] = [
   ['volley', 'swing_volley', 'overhead'],
   ['lob', 'drop'],
 ]
+export const SHOT_TYPES: ShotType[] = SHOT_TYPE_GROUPS.flat()
 export const OUTCOMES: Outcome[] = ['error', 'winner', 'placement']
 
 export const STROKE_LABEL: Record<PlacementStroke, string> = { fh: 'Forehand', bh: 'Backhand', serve: 'Serve' }
@@ -37,6 +38,17 @@ export const SHOT_TYPE_LABEL: Record<ShotType, string> = {
   overhead: 'Overhead',
   lob: 'Lob',
   drop: 'Drop shot',
+}
+/** Compact labels used where every ball type must fit inside a court-map zone. */
+export const SHOT_TYPE_SHORT: Record<ShotType, string> = {
+  ground: 'G',
+  slice: 'S',
+  approach: 'A',
+  volley: 'V',
+  swing_volley: 'SV',
+  overhead: 'O',
+  lob: 'L',
+  drop: 'D',
 }
 export const SESSION_KINDS: SessionKind[] = ['match', 'practice']
 export const KIND_LABEL: Record<SessionKind, string> = { match: 'Match', practice: 'Practice' }

@@ -111,6 +111,22 @@ describe('summarize', () => {
     expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(2)
   })
 
+  it('counts every selected ball type, including swing volleys, for errors only', () => {
+    const s = summarize([
+      point({ shot_type: 'ground' }),
+      point({ shot_type: 'swing_volley' }),
+      point({ shot_type: 'swing_volley' }),
+      point({ shot_type: null }),
+      point({ stroke: '', error_type: '', outcome: 'winner', shot_type: 'lob' }),
+      point({ stroke: 'fh', error_type: '', outcome: 'placement', shot_type: 'drop' }),
+    ])
+    expect(s.byShotType.ground).toBe(1)
+    expect(s.byShotType.swing_volley).toBe(2)
+    expect(s.byShotType.lob).toBe(0)
+    expect(s.byShotType.drop).toBe(0)
+    expect(s.untypedErrors).toBe(1)
+  })
+
   it('keeps a landing map of its own, separate from the error zones', () => {
     const s = summarize([
       point({ stroke: 'fh', error_type: 'long', x: 10, y: 45 }),

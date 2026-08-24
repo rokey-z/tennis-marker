@@ -14,7 +14,7 @@ import {
   zoneId,
   zoneRect,
 } from '../domain/court'
-import { isErrorType, isPlacementResult, isPlacementStroke, type ErrorType, type PlacementStroke, type Point, type Stroke } from '../domain/types'
+import { SHOT_TYPES, SHOT_TYPE_SHORT, isErrorType, isPlacementResult, isPlacementStroke, isShotType, type ErrorType, type PlacementStroke, type Point, type ShotType, type Stroke } from '../domain/types'
 import { errorWheelSelection, type ErrorDragChoice } from '../domain/errorWheel'
 import { ERROR_LETTER, markLabel } from './marks'
 
@@ -309,6 +309,25 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
       counts.set(id, row)
     }
     return counts
+  }, [heat, points])
+
+  /** Ball-type counts per error zone, including legacy errors that have no selected type. */
+  const heatShotTypes = useMemo(() => {
+    type ZoneTypes = { counts: Record<ShotType, number>; untyped: number }
+    const byZone = new Map<string, ZoneTypes>()
+    if (!heat) return byZone
+    for (const p of points ?? []) {
+      if ((p.outcome ?? 'error') !== 'error') continue
+      const id = zoneId(zoneFor(p.x, p.y))
+      const row = byZone.get(id) ?? {
+        counts: Object.fromEntries(SHOT_TYPES.map((type) => [type, 0])) as Record<ShotType, number>,
+        untyped: 0,
+      }
+      if (isShotType(p.shot_type)) row.counts[p.shot_type]++
+      else row.untyped++
+      byZone.set(id, row)
+    }
+    return byZone
   }, [heat, points])
 
   const placementSplit = useMemo(() => {
@@ -643,21 +662,34 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
               const pctLabel = heatTotal > 0 ? `${Math.round((c.n / heatTotal) * 100)}%` : '0%'
               const strokes = heatStrokes.get(c.id) ?? { fh: 0, bh: 0 }
               const strokeTotal = strokes.fh + strokes.bh
+              const zoneTypes = heatShotTypes.get(c.id)
+              const typeLabels = zoneTypes
+                ? [
+                    ...SHOT_TYPES.flatMap((type) => zoneTypes.counts[type] ? [`${SHOT_TYPE_SHORT[type]} ${zoneTypes.counts[type]}`] : []),
+                    ...(zoneTypes.untyped ? [`? ${zoneTypes.untyped}`] : []),
+                  ]
+                : []
+              const typeRows = [typeLabels.slice(0, 4), typeLabels.slice(4, 8), typeLabels.slice(8)].filter((row) => row.length > 0)
               return (
                 <g key={c.id} transform={uprightAt(cx, cy, half === 'opposite', rotation)}>
-                  <text x={cx} y={cy - 0.1} fontSize={3.1} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.7)'}>
+                  <text x={cx} y={cy - 1.1} fontSize={3.1} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.7)'}>
                     {pctLabel}
                   </text>
-                  <text x={cx} y={cy + 2.25} fontSize={1.25} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.7)'} opacity={0.8}>
+                  <text x={cx} y={cy + 0.95} fontSize={1.25} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.7)'} opacity={0.8}>
                     {c.n} {c.n === 1 ? 'mark' : 'marks'}
                   </text>
                   {strokeTotal > 0 && (
-                    <text x={cx} y={cy + 3.85} fontSize={0.92}>
+                    <text x={cx} y={cy + 2.45} fontSize={0.92}>
                       <tspan fill="var(--fh-text)">FH {Math.round((strokes.fh / strokeTotal) * 100)}%</tspan>
                       <tspan fill="#5b6672"> · </tspan>
                       <tspan fill="var(--bh-text)">BH {Math.round((strokes.bh / strokeTotal) * 100)}%</tspan>
                     </text>
                   )}
+                  {typeRows.map((row, index) => (
+                    <text key={index} x={cx} y={cy + 3.75 + index * 0.92} fontSize={0.66} fill="#14181d" opacity={0.82}>
+                      {row.join(' · ')}
+                    </text>
+                  ))}
                 </g>
               )
             })}
