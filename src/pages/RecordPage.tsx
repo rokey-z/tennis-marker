@@ -5,7 +5,7 @@ import { useIsDesktop, usePlayer } from '../components/hooks'
 import { shortDate } from '../lib/format'
 import { Court, type CourtRotation } from '../components/Court'
 import { StatsFilters, StatsPanel, type StatsFilterState } from '../components/StatsPanel'
-import { BackIcon, ChartIcon, CloseIcon, FullscreenIcon, ListIcon, LockIcon, PencilIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
+import { BackIcon, CloseIcon, FullscreenIcon, ListIcon, LockIcon, PencilIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
 import { ShotPopover } from '../components/ShotPopover'
 import { store, useAppState } from '../data/app'
 import { livePointsForSession } from '../data/store'
@@ -299,9 +299,14 @@ export function RecordPage() {
           <UndoIcon /> Undo
         </button>
       )}
-      <button type="button" className={`btn${statsMode ? ' primary' : ''}`} onClick={() => setView((v) => (v === 'stats' ? 'court' : 'stats'))} aria-pressed={statsMode}>
-        <ChartIcon /> {statsMode ? 'Court' : 'Stats'}
-      </button>
+      <div className="view-mode-toggle" role="group" aria-label="Court view mode">
+        <button type="button" className={!statsMode ? 'active' : ''} onClick={() => setView('court')} aria-pressed={!statsMode}>
+          Marker mode
+        </button>
+        <button type="button" className={statsMode ? 'active' : ''} onClick={() => setView('stats')} aria-pressed={statsMode}>
+          Stats mode
+        </button>
+      </div>
     </div>
   )
 
