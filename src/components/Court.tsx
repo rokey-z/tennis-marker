@@ -616,7 +616,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
         )}
 
         {/* lines */}
-        <g stroke="#ffffff" strokeWidth={0.35} strokeLinecap="square" fill="none">
+        <g stroke="rgba(255,255,255,0.42)" strokeWidth={0.35} strokeLinecap="square" fill="none">
           <line x1={-COURT.doublesHalfWidth} y1={COURT.halfLength} x2={COURT.doublesHalfWidth} y2={COURT.halfLength} />
           <line x1={-COURT.doublesHalfWidth} y1={0} x2={-COURT.doublesHalfWidth} y2={COURT.halfLength} />
           <line x1={COURT.doublesHalfWidth} y1={0} x2={COURT.doublesHalfWidth} y2={COURT.halfLength} />
@@ -634,12 +634,11 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
             y={-NET_BAND}
             width={2 * COURT.netPostX}
             height={NET_BAND}
-            fill={heat || placementHeat ? '#f1a65c' : '#1c1f26'}
-            opacity={heat || placementHeat ? 1 : 0.85}
+            fill="#ffffff"
           />
-          <line x1={-COURT.netPostX} y1={-NET_BAND} x2={COURT.netPostX} y2={-NET_BAND} stroke="#ffffff" strokeWidth={0.45} />
-          <rect x={-COURT.netPostX - 0.4} y={-NET_BAND - 0.3} width={0.8} height={NET_BAND + 0.6} fill="#1c1f26" />
-          <rect x={COURT.netPostX - 0.4} y={-NET_BAND - 0.3} width={0.8} height={NET_BAND + 0.6} fill="#1c1f26" />
+          <line x1={-COURT.netPostX} y1={-NET_BAND} x2={COURT.netPostX} y2={-NET_BAND} stroke="#77818b" strokeWidth={0.38} />
+          <rect x={-COURT.netPostX - 0.4} y={-NET_BAND - 0.3} width={0.8} height={NET_BAND + 0.6} fill="#5b6672" />
+          <rect x={COURT.netPostX - 0.4} y={-NET_BAND - 0.3} width={0.8} height={NET_BAND + 0.6} fill="#5b6672" />
         </g>
 
         {/* The visible net paints over the heat cell, so give it its own hover target in stats. */}
@@ -664,23 +663,21 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
           )
         })()}
 
-        {/* The net itself is a deliberately large target in both recording modes. */}
-        {(interactive || heat || placementHeat) && (
-          <g pointerEvents="none">
-            <defs>
-              <pattern id="net-error-mesh" width="1.2" height="1.2" patternUnits="userSpaceOnUse">
-                <rect width="1.2" height="1.2" fill="#f1a65c" />
-                <path d="M-0.3 0.3L0.3 -0.3M0 1.2L1.2 0M0.9 1.5L1.5 0.9M-0.3 0.9L0.3 1.5M0 0L1.2 1.2M0.9 -0.3L1.5 0.3" stroke="rgba(126, 68, 18, 0.72)" strokeWidth="0.12" />
-              </pattern>
-            </defs>
-            <rect x={-COURT.netPostX} y={-NET_BAND} width={2 * COURT.netPostX} height={NET_BAND} fill="url(#net-error-mesh)" />
-            <g transform={uprightAt(0, -NET_BAND / 2, half === 'opposite', rotation)}>
-              <text x={0} y={-0.9} fontSize={0.9} fontWeight={800} textAnchor="middle" fill="#55300e" fontFamily="var(--font)" letterSpacing={0.16}>
-                NET
-              </text>
-            </g>
+        {/* Every court uses the same white net and subtle neutral mesh. */}
+        <g pointerEvents="none">
+          <defs>
+            <pattern id="net-error-mesh" width="1.2" height="1.2" patternUnits="userSpaceOnUse">
+              <rect width="1.2" height="1.2" fill="#ffffff" />
+              <path d="M-0.3 0.3L0.3 -0.3M0 1.2L1.2 0M0.9 1.5L1.5 0.9M-0.3 0.9L0.3 1.5M0 0L1.2 1.2M0.9 -0.3L1.5 0.3" stroke="rgba(91,102,114,0.45)" strokeWidth="0.1" />
+            </pattern>
+          </defs>
+          <rect x={-COURT.netPostX} y={-NET_BAND} width={2 * COURT.netPostX} height={NET_BAND} fill="url(#net-error-mesh)" />
+          <g transform={uprightAt(0, -NET_BAND / 2, half === 'opposite', rotation)}>
+            <text x={0} y={-0.9} fontSize={0.9} fontWeight={800} textAnchor="middle" fill="#4b5560" fontFamily="var(--font)" letterSpacing={0.16}>
+              NET
+            </text>
           </g>
-        )}
+        </g>
 
         {/* Logged points sit below analysis labels, so aggregate values remain legible even in
             dense zones. The live drag wheel and pending mark still render above both layers. */}
@@ -732,7 +729,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
               const parentTotal = c.id.startsWith('in-') ? placementSplit?.inTotal ?? 0 : placementSplit?.outTotal ?? 0
               const pctLabel = parentTotal > 0 ? `${Math.round((c.n / parentTotal) * 100)}%` : ''
               const inCourt = c.id.startsWith('in-')
-              const textColor = c.id === 'net' ? '#ffffff' : inCourt ? '#155d32' : '#8b220f'
+              const textColor = c.id === 'net' ? '#303840' : inCourt ? '#155d32' : '#8b220f'
               const strokes = placementHeatStrokes.get(c.id) ?? { fh: 0, bh: 0 }
               const strokeTotal = strokes.fh + strokes.bh
               const mainSize = c.id === 'net' ? 1.15 : 1.65
@@ -746,7 +743,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
                   {strokeTotal > 0 && (
                     <text x={cx} y={cy + (c.id === 'net' ? 1.45 : 1.85)} fontSize={c.id === 'net' ? 0.48 : 0.57}>
                       <tspan fill="var(--fh-text)">FH {Math.round((strokes.fh / strokeTotal) * 100)}% ({strokes.fh})</tspan>
-                      <tspan fill={c.id === 'net' ? '#ffffff' : '#5b6672'}> · </tspan>
+                      <tspan fill="#5b6672"> · </tspan>
                       <tspan fill="var(--bh-text)">BH {Math.round((strokes.bh / strokeTotal) * 100)}% ({strokes.bh})</tspan>
                     </text>
                   )}
