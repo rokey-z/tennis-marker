@@ -206,7 +206,6 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
       </div>
     )
   }
-  const errorFocus = STROKES.flatMap((stroke) => ERROR_TYPES.map((error) => ({ stroke, error, count: summary.matrix[stroke][error] }))).sort((a, b) => b.count - a.count)[0]
   const errorTypeParts = [
     { key: 'long', label: 'Long', count: summary.byError.long, color: 'var(--err-long)' },
     { key: 'net', label: 'Net', count: summary.byError.net, color: 'var(--err-net)' },
@@ -220,44 +219,6 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
   ballTypeItems.sort((a, b) => b.count - a.count)
   return (
     <div className="stack stats-panel">
-      {errorFocus?.count > 0 && (
-        <div className="card insight-card">
-          <div className="section-title">Next focus</div>
-          <strong>{STROKE_LABEL[errorFocus.stroke]} {ERROR_LABEL[errorFocus.error]}</strong>
-          <span>{errorFocus.count} {errorFocus.count === 1 ? 'error' : 'errors'} in this session</span>
-        </div>
-      )}
-      <div className="tiles">
-        <div className="tile">
-          <div className="label">Errors</div>
-          <div className="value">
-            {summary.total}
-            {summary.winners > 0 && <small>{summary.winners} {summary.winners === 1 ? 'winner' : 'winners'}</small>}
-          </div>
-        </div>
-        <div className="tile">
-          <div className="label">Forehand</div>
-          <div className="value">
-            {summary.byStroke.fh}
-            <small>{pct(summary.byStroke.fh, summary.total)}%</small>
-          </div>
-        </div>
-        <div className="tile">
-          <div className="label">Backhand</div>
-          <div className="value">
-            {summary.byStroke.bh}
-            <small>{pct(summary.byStroke.bh, summary.total)}%</small>
-          </div>
-        </div>
-        <div className="tile">
-          <div className="label">Forced</div>
-          <div className="value">
-            {summary.byForced.forced}
-            <small>{pct(summary.byForced.forced, summary.lost)}%</small>
-          </div>
-        </div>
-      </div>
-
       <div className="card">
         <div className="section-title">Error types</div>
         <div className="error-types-summary">
