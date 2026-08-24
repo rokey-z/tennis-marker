@@ -34,8 +34,8 @@ export const LockIcon = ({ open = false }: { open?: boolean }) => (
 /** Turn a view clockwise by one quarter turn. */
 export const Rotate90Icon = () => (
   <svg {...base}>
-    <path d="M18 8V4l3 3-3 3" />
-    <path d="M20.5 7a8.5 8.5 0 1 0 1 4" />
+    <path d="M5 6h8a5 5 0 0 1 5 5v8" />
+    <path d="m14 15 4 4 4-4" />
   </svg>
 )
 /** Curved arrow doubling back to the left — the usual "undo that" gesture. */
