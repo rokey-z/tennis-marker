@@ -1844,7 +1844,6 @@ textarea.input {
   font-size: clamp(12px, 2vw, 18px);
   line-height: 1;
 }
-.ball-type-bubble.empty,
 .ball-type-bubble.untyped {
   background: var(--surface-2);
   color: var(--muted);

@@ -211,12 +211,11 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
     { key: 'wide', label: 'Wide', count: summary.byError.wide, color: 'var(--err-wide)' },
     { key: 'winners', label: 'Winners', count: summary.winners, color: 'var(--win)' },
   ]
-  const ballTypeItems: Array<{ key: string; label: string; count: number; muted?: boolean }> = SHOT_TYPES.map((type) => ({
-    key: type,
-    label: SHOT_TYPE_LABEL[type],
-    count: summary.byShotType[type],
-  }))
+  const ballTypeItems: Array<{ key: string; label: string; count: number; muted?: boolean }> = SHOT_TYPES
+    .map((type) => ({ key: type, label: SHOT_TYPE_LABEL[type], count: summary.byShotType[type] }))
+    .filter((item) => item.count > 0)
   if (summary.untypedErrors > 0) ballTypeItems.push({ key: 'untyped', label: 'Not selected', count: summary.untypedErrors, muted: true })
+  ballTypeItems.sort((a, b) => b.count - a.count)
   return (
     <div className="stack stats-panel">
       {errorFocus?.count > 0 && (
@@ -292,7 +291,7 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
               <div className="ball-type-item" key={item.key}>
                 <div className="ball-type-stage">
                   <div
-                    className={`ball-type-bubble${item.count === 0 ? ' empty' : ''}${item.muted ? ' untyped' : ''}`}
+                    className={`ball-type-bubble${item.muted ? ' untyped' : ''}`}
                     style={{ '--bubble-size': `${size}px` } as CSSProperties}
                     role="img"
                     aria-label={`${item.label}: ${item.count} ${item.count === 1 ? 'error' : 'errors'}, ${percentage}%`}
@@ -305,6 +304,7 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
               </div>
             )
           })}
+          {ballTypeItems.length === 0 && <p className="muted">No ball types tagged.</p>}
         </div>
         <div className="section-title">Stroke × error</div>
         <table className="matrix">
