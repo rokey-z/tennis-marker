@@ -438,7 +438,12 @@ export function RecordPage() {
                 <aside className="court-fullscreen-log-panel" aria-label="Logged points">
                   <LogFilterHeader points={points} mode={placementMode ? 'placement' : 'errors'} value={logFilter} playerName={player.name || 'Player'} onChange={setLogFilter} />
                   <div className="court-fullscreen-log-body">
-                    <PointList points={loggedPoints} indexSource={points} onOpen={finished ? undefined : (p, index) => setOpenPoint({ id: p.id, index })} />
+                    <PointList
+                      points={loggedPoints}
+                      indexSource={points}
+                      onOpen={finished ? undefined : (p, index) => setOpenPoint({ id: p.id, index })}
+                      onDelete={finished ? undefined : deletePoint}
+                    />
                   </div>
                 </aside>
               )}
