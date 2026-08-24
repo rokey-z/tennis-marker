@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { describeMark, isOut } from '../domain/court'
-import { SHOT_TYPE_LABEL, isShotType, type ErrorType, type Point, type Stroke } from '../domain/types'
+import { SHOT_TYPE_GROUPS, SHOT_TYPE_LABEL, isShotType, type ErrorType, type Point, type Stroke } from '../domain/types'
 import { formatTime } from '../lib/format'
 import { CloseIcon, TrashIcon } from './Icons'
 import { MarkDot, ShotGrid, markLabel } from './marks'
@@ -21,7 +21,7 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
   // a placement lives on the far half: the only thing to correct is which stroke played it
   const pick = (stroke: Stroke, error: ErrorType) => {
     onChange(placement ? { stroke } : { stroke, error_type: error, outcome: 'error' })
-    onClose()
+    if (placement) onClose()
   }
   // a winner is the opponent's shot: it keeps only the position
   const makeWinner = () => {
@@ -67,6 +67,29 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
 
         <div className="section-title">{placement ? 'Change the stroke' : 'Change it to'}</div>
         <ShotGrid current={{ stroke: point.stroke, error: point.error_type, outcome: point.outcome }} forced={point.forced} strokeOnly={placement} onPick={pick} />
+        {!winner && !placement && (
+          <div className="point-shot-types">
+            <div className="section-title">Ball type</div>
+            {SHOT_TYPE_GROUPS.map((group, index) => (
+              <div className="shot-type-group" key={index}>
+                {group.map((type) => {
+                  const selected = point.shot_type === type
+                  return (
+                    <button
+                      type="button"
+                      className={`shot-type-btn${selected ? ' sel' : ''}`}
+                      key={type}
+                      aria-pressed={selected}
+                      onClick={() => onChange({ shot_type: type })}
+                    >
+                      {SHOT_TYPE_LABEL[type]}
+                    </button>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+        )}
         {!winner && !placement && (
           <>
             <div className="section-title">or</div>
