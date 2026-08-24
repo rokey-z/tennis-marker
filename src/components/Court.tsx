@@ -889,13 +889,23 @@ function Marker({ p: pt, rotation, compact, selected = false }: { p: Point; rota
 
   // Previous points are positional context only. Keep them visible without letting their symbols,
   // letters, or outlines compete with the newest mark.
-  if (compact && !selected) {
+  if (compact) {
     const overview = compact === 'overview'
     const compactRadius = overview ? 0.46 : 0.36
     const compactOpacity = overview ? 0.76 : 0.62
     return (
       <g transform={uprightAt(p.x, p.y, false, rotation)}>
         <title>{label}</title>
+        {selected && (
+          <circle
+            cx={p.x}
+            cy={p.y}
+            r={compactRadius + 0.42}
+            fill="none"
+            stroke="#ffffff"
+            strokeWidth={0.2}
+          />
+        )}
         {miss ? (
           <g stroke={color} strokeWidth={0.24} strokeLinecap="round">
             <line x1={p.x - compactRadius} y1={p.y - compactRadius} x2={p.x + compactRadius} y2={p.y + compactRadius} />
