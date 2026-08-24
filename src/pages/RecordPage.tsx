@@ -346,7 +346,7 @@ export function RecordPage() {
       </header>
 
       <div className="record-court">
-        {statsMode && !placementMode && <StatsFilters value={filters} onChange={setFilters} />}
+        {statsMode && !placementMode && <StatsFilters value={filters} points={points} onChange={setFilters} />}
         <div className="court-box" ref={courtRef}>
           {statsMode ? (
             <Court

@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
-import { pct, type Filters, type Summary } from '../domain/stats'
-import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, SHOT_TYPES, SHOT_TYPE_LABEL, STROKE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type PlacementResult, type Stroke } from '../domain/types'
+import { filterPoints, pct, type Filters, type Summary } from '../domain/stats'
+import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, SHOT_TYPES, SHOT_TYPE_LABEL, STROKE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type PlacementResult, type Point, type Stroke } from '../domain/types'
 import { Chip } from './Bits'
 import { DownloadIcon } from './Icons'
 
@@ -11,39 +11,41 @@ export interface StatsFilterState {
 }
 
 /** Stroke / error / forced chip row that scopes the heat court and the panel below it. */
-export function StatsFilters({ value, onChange }: { value: StatsFilterState; onChange: (v: StatsFilterState) => void }) {
+export function StatsFilters({ value, points, onChange }: { value: StatsFilterState; points: Point[]; onChange: (v: StatsFilterState) => void }) {
   const set = (patch: Partial<StatsFilterState>) => onChange({ ...value, ...patch })
+  const count = (patch: Partial<StatsFilterState>) => filterPoints(points, { ...value, ...patch }).length
+  const label = (text: string, n: number) => <>{text}<span className="stats-filter-count">{n}</span></>
   return (
     <div className="stats-filters" role="group" aria-label="Filters">
       <div className="chip-group" role="group" aria-label="Stroke">
         <Chip on={value.stroke === 'all'} onClick={() => set({ stroke: 'all' })}>
-          All strokes
+          {label('All strokes', count({ stroke: 'all' }))}
         </Chip>
         {STROKES.map((s) => (
           <Chip key={s} on={value.stroke === s} cls={s} onClick={() => set({ stroke: s })}>
-            {STROKE_SHORT[s]}
+            {label(STROKE_SHORT[s], count({ stroke: s }))}
           </Chip>
         ))}
       </div>
       <div className="chip-group" role="group" aria-label="Error type">
         <Chip on={value.error === 'all'} onClick={() => set({ error: 'all' })}>
-          All errors
+          {label('All errors', count({ error: 'all' }))}
         </Chip>
         {ERROR_TYPES.map((e) => (
           <Chip key={e} on={value.error === e} onClick={() => set({ error: e })}>
-            {ERROR_LABEL[e]}
+            {label(ERROR_LABEL[e], count({ error: e }))}
           </Chip>
         ))}
       </div>
       <div className="chip-group" role="group" aria-label="Forced">
         <Chip on={value.forced === 'all'} onClick={() => set({ forced: 'all' })}>
-          All
+          {label('All', count({ forced: 'all' }))}
         </Chip>
         <Chip on={value.forced === 'unforced'} onClick={() => set({ forced: 'unforced' })}>
-          Unforced
+          {label('Unforced', count({ forced: 'unforced' }))}
         </Chip>
         <Chip on={value.forced === 'forced'} onClick={() => set({ forced: 'forced' })}>
-          Forced
+          {label('Forced', count({ forced: 'forced' }))}
         </Chip>
       </div>
     </div>

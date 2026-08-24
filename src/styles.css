@@ -1288,27 +1288,36 @@ textarea.input {
   flex: 0 0 auto;
   width: 100%;
   display: flex;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
   overflow-x: auto;
   scrollbar-width: none;
-  padding: 4px 6px 6px;
+  padding: 3px 5px 4px;
 }
 .stats-filters::-webkit-scrollbar {
   display: none;
 }
 .stats-filters .chip-group {
   flex-wrap: nowrap;
+  gap: 4px;
 }
 .stats-filters .chip-group + .chip-group {
   border-left: 1px solid var(--line);
-  padding-left: 6px;
+  padding-left: 4px;
 }
 .stats-filters .chip {
-  min-height: 32px;
-  padding: 0 10px;
-  font-size: 13px;
+  min-height: 26px;
+  padding: 0 7px;
+  border-radius: 7px;
+  gap: 4px;
+  font-size: 11px;
   white-space: nowrap;
+}
+.stats-filter-count {
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  opacity: 0.62;
 }
 @media (max-width: 899px) {
   .record.stats .record-court {
