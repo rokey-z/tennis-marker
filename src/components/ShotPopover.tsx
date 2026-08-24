@@ -109,12 +109,20 @@ export function ShotPopover({ anchor, containerRef, where, forced, onForcedChang
         )}
         {winnerOnly ? (
           <div className="shot-type-step winner-type-step">
-            <div className="shot-type-title">{capitalise(player.possessive)} winner · stroke</div>
-            <ShotGrid
-              current={{ stroke: winnerStroke, error: '', outcome: 'player_winner' }}
-              strokeOnly
-              onPick={(stroke) => setWinnerStroke(stroke)}
-            />
+            <div className="shot-type-title">{capitalise(player.possessive)} winner</div>
+            <div className="winner-stroke-toggle" role="group" aria-label="Winner stroke">
+              {(['bh', 'fh'] as Stroke[]).map((stroke) => (
+                <button
+                  type="button"
+                  key={stroke}
+                  className={`${stroke}${winnerStroke === stroke ? ' on' : ''}`}
+                  aria-pressed={winnerStroke === stroke}
+                  onClick={() => setWinnerStroke(stroke)}
+                >
+                  {STROKE_SHORT[stroke]}
+                </button>
+              ))}
+            </div>
             <div className="shot-type-title">Ball type</div>
             {SHOT_TYPE_GROUPS.map((group, index) => (
               <div className="shot-type-group" key={index}>

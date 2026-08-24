@@ -1566,6 +1566,32 @@ textarea.input {
   text-align: center;
   text-transform: uppercase;
 }
+.winner-stroke-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px;
+  width: 132px;
+  margin: 5px auto 9px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+.winner-stroke-toggle button {
+  min-height: 32px;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 850;
+}
+.winner-stroke-toggle button.bh.on {
+  color: #fff;
+  background: var(--bh);
+}
+.winner-stroke-toggle button.fh.on {
+  color: #fff;
+  background: var(--fh);
+}
 .shot-type-back {
   width: 100%;
   min-height: 32px;
