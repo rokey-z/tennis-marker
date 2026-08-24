@@ -58,7 +58,6 @@ export function RecordPage() {
   })
   const [pending, setPending] = useState<{ x: number; y: number; at: { clientX: number; clientY: number }; surface: 'court' | 'net'; intent?: 'error' | 'player_winner'; selection?: { stroke: Stroke; error: ErrorType } } | null>(null)
   const courtRef = useRef<HTMLDivElement>(null)
-  const rotationBeforeFullscreen = useRef<CourtRotation | null>(null)
   const [courtFullscreen, setCourtFullscreen] = useState(false)
   const [fullscreenLogOpen, setFullscreenLogOpen] = useState(false)
   const [forced, setForced] = useState(false)
@@ -94,11 +93,6 @@ export function RecordPage() {
     setCourtFullscreen(false)
     setFullscreenLogOpen(false)
     setOpenPoint(null)
-    const previous = rotationBeforeFullscreen.current
-    if (previous !== null) {
-      setRotation(previous)
-      rotationBeforeFullscreen.current = null
-    }
   }, [])
 
   useEffect(() => {
@@ -111,9 +105,7 @@ export function RecordPage() {
 
   const enterCourtFullscreen = async () => {
     if (courtFullscreen) return
-    rotationBeforeFullscreen.current = rotation
     setFullscreenLogOpen(false)
-    setRotation(rotation === 180 || rotation === 270 ? 180 : 0)
     setCourtFullscreen(true)
     try {
       await courtRef.current?.requestFullscreen?.()
@@ -429,6 +421,15 @@ export function RecordPage() {
                 title={fullscreenLogOpen ? 'Close log' : 'Open log'}
               >
                 <ListIcon />
+              </button>
+              <button
+                type="button"
+                className="court-fullscreen-rotate"
+                onClick={() => setRotation((value) => ((value + 90) % 360) as CourtRotation)}
+                aria-label={`Rotate court 90 degrees clockwise (currently ${rotation} degrees)`}
+                title={`Rotate 90° clockwise (currently ${rotation}°)`}
+              >
+                <Rotate90Icon />
               </button>
               <button type="button" className="court-fullscreen-exit" onClick={() => void exitCourtFullscreen()} aria-label="Exit full-screen court" title="Exit full screen">
                 <CloseIcon />

@@ -772,6 +772,7 @@ textarea.input {
 }
 .court-fullscreen-exit,
 .court-fullscreen-log-toggle,
+.court-fullscreen-rotate,
 .court-fullscreen-log-panel {
   display: none;
 }
@@ -930,10 +931,10 @@ textarea.input {
     width: 22px;
     height: 22px;
   }
-  .court-fullscreen-log-toggle {
+  .court-fullscreen-log-toggle,
+  .court-fullscreen-rotate {
     position: absolute;
     bottom: max(10px, env(safe-area-inset-bottom));
-    left: max(10px, env(safe-area-inset-left));
     z-index: 22;
     width: 44px;
     height: 44px;
@@ -946,11 +947,18 @@ textarea.input {
     border: 1px solid rgba(255, 255, 255, 0.35);
     backdrop-filter: blur(8px);
   }
+  .court-fullscreen-log-toggle {
+    left: max(10px, env(safe-area-inset-left));
+  }
+  .court-fullscreen-rotate {
+    left: max(64px, calc(env(safe-area-inset-left) + 64px));
+  }
   .court-fullscreen-log-toggle.on {
     background: var(--accent);
     border-color: rgba(255, 255, 255, 0.7);
   }
-  .court-fullscreen-log-toggle svg {
+  .court-fullscreen-log-toggle svg,
+  .court-fullscreen-rotate svg {
     width: 22px;
     height: 22px;
   }
