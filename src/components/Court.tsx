@@ -97,7 +97,7 @@ function polarPoint(cx: number, cy: number, radius: number, degrees: number) {
 }
 
 function ErrorDragWheel({ x, y, radius, rotation, selected, winner }: { x: number; y: number; radius: number; rotation: CourtRotation; selected: ErrorDragChoice | null; winner: boolean }) {
-  const ballRadius = radius * 0.2
+  const ballRadius = radius * 0.23
   return (
     <g transform={uprightAt(x, y, false, rotation)} pointerEvents="none">
       <circle cx={x} cy={y} r={radius} fill="rgba(23,27,33,0.2)" stroke={winner ? 'var(--win)' : 'rgba(255,255,255,0.88)'} strokeWidth={winner ? 0.56 : 0.28} />
