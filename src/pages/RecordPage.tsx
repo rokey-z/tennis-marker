@@ -486,6 +486,7 @@ export function RecordPage() {
               {statsSummary.playerWinners > 0 && <span aria-label={`${statsSummary.playerWinners} ${player.subject} winners`}><span className="stats-map-player-winner-mark" aria-hidden="true">★</span> {player.subject} winners <strong>{statsSummary.playerWinners}</strong></span>}
             </div>
           )}
+          {courtFullscreen && <Toast toast={toast} onDismiss={dismissToast} />}
         </div>
       </div>
 
@@ -557,7 +558,7 @@ export function RecordPage() {
         />
       )}
 
-      <Toast toast={toast} onDismiss={dismissToast} />
+      {!courtFullscreen && <Toast toast={toast} onDismiss={dismissToast} />}
 
       {showFinish && (
         <FinishSessionModal
