@@ -60,6 +60,7 @@ export function RecordPage() {
   const courtRef = useRef<HTMLDivElement>(null)
   const rotationBeforeFullscreen = useRef<CourtRotation | null>(null)
   const [courtFullscreen, setCourtFullscreen] = useState(false)
+  const [fullscreenLogOpen, setFullscreenLogOpen] = useState(false)
   const [forced, setForced] = useState(false)
   const [toast, setToast] = useState<ToastState | null>(null)
   const [logFilter, setLogFilter] = useState<LogFilter>('all')
@@ -91,6 +92,7 @@ export function RecordPage() {
 
   const finishCourtFullscreen = useCallback(() => {
     setCourtFullscreen(false)
+    setFullscreenLogOpen(false)
     const previous = rotationBeforeFullscreen.current
     if (previous !== null) {
       setRotation(previous)
@@ -109,6 +111,7 @@ export function RecordPage() {
   const enterCourtFullscreen = async () => {
     if (courtFullscreen) return
     rotationBeforeFullscreen.current = rotation
+    setFullscreenLogOpen(false)
     setRotation(rotation === 180 || rotation === 270 ? 180 : 0)
     setCourtFullscreen(true)
     try {
@@ -403,9 +406,29 @@ export function RecordPage() {
         {statsMode && !placementMode && <StatsFilters value={filters} points={points} onChange={setFilters} />}
         <div className="court-box" ref={courtRef}>
           {courtFullscreen && (
-            <button type="button" className="court-fullscreen-exit" onClick={() => void exitCourtFullscreen()} aria-label="Exit full-screen court" title="Exit full screen">
-              <CloseIcon />
-            </button>
+            <>
+              <button
+                type="button"
+                className={`court-fullscreen-log-toggle${fullscreenLogOpen ? ' on' : ''}`}
+                onClick={() => setFullscreenLogOpen((open) => !open)}
+                aria-label={fullscreenLogOpen ? 'Close log list' : 'Open log list'}
+                aria-expanded={fullscreenLogOpen}
+                title={fullscreenLogOpen ? 'Close log' : 'Open log'}
+              >
+                <ListIcon />
+              </button>
+              <button type="button" className="court-fullscreen-exit" onClick={() => void exitCourtFullscreen()} aria-label="Exit full-screen court" title="Exit full screen">
+                <CloseIcon />
+              </button>
+              {fullscreenLogOpen && (
+                <aside className="court-fullscreen-log-panel" aria-label="Logged points">
+                  <LogFilterHeader points={points} mode={placementMode ? 'placement' : 'errors'} value={logFilter} playerName={player.name || 'Player'} onChange={setLogFilter} />
+                  <div className="court-fullscreen-log-body">
+                    <PointList points={loggedPoints} indexSource={points} />
+                  </div>
+                </aside>
+              )}
+            </>
           )}
           {statsMode ? (
             <Court
