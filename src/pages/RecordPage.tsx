@@ -5,7 +5,7 @@ import { useIsDesktop, usePlayer } from '../components/hooks'
 import { shortDate } from '../lib/format'
 import { Court, type CourtRotation } from '../components/Court'
 import { StatsFilters, StatsPanel, type StatsFilterState } from '../components/StatsPanel'
-import { BackIcon, LinkIcon, ListIcon, LockIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
+import { BackIcon, CloseIcon, FullscreenIcon, LinkIcon, ListIcon, LockIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
 import { ShotPopover } from '../components/ShotPopover'
 import { store, supabase, sync, useAppState } from '../data/app'
 import { defaultId, livePointsForSession } from '../data/store'
@@ -58,6 +58,8 @@ export function RecordPage() {
   })
   const [pending, setPending] = useState<{ x: number; y: number; at: { clientX: number; clientY: number }; surface: 'court' | 'net'; intent?: 'error' | 'player_winner'; selection?: { stroke: Stroke; error: ErrorType } } | null>(null)
   const courtRef = useRef<HTMLDivElement>(null)
+  const rotationBeforeFullscreen = useRef<CourtRotation | null>(null)
+  const [courtFullscreen, setCourtFullscreen] = useState(false)
   const [forced, setForced] = useState(false)
   const [toast, setToast] = useState<ToastState | null>(null)
   const [logFilter, setLogFilter] = useState<LogFilter>('all')
@@ -86,6 +88,44 @@ export function RecordPage() {
   useEffect(() => {
     if (logFilter !== 'all' && !points.some((point) => matchesLogFilter(point, logFilter))) setLogFilter('all')
   }, [logFilter, points])
+
+  const finishCourtFullscreen = useCallback(() => {
+    setCourtFullscreen(false)
+    const previous = rotationBeforeFullscreen.current
+    if (previous !== null) {
+      setRotation(previous)
+      rotationBeforeFullscreen.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      if (courtFullscreen && !document.fullscreenElement) finishCourtFullscreen()
+    }
+    document.addEventListener('fullscreenchange', onFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange)
+  }, [courtFullscreen, finishCourtFullscreen])
+
+  const enterCourtFullscreen = async () => {
+    if (courtFullscreen) return
+    rotationBeforeFullscreen.current = rotation
+    setRotation(rotation === 180 || rotation === 270 ? 180 : 0)
+    setCourtFullscreen(true)
+    try {
+      await courtRef.current?.requestFullscreen?.()
+    } catch {
+      // Fixed-position CSS remains the fallback on browsers without element fullscreen.
+    }
+  }
+
+  const exitCourtFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen()
+    } catch {
+      /* state cleanup below also exits the CSS fallback */
+    }
+    finishCourtFullscreen()
+  }
   useEffect(() => {
     if (!statsMode || isDesktop) {
       statsPanelScrollTop.current = 0
@@ -284,7 +324,7 @@ export function RecordPage() {
   const where = pending ? pending.surface === 'net' ? 'Net' : describeZone(zoneFor(pending.x, pending.y)) : ''
 
   const actions = (
-    <div className="record-actions">
+    <div className={`record-actions${!isDesktop && !statsMode ? ' has-fullscreen' : ''}`}>
       {statsMode ? (
         <button
           type="button"
@@ -303,6 +343,11 @@ export function RecordPage() {
           <UndoIcon /> Undo
         </button>
       )}
+      {!isDesktop && !statsMode && (
+        <button type="button" className="btn fullscreen-entry" onClick={() => void enterCourtFullscreen()} aria-label="Open full-screen court" title="Full-screen court">
+          <FullscreenIcon />
+        </button>
+      )}
       <div className="view-mode-toggle" role="group" aria-label="Court view mode">
         <button type="button" className={!statsMode ? 'active' : ''} onClick={() => setView('court')} aria-pressed={!statsMode}>
           Marker mode
@@ -315,7 +360,7 @@ export function RecordPage() {
   )
 
   return (
-    <div key={id} className={`record page-in${statsMode ? ' stats' : ''}${statsMapCompact ? ' stats-map-compact' : ''}`}>
+    <div key={id} className={`record page-in${statsMode ? ' stats' : ''}${statsMapCompact ? ' stats-map-compact' : ''}${courtFullscreen ? ' court-fullscreen' : ''}`}>
       <header className="record-head">
         <Link to="/" className="icon-btn" aria-label="Back to sessions">
           <BackIcon />
@@ -357,6 +402,11 @@ export function RecordPage() {
       <div className="record-court">
         {statsMode && !placementMode && <StatsFilters value={filters} points={points} onChange={setFilters} />}
         <div className="court-box" ref={courtRef}>
+          {courtFullscreen && (
+            <button type="button" className="court-fullscreen-exit" onClick={() => void exitCourtFullscreen()} aria-label="Exit full-screen court" title="Exit full screen">
+              <CloseIcon />
+            </button>
+          )}
           {statsMode ? (
             <Court
               rotation={rotation}

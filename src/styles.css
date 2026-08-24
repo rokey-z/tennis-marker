@@ -1309,8 +1309,19 @@ textarea.input {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
+.record-actions.has-fullscreen {
+  grid-template-columns: minmax(0, 1fr) 50px minmax(0, 1.2fr);
+}
 .record-actions .btn {
   min-height: 50px;
+}
+.record-actions .fullscreen-entry {
+  width: 50px;
+  padding: 0;
+}
+.record-actions .fullscreen-entry svg {
+  width: 21px;
+  height: 21px;
 }
 .view-mode-toggle {
   display: grid;
