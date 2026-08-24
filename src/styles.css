@@ -1832,8 +1832,10 @@ textarea.input {
   width: var(--bubble-size);
   height: var(--bubble-size);
   flex: 0 0 var(--bubble-size);
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
   background: var(--accent);
   color: var(--accent-ink);
@@ -1844,13 +1846,22 @@ textarea.input {
   font-size: clamp(12px, 2vw, 18px);
   line-height: 1;
 }
+.ball-type-bubble small {
+  max-width: calc(var(--bubble-size) - 6px);
+  margin-top: 3px;
+  overflow: hidden;
+  font-size: clamp(8px, 1.1vw, 11px);
+  font-weight: 700;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .ball-type-bubble.untyped {
   background: var(--surface-2);
   color: var(--muted);
   box-shadow: inset 0 0 0 1px var(--line);
 }
-.ball-type-item > span,
-.ball-type-item > small {
+.ball-type-item > span {
   display: block;
 }
 .ball-type-item > span {
@@ -1858,12 +1869,6 @@ textarea.input {
   font-size: 13px;
   font-weight: 750;
   line-height: 1.15;
-}
-.ball-type-item > small {
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
 }
 .matrix {
   width: 100%;

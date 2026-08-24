@@ -297,10 +297,10 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
                     aria-label={`${item.label}: ${item.count} ${item.count === 1 ? 'error' : 'errors'}, ${percentage}%`}
                   >
                     <strong>{percentage}%</strong>
+                    <small>{item.count} {item.count === 1 ? 'error' : 'errors'}</small>
                   </div>
                 </div>
                 <span>{item.label}</span>
-                <small>{item.count} {item.count === 1 ? 'error' : 'errors'}</small>
               </div>
             )
           })}
