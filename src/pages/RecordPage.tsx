@@ -5,7 +5,7 @@ import { useIsDesktop, usePlayer } from '../components/hooks'
 import { shortDate } from '../lib/format'
 import { Court, type CourtRotation } from '../components/Court'
 import { StatsFilters, StatsPanel, type StatsFilterState } from '../components/StatsPanel'
-import { BackIcon, CloseIcon, FullscreenIcon, LinkIcon, ListIcon, LockIcon, PencilIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
+import { BackIcon, LinkIcon, ListIcon, LockIcon, PencilIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
 import { ShotPopover } from '../components/ShotPopover'
 import { store, supabase, sync, useAppState } from '../data/app'
 import { defaultId, livePointsForSession } from '../data/store'
@@ -60,8 +60,6 @@ export function RecordPage() {
   })
   const [pending, setPending] = useState<{ x: number; y: number; at: { clientX: number; clientY: number }; surface: 'court' | 'net'; selection?: { stroke: Stroke; error: ErrorType } } | null>(null)
   const courtRef = useRef<HTMLDivElement>(null)
-  const rotationBeforeFullscreen = useRef<CourtRotation | null>(null)
-  const [courtFullscreen, setCourtFullscreen] = useState(false)
   const [forced, setForced] = useState(false)
   const [toast, setToast] = useState<ToastState | null>(null)
   const [logOpen, setLogOpen] = useState(() => localStorage.getItem(LOG_KEY) !== '0')
@@ -102,46 +100,6 @@ export function RecordPage() {
     update()
     return () => window.removeEventListener('scroll', update)
   }, [isDesktop, statsMode])
-
-  const finishCourtFullscreen = useCallback(() => {
-    setCourtFullscreen(false)
-    const previous = rotationBeforeFullscreen.current
-    if (previous !== null) {
-      setRotation(previous)
-      rotationBeforeFullscreen.current = null
-    }
-  }, [])
-
-  useEffect(() => {
-    const onFullscreenChange = () => {
-      if (courtFullscreen && !document.fullscreenElement) finishCourtFullscreen()
-    }
-    document.addEventListener('fullscreenchange', onFullscreenChange)
-    return () => document.removeEventListener('fullscreenchange', onFullscreenChange)
-  }, [courtFullscreen, finishCourtFullscreen])
-
-  const enterCourtFullscreen = async () => {
-    if (courtFullscreen) return
-    rotationBeforeFullscreen.current = rotation
-    // Portrait full screen always presents the half court vertically. Preserve which baseline is
-    // nearest when possible, then restore the user's exact rotation on exit.
-    setRotation(rotation === 180 || rotation === 270 ? 180 : 0)
-    setCourtFullscreen(true)
-    try {
-      await courtRef.current?.requestFullscreen?.()
-    } catch {
-      // The fixed-position fallback still fills browsers that do not support element full screen.
-    }
-  }
-
-  const exitCourtFullscreen = async () => {
-    try {
-      if (document.fullscreenElement) await document.exitFullscreen()
-    } catch {
-      /* the state cleanup below also exits the CSS fallback */
-    }
-    finishCourtFullscreen()
-  }
 
   const onTap = useCallback((x: number, y: number, at: { clientX: number; clientY: number }, surface: 'court' | 'net' = 'court') => {
     if (performance.now() < ignoreUntil.current) return
@@ -343,7 +301,7 @@ export function RecordPage() {
   )
 
   return (
-    <div key={id} className={`record page-in${statsMode ? ' stats' : ''}${statsMapCompact ? ' stats-map-compact' : ''}${courtFullscreen ? ' court-fullscreen' : ''}`}>
+    <div key={id} className={`record page-in${statsMode ? ' stats' : ''}${statsMapCompact ? ' stats-map-compact' : ''}`}>
       <header className="record-head">
         <Link to="/" className="icon-btn" aria-label="Back to sessions">
           <BackIcon />
@@ -375,17 +333,6 @@ export function RecordPage() {
           >
             <Rotate90Icon />
           </button>
-          {!isDesktop && (
-            <button
-              type="button"
-              className="flip-fab fullscreen-fab"
-              onClick={() => void enterCourtFullscreen()}
-              aria-label="Open full-screen landscape court"
-              title="Full-screen landscape court"
-            >
-              <FullscreenIcon />
-            </button>
-          )}
           <button type="button" className={`btn header-finish${finished ? ' primary' : ''}`} onClick={openFinish} aria-pressed={finished} title={finished ? 'Edit rating or unlock this session' : 'Finish, rate, and lock this session'}>
             <LockIcon /> {finished && session.self_rating ? `${session.self_rating}/100` : 'Finish'}
           </button>
@@ -395,11 +342,6 @@ export function RecordPage() {
       <div className="record-court">
         {statsMode && !placementMode && <StatsFilters value={filters} onChange={setFilters} />}
         <div className="court-box" ref={courtRef}>
-          {courtFullscreen && (
-            <button type="button" className="court-fullscreen-exit" onClick={() => void exitCourtFullscreen()} aria-label="Exit full-screen court" title="Exit full screen">
-              <CloseIcon />
-            </button>
-          )}
           {statsMode ? (
             <Court
               rotation={rotation}
