@@ -682,6 +682,22 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
           </g>
         )}
 
+        {/* Logged points sit below analysis labels, so aggregate values remain legible even in
+            dense zones. The live drag wheel and pending mark still render above both layers. */}
+        {points && points.length > 0 && (
+          <g pointerEvents="none">
+            {points.map((p) => (
+              <Marker
+                key={p.id}
+                p={p}
+                rotation={rotation}
+                compact={compactMarks ?? (newestId !== null && p.id !== newestId ? 'past' : undefined)}
+                selected={p.id === highlightedPointId}
+              />
+            ))}
+          </g>
+        )}
+
         {/* heat labels stay upright in every rotated view */}
         {heatCells && (
           <g fontFamily="var(--font)" fontWeight={800} textAnchor="middle" pointerEvents="none">
@@ -699,7 +715,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
                     </text>
                   )}
                   {strokeTotal > 0 && (
-                    <text x={cx} y={cy + 2.65} fontSize={0.94} fill="rgba(255,255,255,0.9)">
+                    <text x={cx} y={cy + 2.65} fontSize={0.94} fill="rgba(255,255,255,0.5)">
                       FH {Math.round((strokes.fh / strokeTotal) * 100)}% ({strokes.fh}) · BH {Math.round((strokes.bh / strokeTotal) * 100)}% ({strokes.bh})
                     </text>
                   )}
@@ -739,21 +755,6 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
             })}
           </g>
         )}
-        {/* logged points */}
-        {points && points.length > 0 && (
-          <g pointerEvents="none">
-            {points.map((p) => (
-              <Marker
-                key={p.id}
-                p={p}
-                rotation={rotation}
-                compact={compactMarks ?? (newestId !== null && p.id !== newestId ? 'past' : undefined)}
-                selected={p.id === highlightedPointId}
-              />
-            ))}
-          </g>
-        )}
-
         {/* Error selection stays above the court, net, and existing marks while the finger moves. */}
         {drag && onErrorSelect && (
           (() => {
