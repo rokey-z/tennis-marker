@@ -93,6 +93,7 @@ export function RecordPage() {
   const finishCourtFullscreen = useCallback(() => {
     setCourtFullscreen(false)
     setFullscreenLogOpen(false)
+    setOpenPoint(null)
     const previous = rotationBeforeFullscreen.current
     if (previous !== null) {
       setRotation(previous)
@@ -325,6 +326,18 @@ export function RecordPage() {
   }
 
   const where = pending ? pending.surface === 'net' ? 'Net' : describeZone(zoneFor(pending.x, pending.y)) : ''
+  const pointEditor = openPoint && state.points[openPoint.id] && !state.points[openPoint.id].deleted_at ? (
+    <PointSheet
+      point={state.points[openPoint.id]}
+      index={openPoint.index}
+      onChange={(patch) => store.updatePoint(openPoint.id, patch)}
+      onDelete={() => {
+        deletePoint(state.points[openPoint.id])
+        setOpenPoint(null)
+      }}
+      onClose={() => setOpenPoint(null)}
+    />
+  ) : null
 
   const actions = (
     <div className={`record-actions${!isDesktop && !statsMode ? ' has-fullscreen' : ''}`}>
@@ -424,7 +437,7 @@ export function RecordPage() {
                 <aside className="court-fullscreen-log-panel" aria-label="Logged points">
                   <LogFilterHeader points={points} mode={placementMode ? 'placement' : 'errors'} value={logFilter} playerName={player.name || 'Player'} onChange={setLogFilter} />
                   <div className="court-fullscreen-log-body">
-                    <PointList points={loggedPoints} indexSource={points} />
+                    <PointList points={loggedPoints} indexSource={points} onOpen={finished ? undefined : (p, index) => setOpenPoint({ id: p.id, index })} />
                   </div>
                 </aside>
               )}
@@ -487,6 +500,7 @@ export function RecordPage() {
             </div>
           )}
           {courtFullscreen && <Toast toast={toast} onDismiss={dismissToast} />}
+          {courtFullscreen && pointEditor}
         </div>
       </div>
 
@@ -545,18 +559,7 @@ export function RecordPage() {
         </>
       )}
 
-      {openPoint && state.points[openPoint.id] && !state.points[openPoint.id].deleted_at && (
-        <PointSheet
-          point={state.points[openPoint.id]}
-          index={openPoint.index}
-          onChange={(patch) => store.updatePoint(openPoint.id, patch)}
-          onDelete={() => {
-            deletePoint(state.points[openPoint.id])
-            setOpenPoint(null)
-          }}
-          onClose={() => setOpenPoint(null)}
-        />
-      )}
+      {!courtFullscreen && pointEditor}
 
       {!courtFullscreen && <Toast toast={toast} onDismiss={dismissToast} />}
 
