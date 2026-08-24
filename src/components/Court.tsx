@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import {
   COURT,
   VIEW,
@@ -831,21 +831,21 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
       </div>
     )}
     {hoveredPlacement && placementHoverClient && (
-      <div className="court-hover-tooltip" style={{ left: placementHoverClient.x + 14, top: placementHoverClient.y + 14 }}>
+      <FloatingCourtTooltip anchor={placementHoverClient}>
         <div>
           <span className="fh">FH {placementHeatStrokes.get(hoveredPlacement.id)?.fh ?? 0}</span>
           <span className="sep"> · </span>
           <span className="bh">BH {placementHeatStrokes.get(hoveredPlacement.id)?.bh ?? 0}</span>
         </div>
         <small>{hoveredPlacement.n} mark{hoveredPlacement.n === 1 ? '' : 's'} in this area</small>
-      </div>
+      </FloatingCourtTooltip>
     )}
     {hoveredHeat && heatHoverClient && (() => {
       const zoneTypes = heatShotTypes.get(hoveredHeat.id)
       const typed = zoneTypes ? SHOT_TYPES.filter((type) => zoneTypes.counts[type].fh + zoneTypes.counts[type].bh > 0) : []
       const untypedTotal = zoneTypes ? zoneTypes.untyped.fh + zoneTypes.untyped.bh : 0
       return (
-        <div className="court-hover-tooltip ball-type-tooltip" style={{ left: heatHoverClient.x + 14, top: heatHoverClient.y + 14 }}>
+        <FloatingCourtTooltip anchor={heatHoverClient} className="ball-type-tooltip">
           <div className="zone-share-chart" aria-label="Percentage distribution across all court blocks">
             <div className="zone-share-combined">
             {heatCells!.filter((cell) => cell.n > 0).map((cell) => {
@@ -898,11 +898,51 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
             </div>
           )}
           {typed.length === 0 && untypedTotal === 0 && <small>No errors in this area</small>}
-        </div>
+        </FloatingCourtTooltip>
       )
     })()}
     </>
   )
+}
+
+const TOOLTIP_EDGE = 8
+const TOOLTIP_OFFSET = 14
+
+export function clampTooltipPosition(anchor: { x: number; y: number }, size: { width: number; height: number }, viewport: { width: number; height: number }) {
+  let left = anchor.x + TOOLTIP_OFFSET
+  let top = anchor.y + TOOLTIP_OFFSET
+  if (left + size.width > viewport.width - TOOLTIP_EDGE) left = anchor.x - TOOLTIP_OFFSET - size.width
+  if (top + size.height > viewport.height - TOOLTIP_EDGE) top = anchor.y - TOOLTIP_OFFSET - size.height
+  return {
+    left: Math.max(TOOLTIP_EDGE, Math.min(left, viewport.width - TOOLTIP_EDGE - size.width)),
+    top: Math.max(TOOLTIP_EDGE, Math.min(top, viewport.height - TOOLTIP_EDGE - size.height)),
+  }
+}
+
+/** Keeps both pointer-following and click-pinned court details fully inside the viewport. */
+function FloatingCourtTooltip({ anchor, className = '', children }: { anchor: { x: number; y: number }; className?: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [position, setPosition] = useState<CSSProperties>({ left: anchor.x + TOOLTIP_OFFSET, top: anchor.y + TOOLTIP_OFFSET })
+
+  useLayoutEffect(() => {
+    const node = ref.current
+    if (!node) return
+    const place = () => {
+      const rect = node.getBoundingClientRect()
+      const { left, top } = clampTooltipPosition(anchor, rect, { width: window.innerWidth, height: window.innerHeight })
+      setPosition((current) => current.left === left && current.top === top ? current : { left, top })
+    }
+    place()
+    window.addEventListener('resize', place)
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(place)
+    observer?.observe(node)
+    return () => {
+      window.removeEventListener('resize', place)
+      observer?.disconnect()
+    }
+  }, [anchor.x, anchor.y])
+
+  return <div ref={ref} className={`court-hover-tooltip${className ? ` ${className}` : ''}`} style={position}>{children}</div>
 }
 
 

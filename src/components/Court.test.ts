@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { clampTooltipPosition } from './Court'
 import { errorDragChoice, errorWheelSelection } from '../domain/errorWheel'
 
 describe('error drag wheel', () => {
@@ -20,5 +21,19 @@ describe('error drag wheel', () => {
   it('turns a drag beyond the visible circle into a winner', () => {
     expect(errorWheelSelection(101, 0, 100)).toEqual({ winner: true })
     expect(errorWheelSelection(50, 0, 100)).toEqual({ stroke: 'fh', error: 'long' })
+  })
+})
+
+describe('court stats tooltip placement', () => {
+  it('uses the pointer offset when there is room', () => {
+    expect(clampTooltipPosition({ x: 100, y: 100 }, { width: 128, height: 80 }, { width: 800, height: 600 })).toEqual({ left: 114, top: 114 })
+  })
+
+  it('flips inward at the right and bottom edges', () => {
+    expect(clampTooltipPosition({ x: 760, y: 570 }, { width: 210, height: 180 }, { width: 800, height: 600 })).toEqual({ left: 536, top: 376 })
+  })
+
+  it('keeps an oversized tooltip anchored to the safe viewport edge', () => {
+    expect(clampTooltipPosition({ x: 4, y: 4 }, { width: 500, height: 700 }, { width: 375, height: 667 })).toEqual({ left: 8, top: 8 })
   })
 })

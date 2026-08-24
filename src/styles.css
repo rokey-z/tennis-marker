@@ -999,6 +999,11 @@ textarea.input {
   z-index: 2147483647;
   pointer-events: none;
   min-width: 128px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100dvh - 16px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
   padding: 8px 10px;
   border-radius: 9px;
   background: var(--surface);
