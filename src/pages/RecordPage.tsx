@@ -5,12 +5,12 @@ import { useIsDesktop, usePlayer } from '../components/hooks'
 import { shortDate } from '../lib/format'
 import { Court, type CourtRotation } from '../components/Court'
 import { StatsFilters, StatsPanel, type StatsFilterState } from '../components/StatsPanel'
-import { BackIcon, LinkIcon, ListIcon, LockIcon, PencilIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
+import { BackIcon, LinkIcon, ListIcon, LockIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
 import { ShotPopover } from '../components/ShotPopover'
 import { store, supabase, sync, useAppState } from '../data/app'
 import { defaultId, livePointsForSession } from '../data/store'
 import { describeMark, describeZone, placementResultFor, zoneFor } from '../domain/court'
-import { capitalise, cleanOpponent, cleanUtr } from '../domain/session'
+import { capitalise, cleanOpponent, cleanUtr, formatUtr } from '../domain/session'
 import { opponentRowsWithRoster, sessionLabel, venueRows } from '../domain/session'
 import { MarkLegend, markLabel } from '../components/marks'
 import { PointSheet } from '../components/PointSheet'
@@ -308,17 +308,12 @@ export function RecordPage() {
         </Link>
         <button type="button" className="title-btn" onClick={() => setShowDetails(true)} aria-label="Edit session details">
           <span className="tb-name">
-            <strong>{sessionLabel(session)}</strong>
-            <PencilIcon />
+            <strong>{cleanOpponent(session.opponent) || (session.kind === 'match' ? 'Add opponent' : 'Practice')}</strong>
+            {formatUtr(session.opponent_utr) && <span className="tb-utr">UTR {formatUtr(session.opponent_utr)}</span>}
           </span>
           <span className="tb-meta">
-            <span className="tb-line">
-              {MODE_LABEL[session.mode]} · {KIND_LABEL[session.kind]} · {shortDate(session.date)}
-              {session.venue ? ` · ${session.venue}` : ''}
-              {!session.opponent && session.kind === 'match' ? ' · add opponent' : ''}
-              {finished ? ' · finished' : ''}
-              {session.self_rating ? ` · ${session.self_rating}/100` : ''}
-            </span>
+            <span className="tb-kind">{KIND_LABEL[session.kind]}</span>
+            <span className="tb-time">{shortDate(session.date)}</span>
             <SyncBadge compact interactive={false} />
           </span>
         </button>
