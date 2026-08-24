@@ -116,31 +116,30 @@ export function ShotPopover({ anchor, containerRef, where, forced, onForcedChang
               setWinnerStroke(stroke)
               setWinnerShotType(null)
             }} />
-            {winnerStroke === 'serve' ? (
-              <>
+            <div className="winner-choice-stack">
+              <div className={`winner-choice-panel${winnerStroke === 'serve' ? '' : ' inactive'}`} aria-hidden={winnerStroke !== 'serve'}>
                 <div className="shot-type-title">Serve result</div>
                 <div className="shot-type-group winner-serve-group">
                   {WINNER_SERVE_TYPES.map((type) => (
-                    <button type="button" className={`shot-type-btn${winnerShotType === type ? ' sel' : ''}`} key={type} aria-pressed={winnerShotType === type} onClick={() => setWinnerShotType(type)}>
+                    <button type="button" tabIndex={winnerStroke === 'serve' ? 0 : -1} className={`shot-type-btn${winnerShotType === type ? ' sel' : ''}`} key={type} aria-pressed={winnerShotType === type} onClick={() => setWinnerShotType(type)}>
                       {SHOT_TYPE_LABEL[type]}
                     </button>
                   ))}
                 </div>
-              </>
-            ) : (
-              <>
+              </div>
+              <div className={`winner-choice-panel${winnerStroke === 'serve' ? ' inactive' : ''}`} aria-hidden={winnerStroke === 'serve'}>
                 <div className="shot-type-title">Ball type</div>
                 {SHOT_TYPE_GROUPS.map((group, index) => (
                   <div className="shot-type-group" key={index}>
                     {group.map((type) => (
-                      <button type="button" className={`shot-type-btn${winnerShotType === type ? ' sel' : ''}`} key={type} aria-pressed={winnerShotType === type} onClick={() => setWinnerShotType(type)}>
+                      <button type="button" tabIndex={winnerStroke === 'serve' ? -1 : 0} className={`shot-type-btn${winnerShotType === type ? ' sel' : ''}`} key={type} aria-pressed={winnerShotType === type} onClick={() => setWinnerShotType(type)}>
                         {SHOT_TYPE_LABEL[type]}
                       </button>
                     ))}
                   </div>
                 ))}
-              </>
-            )}
+              </div>
+            </div>
             <button
               type="button"
               className="winner-confirm"
