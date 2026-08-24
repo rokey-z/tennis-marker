@@ -549,25 +549,6 @@ export function Court({ rotation = 0, onTap, onLongPress, disabled = false, poin
         <rect x={DRAW_MIN_X} y={VB_MIN_Y} width={DRAW_WIDTH} height={VB_HEIGHT} fill="var(--surround)" />
         <rect x={-COURT.doublesHalfWidth} y={0} width={2 * COURT.doublesHalfWidth} height={COURT.halfLength} fill="var(--court)" />
 
-        {/* whose half this is — dimmed, behind every mark, and always upright */}
-        {sideLabel && (
-          <g transform={uprightAt(0, VB_MIN_Y + 4.6, half === 'opposite', rotation)} pointerEvents="none">
-            <text
-              x={0}
-              y={VB_MIN_Y + 4.6}
-              fontSize={2}
-              fontWeight={800}
-              textAnchor="middle"
-              fill="#ffffff"
-              fillOpacity={0.2}
-              letterSpacing={0.35}
-              fontFamily="var(--font)"
-            >
-              {sideLabel.toUpperCase()}
-            </text>
-          </g>
-        )}
-
         {/* Placement mode makes the ways a ball can miss unmistakable: the net is a Net error;
             everything beyond the singles lines or baseline is an out landing. */}
         {/* Keep the placement result areas visible in analysis too: the heat layer then shows
@@ -762,8 +743,8 @@ export function Court({ rotation = 0, onTap, onLongPress, disabled = false, poin
           </defs>
           <rect x={-COURT.netPostX} y={-NET_BAND} width={2 * COURT.netPostX} height={NET_BAND} fill="url(#net-error-mesh)" />
           <g transform={uprightAt(0, -NET_BAND / 2, half === 'opposite', rotation)}>
-            <text x={0} y={-0.9} fontSize={0.9} fontWeight={800} textAnchor="middle" fill="#4b5560" fontFamily="var(--font)" letterSpacing={0.16}>
-              NET
+            <text x={0} y={-0.9} fontSize={0.9} fontWeight={800} textAnchor="middle" fill="#4b5560" fontFamily="var(--font)" letterSpacing={0.12}>
+              {sideLabel ? `NET · ${sideLabel.toUpperCase()}` : 'NET'}
             </text>
           </g>
         </g>
