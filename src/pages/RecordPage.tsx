@@ -334,7 +334,13 @@ export function RecordPage() {
             <Rotate90Icon />
           </button>
           <button type="button" className={`btn header-finish${finished ? ' primary' : ''}`} onClick={openFinish} aria-pressed={finished} title={finished ? 'Edit rating or unlock this session' : 'Finish, rate, and lock this session'}>
-            <LockIcon /> {finished && session.self_rating ? `${session.self_rating}/100` : 'Finish'}
+            <LockIcon />
+            {finished && session.self_rating ? (
+              <span className="header-rating">
+                <small>Self-rating</small>
+                <span>{session.self_rating}/100</span>
+              </span>
+            ) : 'Finish'}
           </button>
         </div>
       </header>

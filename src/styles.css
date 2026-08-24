@@ -717,6 +717,23 @@ textarea.input {
   width: 18px;
   height: 18px;
 }
+.header-rating {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1;
+}
+.header-rating small {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.72;
+  text-transform: uppercase;
+}
+.header-rating span {
+  font-size: 14px;
+  line-height: 1.15;
+}
 .flip-fab {
   width: 40px;
   height: 40px;
