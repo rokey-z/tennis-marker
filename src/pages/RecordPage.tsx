@@ -12,7 +12,7 @@ import { defaultId, livePointsForSession } from '../data/store'
 import { describeMark, describeZone, placementResultFor, zoneFor } from '../domain/court'
 import { capitalise, cleanOpponent, cleanUtr, formatUtr } from '../domain/session'
 import { opponentRowsWithRoster, sessionLabel, venueRows } from '../domain/session'
-import { MarkLegend, markLabel } from '../components/marks'
+import { markLabel } from '../components/marks'
 import { PointSheet } from '../components/PointSheet'
 import { OpponentPicker } from '../components/OpponentPicker'
 import { VenuePicker } from '../components/VenuePicker'
@@ -464,7 +464,6 @@ export function RecordPage() {
             </button>
             {logOpen && (
               <div className="log-body">
-                <MarkLegend className="log-legend" mode={placementMode ? 'placement' : 'errors'} />
                 <PointList points={points} onOpen={finished ? undefined : (p, index) => setOpenPoint({ id: p.id, index })} onDelete={finished ? undefined : deletePoint} />
                 {otherMode > 0 && (
                   <p className="log-note">
