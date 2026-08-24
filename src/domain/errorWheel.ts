@@ -9,7 +9,7 @@ export type ErrorWheelSelection = ErrorDragChoice | { winner: true }
 
 const ERROR_DRAG_PX = 26
 
-/** Six directional sectors, matching the wheel clockwise from upper-left. */
+/** Six directional targets, matching the visible balls clockwise from upper-left. */
 export function errorDragChoice(dx: number, dy: number): ErrorDragChoice | null {
   if (Math.hypot(dx, dy) < ERROR_DRAG_PX) return null
   const angle = Math.atan2(dy, dx) * 180 / Math.PI
@@ -21,7 +21,7 @@ export function errorDragChoice(dx: number, dy: number): ErrorDragChoice | null 
   return { stroke: 'bh', error: 'long' }
 }
 
-/** Moving past the visible wheel boundary is the fast gesture for an opponent winner. */
+/** Moving past the visible thin boundary is the fast gesture for an opponent winner. */
 export function errorWheelSelection(dx: number, dy: number, wheelRadiusPx: number): ErrorWheelSelection | null {
   if (Math.hypot(dx, dy) > wheelRadiusPx) return { winner: true }
   return errorDragChoice(dx, dy)

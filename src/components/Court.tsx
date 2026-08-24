@@ -96,42 +96,44 @@ function polarPoint(cx: number, cy: number, radius: number, degrees: number) {
   return { x: cx + radius * Math.cos(radians), y: cy + radius * Math.sin(radians) }
 }
 
-function wheelSectorPath(cx: number, cy: number, radius: number, start: number, end: number): string {
-  const a = polarPoint(cx, cy, radius, start)
-  const b = polarPoint(cx, cy, radius, end)
-  return `M ${cx} ${cy} L ${a.x} ${a.y} A ${radius} ${radius} 0 ${end - start > 180 ? 1 : 0} 1 ${b.x} ${b.y} Z`
-}
-
 function ErrorDragWheel({ x, y, radius, rotation, selected, winner }: { x: number; y: number; radius: number; rotation: CourtRotation; selected: ErrorDragChoice | null; winner: boolean }) {
+  const ballRadius = radius * 0.2
   return (
     <g transform={uprightAt(x, y, false, rotation)} pointerEvents="none">
-      <circle cx={x} cy={y} r={radius + 0.3} fill="#171b21" opacity={0.96} stroke="#ffffff" strokeWidth={0.34} />
+      <circle cx={x} cy={y} r={radius} fill="rgba(23,27,33,0.2)" stroke={winner ? 'var(--win)' : 'rgba(255,255,255,0.88)'} strokeWidth={winner ? 0.56 : 0.28} />
       {ERROR_WHEEL_SECTORS.map((sector) => {
         const active = selected?.stroke === sector.stroke && selected.error === sector.error
         const dimmed = winner || !!selected && !active
         const mid = (sector.start + sector.end) / 2
-        const label = polarPoint(x, y, radius * 0.62, mid)
+        const ball = polarPoint(x, y, radius * 0.62, mid)
         return (
-          <g key={`${sector.stroke}-${sector.error}`} opacity={dimmed ? 0.24 : 1}>
-            <path
-              d={wheelSectorPath(x, y, radius, sector.start, sector.end)}
+          <g key={`${sector.stroke}-${sector.error}`} opacity={dimmed ? 0.2 : 1}>
+            <line x1={x} y1={y} x2={ball.x} y2={ball.y} stroke="rgba(255,255,255,0.48)" strokeWidth={0.18} />
+            <circle
+              cx={ball.x}
+              cy={ball.y}
+              r={active ? ballRadius + 0.24 : ballRadius}
               fill={`var(--${sector.stroke})`}
-              stroke="rgba(255,255,255,0.72)"
-              strokeWidth={0.22}
+              stroke="#ffffff"
+              strokeWidth={active ? 0.42 : 0.24}
             />
-            <text x={label.x} y={label.y - 0.25} textAnchor="middle" fill="rgba(255,255,255,0.62)" fontFamily="var(--font)" fontSize={1.15} fontWeight={700}>
+            <text x={ball.x} y={ball.y - ballRadius * 0.15} textAnchor="middle" fill="rgba(255,255,255,0.66)" fontFamily="var(--font)" fontSize={ballRadius * 0.56} fontWeight={750}>
               {sector.stroke.toUpperCase()}
             </text>
-            <text x={label.x} y={label.y + 1.25} textAnchor="middle" fill="#ffffff" fontFamily="var(--font)" fontSize={1.65} fontWeight={850}>
+            <text x={ball.x} y={ball.y + ballRadius * 0.58} textAnchor="middle" fill="#ffffff" fontFamily="var(--font)" fontSize={ballRadius * 0.72} fontWeight={900}>
               {sector.error.toUpperCase()}
             </text>
           </g>
         )
       })}
-      <circle cx={x} cy={y} r={0.48} fill="#73777c" stroke="#ffffff" strokeWidth={0.18} />
+      <circle cx={x} cy={y} r={0.46} fill="#73777c" stroke="#ffffff" strokeWidth={0.18} />
+      {!winner && (
+        <text x={x} y={y + radius - 0.48} textAnchor="middle" fill="rgba(255,255,255,0.88)" fontFamily="var(--font)" fontSize={0.72} fontWeight={850} letterSpacing={0.08}>
+          PAST LINE = WINNER
+        </text>
+      )}
       {winner && (
         <g>
-          <circle cx={x} cy={y} r={radius + 0.55} fill="none" stroke="var(--win)" strokeWidth={0.72} />
           <rect x={x - 3.5} y={y - 1.15} width={7} height={2.3} rx={1.15} fill="var(--win)" stroke="#ffffff" strokeWidth={0.18} />
           <text x={x} y={y + 0.48} textAnchor="middle" fill="var(--win-ink)" fontFamily="var(--font)" fontSize={1.18} fontWeight={850}>★ WINNER</text>
         </g>
