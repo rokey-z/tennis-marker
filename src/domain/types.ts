@@ -30,9 +30,9 @@ export const STROKE_LABEL: Record<PlacementStroke, string> = { fh: 'Forehand', b
 export const STROKE_SHORT: Record<PlacementStroke, string> = { fh: 'FH', bh: 'BH', serve: 'S' }
 export const ERROR_LABEL: Record<ErrorType, string> = { long: 'Long', net: 'Net', wide: 'Wide' }
 export const SHOT_TYPE_LABEL: Record<ShotType, string> = {
-  ground: 'Ground',
+  ground: 'Neutral',
   slice: 'Slice',
-  approach: 'Approach',
+  approach: 'Attack',
   volley: 'Volley',
   swing_volley: 'Swing volley',
   overhead: 'Overhead',
@@ -41,7 +41,7 @@ export const SHOT_TYPE_LABEL: Record<ShotType, string> = {
 }
 /** Compact labels used where every ball type must fit inside a court-map zone. */
 export const SHOT_TYPE_SHORT: Record<ShotType, string> = {
-  ground: 'G',
+  ground: 'N',
   slice: 'S',
   approach: 'A',
   volley: 'V',
