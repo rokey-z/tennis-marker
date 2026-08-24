@@ -1638,6 +1638,13 @@ textarea.input {
   visibility: hidden;
   pointer-events: none;
 }
+.winner-serve-group .shot-type-btn {
+  width: 88px;
+  min-width: 88px;
+  height: 88px;
+  font-size: 14px;
+  font-weight: 850;
+}
 .winner-confirm {
   width: 100%;
   min-height: 40px;
@@ -1651,6 +1658,10 @@ textarea.input {
 }
 .winner-confirm:disabled {
   opacity: 0.35;
+}
+.winner-confirm.serve-hidden {
+  visibility: hidden;
+  pointer-events: none;
 }
 .shot-type-back {
   width: 100%;

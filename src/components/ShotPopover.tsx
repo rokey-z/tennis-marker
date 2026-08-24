@@ -152,8 +152,10 @@ export function ShotPopover({ anchor, containerRef, where, forced, onForcedChang
             </div>
             <button
               type="button"
-              className="winner-confirm"
+              className={`winner-confirm${winnerStroke === 'serve' ? ' serve-hidden' : ''}`}
               disabled={!winnerShotType}
+              aria-hidden={winnerStroke === 'serve'}
+              tabIndex={winnerStroke === 'serve' ? -1 : 0}
               onClick={() => winnerShotType && onPlayerWinner?.(winnerStroke, winnerShotType)}
             >
               ✓ Winner
