@@ -529,7 +529,8 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
         {heatCells && (
           <g>
             {heatCells.map((c) => {
-              const hovered = c.id === hoveredHeatCell
+              const hoverable = c.n > 0
+              const hovered = hoverable && c.id === hoveredHeatCell
               return (
                 <rect
                   key={c.id}
@@ -541,10 +542,10 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
                   fillOpacity={hovered ? Math.min(1, c.a + 0.14) : c.a}
                   stroke={hovered ? '#ffffff' : 'rgba(255,255,255,0.35)'}
                   strokeWidth={hovered ? 0.5 : 0.15}
-                  style={{ cursor: 'help' }}
-                  onPointerEnter={(e) => updateHeatHover(c.id, e)}
-                  onPointerMove={(e) => updateHeatHover(c.id, e)}
-                  onPointerLeave={clearHeatHover}
+                  style={hoverable ? { cursor: 'help' } : undefined}
+                  onPointerEnter={hoverable ? (e) => updateHeatHover(c.id, e) : undefined}
+                  onPointerMove={hoverable ? (e) => updateHeatHover(c.id, e) : undefined}
+                  onPointerLeave={hoverable ? clearHeatHover : undefined}
                 />
               )
             })}
@@ -554,7 +555,8 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
           <g>
             {placementHeatCells.map((c) => {
               const strokes = placementHeatStrokes.get(c.id) ?? { fh: 0, bh: 0 }
-              const hovered = c.id === hoveredPlacementCell
+              const hoverable = c.n > 0
+              const hovered = hoverable && c.id === hoveredPlacementCell
               return (
                 <rect
                   key={c.id}
@@ -566,10 +568,10 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
                   fillOpacity={hovered ? Math.min(1, c.a + 0.18) : c.a}
                   stroke={hovered ? "#ffffff" : "rgba(255,255,255,0.48)"}
                   strokeWidth={hovered ? 0.58 : 0.2}
-                  style={{ cursor: 'help' }}
-                  onPointerEnter={(e) => updatePlacementHover(c.id, e)}
-                  onPointerMove={(e) => updatePlacementHover(c.id, e)}
-                  onPointerLeave={clearPlacementHover}
+                  style={hoverable ? { cursor: 'help' } : undefined}
+                  onPointerEnter={hoverable ? (e) => updatePlacementHover(c.id, e) : undefined}
+                  onPointerMove={hoverable ? (e) => updatePlacementHover(c.id, e) : undefined}
+                  onPointerLeave={hoverable ? clearPlacementHover : undefined}
                 >
                   <title>FH {strokes.fh} · BH {strokes.bh}</title>
                 </rect>
@@ -644,7 +646,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
         {/* The visible net paints over the heat cell, so give it its own hover target in stats. */}
         {placementHeatCells && (() => {
           const net = placementHeatCells.find((cell) => cell.id === 'net')
-          if (!net) return null
+          if (!net || net.n === 0) return null
           const strokes = placementHeatStrokes.get('net') ?? { fh: 0, bh: 0 }
           return (
             <rect
