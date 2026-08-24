@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useId, type ReactNode } from 'react'
 import { cleanOpponent, defaultOpponentPlaceholder, opponentKey, type OpponentRow } from '../domain/session'
 import type { SessionKind } from '../domain/types'
 
@@ -11,26 +11,33 @@ export interface OpponentPickerProps {
   label?: string
   /** how many quick chips to show */
   maxChips?: number
+  /** Optional session-only field displayed immediately after the opponent name. */
+  afterInput?: ReactNode
 }
 
 /** Text field + one-tap chips for recent opponents (no typing for someone she has played before). */
-export function OpponentPicker({ value, onChange, kind, known, label = 'Opponent', maxChips = 6 }: OpponentPickerProps) {
+export function OpponentPicker({ value, onChange, kind, known, label = 'Opponent', maxChips = 6, afterInput }: OpponentPickerProps) {
   const listId = useId()
   const current = opponentKey(value)
   const chips = known.slice(0, maxChips)
   return (
-    <div className="field opponent-picker">
-      <span>{label}</span>
-      <input
-        className="input"
-        list={listId}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={defaultOpponentPlaceholder(kind)}
-        autoComplete="off"
-        autoCapitalize="words"
-        enterKeyHint="done"
-      />
+    <div className="opponent-picker">
+      <div className="opponent-fields">
+        <label className="field grow">
+          <span>{label}</span>
+          <input
+            className="input"
+            list={listId}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={defaultOpponentPlaceholder(kind)}
+            autoComplete="off"
+            autoCapitalize="words"
+            enterKeyHint="done"
+          />
+        </label>
+        {afterInput}
+      </div>
       <datalist id={listId}>
         {known.map((o) => (
           <option key={o.key} value={o.name} />

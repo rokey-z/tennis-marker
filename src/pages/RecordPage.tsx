@@ -10,7 +10,7 @@ import { ShotPopover } from '../components/ShotPopover'
 import { store, supabase, sync, useAppState } from '../data/app'
 import { defaultId, livePointsForSession } from '../data/store'
 import { describeMark, describeZone, placementResultFor, zoneFor } from '../domain/court'
-import { capitalise, cleanOpponent } from '../domain/session'
+import { capitalise, cleanOpponent, cleanUtr } from '../domain/session'
 import { opponentRowsWithRoster, sessionLabel, venueRows } from '../domain/session'
 import { MarkLegend, markLabel } from '../components/marks'
 import { PointSheet } from '../components/PointSheet'
@@ -272,6 +272,7 @@ export function RecordPage() {
     const token = isUuid(match.share_token) ? match.share_token : defaultId()
     store.updateSession(match.id, {
       opponent: match.opponent,
+      opponent_utr: match.opponent_utr ?? null,
       venue: match.venue,
       date: match.date,
       kind: match.kind,
@@ -588,6 +589,7 @@ function SessionDetails({ session, isNew = false, onCopyLink, onClose, onDeleted
   const state = useAppState()
   const [mode, setMode] = useState(session.mode)
   const [opponent, setOpponent] = useState(session.opponent ?? '')
+  const [opponentUtr, setOpponentUtr] = useState(session.opponent_utr === null || session.opponent_utr === undefined ? '' : String(session.opponent_utr))
   const [venue, setVenue] = useState(session.venue ?? '')
   const [date, setDate] = useState(session.date)
   const [kind, setKind] = useState(session.kind)
@@ -596,14 +598,17 @@ function SessionDetails({ session, isNew = false, onCopyLink, onClose, onDeleted
   const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'error'>('idle')
   const known = useMemo(() => opponentRowsWithRoster(Object.values(state.sessions), state.meta.roster), [state.sessions, state.meta.roster])
   const venues = useMemo(() => venueRows(Object.values(state.sessions)), [state.sessions])
+  const utrValue = cleanUtr(opponentUtr)
+  const utrInvalid = kind === 'match' && opponentUtr.trim() !== '' && utrValue === null
 
   const save = () => {
-    store.updateSession(session.id, { opponent, venue, date, kind, mode, notes })
+    if (utrInvalid) return
+    store.updateSession(session.id, { opponent, opponent_utr: kind === 'match' ? utrValue : null, venue, date, kind, mode, notes })
     onClose()
   }
 
   return (
-    <Modal title={sessionLabel({ kind, opponent, title: session.title })} onClose={onClose}>
+    <Modal title={sessionLabel({ kind, opponent, opponent_utr: kind === 'match' ? utrValue : null, title: session.title })} onClose={onClose}>
       <div className="field">
         <span>Records</span>
         <div className="segmented mode-pick" role="radiogroup" aria-label="What this session records">
@@ -615,7 +620,30 @@ function SessionDetails({ session, isNew = false, onCopyLink, onClose, onDeleted
         </div>
         <p className="kbd-hint" style={{ marginTop: 6 }}>{MODE_HINT[mode]}</p>
       </div>
-      <OpponentPicker value={opponent} onChange={setOpponent} kind={kind} known={known} />
+      <OpponentPicker
+        value={opponent}
+        onChange={setOpponent}
+        kind={kind}
+        known={known}
+        afterInput={kind === 'match' ? (
+          <label className="field opponent-utr-field">
+            <span>UTR</span>
+            <input
+              className="input"
+              type="number"
+              min="0.01"
+              max="16.5"
+              step="0.01"
+              inputMode="decimal"
+              value={opponentUtr}
+              onChange={(e) => setOpponentUtr(e.target.value)}
+              placeholder="8.25"
+              aria-label="Opponent UTR for this session"
+            />
+          </label>
+        ) : undefined}
+      />
+      {utrInvalid && <div className="notice err" style={{ margin: '-6px 0 12px' }}>Enter a UTR from 0.01 to 16.50.</div>}
       <VenuePicker value={venue} onChange={setVenue} known={venues} />
       <div className="row">
         <label className="field grow">
@@ -641,9 +669,10 @@ function SessionDetails({ session, isNew = false, onCopyLink, onClose, onDeleted
             type="button"
             className="btn ghost block"
             onClick={async () => {
-              const draft = { ...session, opponent, venue, date, kind, mode, notes }
+              const draft = { ...session, opponent, opponent_utr: utrValue, venue, date, kind, mode, notes }
               setShareStatus(await onCopyLink(draft) ? 'copied' : 'error')
             }}
+            disabled={utrInvalid}
           >
             {shareStatus === 'copied' ? 'Link copied' : 'Copy link'}
           </button>
@@ -652,7 +681,7 @@ function SessionDetails({ session, isNew = false, onCopyLink, onClose, onDeleted
         </div>
       )}
       <div className="row">
-        <button type="button" className="btn primary grow" onClick={save}>
+        <button type="button" className="btn primary grow" onClick={save} disabled={utrInvalid}>
           {isNew ? 'Start recording' : 'Save'}
         </button>
         {confirm ? (

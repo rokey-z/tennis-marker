@@ -62,6 +62,8 @@ describe('sanitizeSession', () => {
     expect(sanitizeSession({ ...good, self_rating: 0 })?.self_rating).toBeNull()
     expect(sanitizeSession({ ...good, self_rating: 101 })?.self_rating).toBeNull()
     expect(sanitizeSession({ ...good, self_rating: 3.5 })?.self_rating).toBeNull()
+    expect(sanitizeSession({ ...good, opponent_utr: '9.125' })?.opponent_utr).toBe(9.13)
+    expect(sanitizeSession({ ...good, opponent_utr: 20 })?.opponent_utr).toBeNull()
   })
 
   it('rejects malformed dates / ids', () => {

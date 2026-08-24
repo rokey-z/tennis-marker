@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { roundFeet } from '../domain/court'
 import { compareSessionDesc } from '../domain/stats'
 import { isShotType, type NewPoint, type Point, type Session } from '../domain/types'
-import { cleanOpponent, opponentFromLegacyTitle, opponentKey } from '../domain/session'
+import { cleanOpponent, cleanUtr, opponentFromLegacyTitle, opponentKey } from '../domain/session'
 import { todayLocalISO } from '../lib/format'
 import { isUuid, sanitizePoint, sanitizeSession } from '../domain/validate'
 import {
@@ -32,7 +32,7 @@ export interface Store {
   /** Re-read from storage (another tab wrote). */
   reload(): void
   createSession(input?: Partial<Pick<Session, 'opponent' | 'venue' | 'date' | 'kind' | 'mode' | 'notes'>>): Session
-  updateSession(id: string, patch: Partial<Pick<Session, 'opponent' | 'venue' | 'date' | 'kind' | 'mode' | 'notes' | 'finished_at' | 'self_rating' | 'share_token'>>): void
+  updateSession(id: string, patch: Partial<Pick<Session, 'opponent' | 'opponent_utr' | 'venue' | 'date' | 'kind' | 'mode' | 'notes' | 'finished_at' | 'self_rating' | 'share_token'>>): void
   /** Add an opponent before she has played them (device-local until used in a session). Returns false if blank/duplicate. */
   addRosterOpponent(name: string): boolean
   /** Rename an opponent across every session that uses it (case-insensitive match). Returns sessions changed. */
@@ -193,6 +193,7 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
       if (!s) return
       const next: Session = { ...s, ...patch, updated_at: iso() }
       if (patch.opponent !== undefined) next.opponent = cleanOpponent(patch.opponent)
+      if (patch.opponent_utr !== undefined) next.opponent_utr = cleanUtr(patch.opponent_utr)
       if (patch.venue !== undefined) next.venue = cleanOpponent(patch.venue)
       set(markDirty({ ...state, sessions: { ...state.sessions, [id]: next } }, 'sessions', [id]))
     },

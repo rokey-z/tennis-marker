@@ -1,7 +1,8 @@
 import { isErrorType, isOutcome, isPlacementResult, isPlacementStroke, isSessionMode, isShotType, type Point, type Session } from './types'
+import { cleanUtr } from './session'
 import { sanitizePoint, sanitizeSession } from './validate'
 
-type SharedSession = Pick<Session, 'title' | 'opponent' | 'venue' | 'date' | 'mode' | 'notes' | 'finished_at' | 'self_rating'>
+type SharedSession = Pick<Session, 'title' | 'opponent' | 'opponent_utr' | 'venue' | 'date' | 'mode' | 'notes' | 'finished_at' | 'self_rating'>
 type SharedPayloadV1 = {
   v: 1
   s: SharedSession
@@ -41,6 +42,7 @@ export function encodeSharedMatch(session: Session, points: Point[]): string {
     s: {
       title: session.title,
       opponent: session.opponent,
+      opponent_utr: session.opponent_utr ?? null,
       venue: session.venue,
       date: session.date,
       mode: session.mode,
@@ -64,6 +66,7 @@ export function decodeSharedMatch(encoded: string): SharedMatch | null {
     if (s.self_rating !== null && s.self_rating !== undefined && (!Number.isInteger(s.self_rating) || s.self_rating < 1 || s.self_rating > 100)) return null
     const session: Session = {
       id: 'shared-match', user_id: null, title: s.title, opponent: s.opponent, venue: s.venue, date: s.date,
+      opponent_utr: cleanUtr(s.opponent_utr),
       kind: 'match', mode: s.mode, notes: s.notes, finished_at: typeof s.finished_at === 'string' ? s.finished_at : null,
       self_rating: s.self_rating ?? null, created_at: '', updated_at: '', deleted_at: null,
     }

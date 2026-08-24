@@ -2456,8 +2456,21 @@ span
 }
 
 /* ---------- opponents ---------- */
+.opponent-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px;
+  gap: 10px;
+  align-items: start;
+}
+.opponent-fields > :only-child {
+  grid-column: 1 / -1;
+}
+.opponent-utr-field .input {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
 .opponent-picker .opponent-chips {
-  margin-top: 8px;
+  margin: -4px 0 12px;
 }
 .opponent-picker .chip.clear {
   color: var(--danger);

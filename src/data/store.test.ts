@@ -145,9 +145,10 @@ describe('store', () => {
     const s = store.createSession()
     store.clearDirty('sessions', [[s.id, s.updated_at]])
     expect(pendingCount(store.getState())).toBe(0)
-    store.updateSession(s.id, { opponent: 'Renamed', kind: 'match' })
+    store.updateSession(s.id, { opponent: 'Renamed', opponent_utr: 7.456, kind: 'match' })
     const cur = store.getState().sessions[s.id]
     expect(cur.opponent).toBe('Renamed')
+    expect(cur.opponent_utr).toBe(7.46)
     expect(cur.updated_at > s.updated_at).toBe(true)
     expect(store.getState().dirty.sessions).toEqual([s.id])
   })

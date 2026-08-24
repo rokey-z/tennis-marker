@@ -77,6 +77,8 @@ export interface Session {
   title: string
   /** Who she played (optional); '' when unknown. */
   opponent: string
+  /** Opponent's UTR for this session only; it is not attached to the reusable opponent name. */
+  opponent_utr?: number | null
   /** Where it was played (club / court name, optional). */
   venue: string
   date: string

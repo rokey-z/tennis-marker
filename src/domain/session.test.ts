@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cleanOpponent, isAutoTitle, opponentFromLegacyTitle, opponentKey, opponentRows, sessionLabel, venueRows } from './session'
+import { cleanOpponent, cleanUtr, formatUtr, isAutoTitle, opponentFromLegacyTitle, opponentKey, opponentRows, sessionLabel, venueRows } from './session'
 import type { Session } from './types'
 
 const base: Session = {
@@ -23,6 +23,7 @@ describe('sessionLabel', () => {
     expect(sessionLabel(sess())).toBe('Practice')
     expect(sessionLabel(sess({ kind: 'match' }))).toBe('Match')
     expect(sessionLabel(sess({ kind: 'match', opponent: 'Emma' }))).toBe('vs Emma')
+    expect(sessionLabel(sess({ kind: 'match', opponent: 'Emma', opponent_utr: 8.25 }))).toBe('vs Emma · UTR 8.25')
     expect(sessionLabel(sess({ opponent: 'Coach Dan' }))).toBe('Practice with Coach Dan')
   })
 
@@ -69,6 +70,16 @@ describe('names', () => {
     expect(cleanOpponent('  Emma   Stone ')).toBe('Emma Stone')
     expect(opponentKey(' emma  STONE ')).toBe('emma stone')
     expect(cleanOpponent('x'.repeat(80))).toHaveLength(60)
+  })
+})
+
+describe('session UTR', () => {
+  it('accepts a two-decimal session snapshot and rejects values outside the UTR range', () => {
+    expect(cleanUtr('8.257')).toBe(8.26)
+    expect(formatUtr(8.5)).toBe('8.5')
+    expect(cleanUtr('')).toBeNull()
+    expect(cleanUtr(0)).toBeNull()
+    expect(cleanUtr(16.51)).toBeNull()
   })
 })
 

@@ -17,6 +17,18 @@ export function cleanOpponent(name: string | null | undefined): string {
   return typeof name === 'string' ? name.trim().replace(/\s+/g, ' ').slice(0, 60) : ''
 }
 
+/** A session snapshot of the opponent's UTR. Empty/invalid values stay unset. */
+export function cleanUtr(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null
+  const n = typeof value === 'number' ? value : Number(String(value).trim())
+  return Number.isFinite(n) && n >= 0.01 && n <= 16.5 ? Math.round(n * 100) / 100 : null
+}
+
+export function formatUtr(value: unknown): string {
+  const utr = cleanUtr(value)
+  return utr === null ? '' : String(utr)
+}
+
 /**
  * Opponent from a legacy free-text title, but ONLY when the title clearly names one
  * ("vs Emma — club ladder" → "Emma"). Anything else ("Practice — groundstrokes") is left alone
@@ -32,9 +44,13 @@ export function opponentFromLegacyTitle(title: string): string {
 }
 
 /** Display name, derived from the fields — there is no title to type. */
-export function sessionLabel(s: Pick<Session, 'kind' | 'opponent' | 'title'>): string {
+export function sessionLabel(s: Pick<Session, 'kind' | 'opponent' | 'opponent_utr' | 'title'>): string {
   const opponent = cleanOpponent(s.opponent ?? '')
-  if (opponent) return s.kind === 'match' ? `vs ${opponent}` : `Practice with ${opponent}`
+  if (opponent) {
+    if (s.kind !== 'match') return `Practice with ${opponent}`
+    const utr = formatUtr(s.opponent_utr)
+    return `vs ${opponent}${utr ? ` · UTR ${utr}` : ''}`
+  }
   // rows recorded before opponents existed keep showing whatever was typed back then
   const legacy = (s.title ?? '').trim()
   if (legacy && !isAutoTitle(legacy)) return legacy

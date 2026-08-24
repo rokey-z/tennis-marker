@@ -1,6 +1,6 @@
 import { clampToView, roundFeet } from './court'
 import { isValidIso, YMD_RE } from '../lib/format'
-import { cleanOpponent } from './session'
+import { cleanOpponent, cleanUtr } from './session'
 import { isErrorType, isOutcome, isPlacementResult, isPlacementStroke, isSessionKind, isSessionMode, isShotType, isStroke, type Point, type Session, type Stroke } from './types'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -42,6 +42,7 @@ export function sanitizeSession(raw: unknown): Session | null {
     updated_at: isoOrNull(r.updated_at) ?? created,
     deleted_at: isoOrNull(r.deleted_at),
   }
+  if ('opponent_utr' in r) session.opponent_utr = cleanUtr(r.opponent_utr)
   if ('share_token' in r) session.share_token = isUuid(r.share_token) ? r.share_token : null
   return session
 }

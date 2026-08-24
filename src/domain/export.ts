@@ -10,6 +10,7 @@ export function csvEscape(value: unknown): string {
 export const CSV_HEADER = [
   'session',
   'opponent',
+  'opponent_utr',
   'session_date',
   'session_kind',
   'point_time',
@@ -34,6 +35,7 @@ export function pointsToCsv(points: Iterable<Point>, sessionsById: Record<string
       [
         csvEscape(s ? sessionLabel(s) : ''),
         csvEscape(s?.opponent ?? ''),
+        csvEscape(s?.opponent_utr ?? ''),
         csvEscape(s?.date ?? ''),
         csvEscape(s?.kind ?? ''),
         csvEscape(p.created_at),
