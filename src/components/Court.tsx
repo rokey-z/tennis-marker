@@ -182,8 +182,10 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
   const [drag, setDrag] = useState<DragState | null>(null)
   const [hoveredPlacementCell, setHoveredPlacementCell] = useState<string | null>(null)
   const [placementHoverClient, setPlacementHoverClient] = useState<{ x: number; y: number } | null>(null)
+  const [pinnedPlacementCell, setPinnedPlacementCell] = useState<string | null>(null)
   const [hoveredHeatCell, setHoveredHeatCell] = useState<string | null>(null)
   const [heatHoverClient, setHeatHoverClient] = useState<{ x: number; y: number } | null>(null)
+  const [pinnedHeatCell, setPinnedHeatCell] = useState<string | null>(null)
   const interactive = !!onTap
   const hasDrag = !!onStrokeDrag || !!onErrorSelect
   const errorWheelRadius = typeof window !== 'undefined' && window.innerWidth <= 600 ? ERROR_WHEEL_RADIUS * 1.15 : ERROR_WHEEL_RADIUS
@@ -425,23 +427,55 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
     }
     return counts
   }, [placementHeat, points])
-  const hoveredPlacement = placementHeatCells?.find((cell) => cell.id === hoveredPlacementCell) ?? null
+  const activePinnedPlacement = placementHeatCells?.some((cell) => cell.id === pinnedPlacementCell && cell.n > 0) ? pinnedPlacementCell : null
+  const hoveredPlacement = placementHeatCells?.find((cell) => cell.id === hoveredPlacementCell && cell.n > 0) ?? null
   const updatePlacementHover = (id: string, e: ReactPointerEvent<SVGRectElement>) => {
+    if (activePinnedPlacement) return
     setHoveredPlacementCell(id)
     setPlacementHoverClient({ x: e.clientX, y: e.clientY })
   }
   const clearPlacementHover = () => {
+    if (activePinnedPlacement) return
     setHoveredPlacementCell(null)
     setPlacementHoverClient(null)
   }
-  const hoveredHeat = heatCells?.find((cell) => cell.id === hoveredHeatCell) ?? null
+  const togglePlacementPin = (id: string, e: ReactMouseEvent<SVGRectElement>) => {
+    e.stopPropagation()
+    if (activePinnedPlacement === id) {
+      setPinnedPlacementCell(null)
+      setHoveredPlacementCell(null)
+      setPlacementHoverClient(null)
+      return
+    }
+    setPinnedPlacementCell(id)
+    setHoveredPlacementCell(id)
+    setPlacementHoverClient({ x: e.clientX, y: e.clientY })
+    setPinnedHeatCell(null)
+  }
+  const activePinnedHeat = heatCells?.some((cell) => cell.id === pinnedHeatCell && cell.n > 0) ? pinnedHeatCell : null
+  const hoveredHeat = heatCells?.find((cell) => cell.id === hoveredHeatCell && cell.n > 0) ?? null
   const updateHeatHover = (id: string, e: ReactPointerEvent<SVGRectElement>) => {
+    if (activePinnedHeat) return
     setHoveredHeatCell(id)
     setHeatHoverClient({ x: e.clientX, y: e.clientY })
   }
   const clearHeatHover = () => {
+    if (activePinnedHeat) return
     setHoveredHeatCell(null)
     setHeatHoverClient(null)
+  }
+  const toggleHeatPin = (id: string, e: ReactMouseEvent<SVGRectElement>) => {
+    e.stopPropagation()
+    if (activePinnedHeat === id) {
+      setPinnedHeatCell(null)
+      setHoveredHeatCell(null)
+      setHeatHoverClient(null)
+      return
+    }
+    setPinnedHeatCell(id)
+    setHoveredHeatCell(id)
+    setHeatHoverClient({ x: e.clientX, y: e.clientY })
+    setPinnedPlacementCell(null)
   }
 
   return (
@@ -546,6 +580,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
                   onPointerEnter={hoverable ? (e) => updateHeatHover(c.id, e) : undefined}
                   onPointerMove={hoverable ? (e) => updateHeatHover(c.id, e) : undefined}
                   onPointerLeave={hoverable ? clearHeatHover : undefined}
+                  onClick={hoverable ? (e) => toggleHeatPin(c.id, e) : undefined}
                 />
               )
             })}
@@ -572,6 +607,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
                   onPointerEnter={hoverable ? (e) => updatePlacementHover(c.id, e) : undefined}
                   onPointerMove={hoverable ? (e) => updatePlacementHover(c.id, e) : undefined}
                   onPointerLeave={hoverable ? clearPlacementHover : undefined}
+                  onClick={hoverable ? (e) => togglePlacementPin(c.id, e) : undefined}
                 >
                   <title>FH {strokes.fh} · BH {strokes.bh}</title>
                 </rect>
@@ -659,6 +695,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
               onPointerEnter={(e) => updatePlacementHover('net', e)}
               onPointerMove={(e) => updatePlacementHover('net', e)}
               onPointerLeave={clearPlacementHover}
+              onClick={(e) => togglePlacementPin('net', e)}
             >
               <title>FH {strokes.fh} · BH {strokes.bh}</title>
             </rect>
@@ -810,25 +847,33 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
       return (
         <div className="court-hover-tooltip ball-type-tooltip" style={{ left: heatHoverClient.x + 14, top: heatHoverClient.y + 14 }}>
           <div className="zone-share-chart" aria-label="Percentage distribution across all court blocks">
+            <div className="zone-share-combined">
             {heatCells!.filter((cell) => cell.n > 0).map((cell) => {
-              const pct = heatTotal > 0 ? Math.round((cell.n / heatTotal) * 100) : 0
               const selected = cell.id === hoveredHeat.id
-              const [row, col] = cell.id.split('-')
-              const blockName = `${row === 'baseline' ? 'Base' : row === 'mid' ? 'Mid' : 'Net'} ${col === 'middle' ? 'Center' : col === 'deuce' ? 'Deuce' : 'Ad'}`
               return (
-                <div
-                  className={`zone-share-bar${selected ? ' selected' : ' dimmed'}`}
+                <span
+                  className={`zone-share-segment${selected ? ' selected' : ' dimmed'}`}
                   key={cell.id}
-                  aria-label={`${blockName}: ${pct}%${selected ? ', selected' : ''}`}
-                >
-                  <span>{pct}%</span>
-                  <i aria-hidden="true">
-                    <b style={{ height: pct > 0 ? `${Math.max(2, pct * 0.32)}px` : 0, background: cell.fill }} />
-                  </i>
-                  <em>{blockName}</em>
-                </div>
+                  style={{ flexGrow: cell.n, background: cell.fill }}
+                  aria-hidden="true"
+                />
               )
             })}
+            </div>
+            <div className="zone-share-labels">
+              {heatCells!.filter((cell) => cell.n > 0).map((cell) => {
+                const pct = heatTotal > 0 ? Math.round((cell.n / heatTotal) * 100) : 0
+                const selected = cell.id === hoveredHeat.id
+                const [row, col] = cell.id.split('-')
+                const blockName = `${row === 'baseline' ? 'Base' : row === 'mid' ? 'Mid' : 'Net'} ${col === 'middle' ? 'Center' : col === 'deuce' ? 'Deuce' : 'Ad'}`
+                return (
+                  <span className={selected ? 'selected' : 'dimmed'} key={cell.id} aria-label={`${blockName}: ${pct}%${selected ? ', selected' : ''}`}>
+                    <b>{blockName}</b>
+                    <em>{pct}%</em>
+                  </span>
+                )
+              })}
+            </div>
           </div>
           <div className="ball-type-chart-head" aria-hidden="true">
             <span>Type</span>

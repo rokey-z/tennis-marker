@@ -1022,55 +1022,60 @@ textarea.input {
   min-width: 210px;
 }
 .zone-share-chart {
-  display: flex;
-  align-items: end;
-  justify-content: center;
-  gap: 3px;
   margin: 0 0 4px;
   padding: 1px 0 6px;
   border-bottom: 1px solid var(--line);
 }
-.zone-share-bar {
-  display: grid;
-  grid-template-rows: 10px 33px auto;
+.zone-share-combined {
+  display: flex;
+  width: 100%;
+  height: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+.zone-share-segment {
+  min-width: 2px;
+  transition: opacity 100ms ease;
+}
+.zone-share-segment + .zone-share-segment {
+  box-shadow: -1px 0 rgba(255, 255, 255, 0.7);
+}
+.zone-share-segment.dimmed {
+  opacity: 0.24;
+}
+.zone-share-segment.selected {
+  opacity: 1;
+}
+.zone-share-labels {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin-top: 5px;
+}
+.zone-share-labels > span {
+  display: flex;
   flex: 1 1 0;
   min-width: 0;
-  max-width: 44px;
-  color: var(--text);
+  flex-direction: column;
   font-size: 7px;
-  font-weight: 850;
-  line-height: 1;
+  line-height: 1.08;
   text-align: center;
   transition: opacity 100ms ease;
 }
-.zone-share-bar.dimmed {
-  opacity: 0.24;
+.zone-share-labels > span.dimmed {
+  opacity: 0.36;
 }
-.zone-share-bar.selected {
-  opacity: 1;
-}
-.zone-share-bar i {
-  display: flex;
-  align-items: flex-end;
-  justify-content: stretch;
-  height: 33px;
-  border-radius: 3px;
-  background: var(--surface-2);
-  overflow: hidden;
-}
-.zone-share-bar b {
-  display: block;
-  width: 100%;
-  border-radius: 2px 2px 0 0;
-}
-.zone-share-bar em {
-  margin-top: 3px;
+.zone-share-labels b {
   color: var(--muted);
-  font-size: 7px;
-  font-style: normal;
   font-weight: 750;
-  line-height: 1.05;
   overflow-wrap: anywhere;
+}
+.zone-share-labels em {
+  margin-top: 2px;
+  color: var(--text);
+  font-style: normal;
+  font-weight: 850;
 }
 .ball-type-chart-head,
 .ball-type-row {
