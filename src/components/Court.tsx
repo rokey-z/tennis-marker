@@ -14,7 +14,7 @@ import {
   zoneId,
   zoneRect,
 } from '../domain/court'
-import { SHOT_TYPES, SHOT_TYPE_SHORT, isErrorType, isPlacementResult, isPlacementStroke, isShotType, type ErrorType, type PlacementStroke, type Point, type ShotType, type Stroke } from '../domain/types'
+import { SHOT_TYPES, SHOT_TYPE_LABEL, isErrorType, isPlacementResult, isPlacementStroke, isShotType, type ErrorType, type PlacementStroke, type Point, type ShotType, type Stroke } from '../domain/types'
 import { errorWheelSelection, type ErrorDragChoice } from '../domain/errorWheel'
 import { ERROR_LETTER, markLabel } from './marks'
 
@@ -182,6 +182,8 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
   const [drag, setDrag] = useState<DragState | null>(null)
   const [hoveredPlacementCell, setHoveredPlacementCell] = useState<string | null>(null)
   const [placementHoverClient, setPlacementHoverClient] = useState<{ x: number; y: number } | null>(null)
+  const [hoveredHeatCell, setHoveredHeatCell] = useState<string | null>(null)
+  const [heatHoverClient, setHeatHoverClient] = useState<{ x: number; y: number } | null>(null)
   const interactive = !!onTap
   const hasDrag = !!onStrokeDrag || !!onErrorSelect
   const errorWheelRadius = typeof window !== 'undefined' && window.innerWidth <= 600 ? ERROR_WHEEL_RADIUS * 1.15 : ERROR_WHEEL_RADIUS
@@ -431,6 +433,15 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
     setHoveredPlacementCell(null)
     setPlacementHoverClient(null)
   }
+  const hoveredHeat = heatCells?.find((cell) => cell.id === hoveredHeatCell) ?? null
+  const updateHeatHover = (id: string, e: ReactPointerEvent<SVGRectElement>) => {
+    setHoveredHeatCell(id)
+    setHeatHoverClient({ x: e.clientX, y: e.clientY })
+  }
+  const clearHeatHover = () => {
+    setHoveredHeatCell(null)
+    setHeatHoverClient(null)
+  }
 
   return (
     <>
@@ -516,9 +527,26 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
         {/* heat overlay */}
         {heatCells && (
           <g>
-            {heatCells.map((c) => (
-              <rect key={c.id} x={c.r.x} y={c.r.y} width={c.r.width} height={c.r.height} fill={c.fill} fillOpacity={c.a} stroke="rgba(255,255,255,0.35)" strokeWidth={0.15} />
-            ))}
+            {heatCells.map((c) => {
+              const hovered = c.id === hoveredHeatCell
+              return (
+                <rect
+                  key={c.id}
+                  x={c.r.x}
+                  y={c.r.y}
+                  width={c.r.width}
+                  height={c.r.height}
+                  fill={c.fill}
+                  fillOpacity={hovered ? Math.min(1, c.a + 0.14) : c.a}
+                  stroke={hovered ? '#ffffff' : 'rgba(255,255,255,0.35)'}
+                  strokeWidth={hovered ? 0.5 : 0.15}
+                  style={{ cursor: 'help' }}
+                  onPointerEnter={(e) => updateHeatHover(c.id, e)}
+                  onPointerMove={(e) => updateHeatHover(c.id, e)}
+                  onPointerLeave={clearHeatHover}
+                />
+              )
+            })}
           </g>
         )}
         {placementHeatCells && (
@@ -662,34 +690,20 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
               const pctLabel = heatTotal > 0 ? `${Math.round((c.n / heatTotal) * 100)}%` : '0%'
               const strokes = heatStrokes.get(c.id) ?? { fh: 0, bh: 0 }
               const strokeTotal = strokes.fh + strokes.bh
-              const zoneTypes = heatShotTypes.get(c.id)
-              const typeLabels = zoneTypes
-                ? [
-                    ...SHOT_TYPES.flatMap((type) => zoneTypes.counts[type] ? [`${SHOT_TYPE_SHORT[type]} ${zoneTypes.counts[type]}`] : []),
-                    ...(zoneTypes.untyped ? [`? ${zoneTypes.untyped}`] : []),
-                  ]
-                : []
-              const typeRows = [typeLabels.slice(0, 4), typeLabels.slice(4, 8), typeLabels.slice(8)].filter((row) => row.length > 0)
               return (
                 <g key={c.id} transform={uprightAt(cx, cy, half === 'opposite', rotation)}>
-                  <text x={cx} y={cy - 1.1} fontSize={3.1} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.7)'}>
+                  <text x={cx - 0.45} y={cy + 0.75} textAnchor="end" fontSize={2.65} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.7)'}>
                     {pctLabel}
                   </text>
-                  <text x={cx} y={cy + 0.95} fontSize={1.25} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.7)'} opacity={0.8}>
-                    {c.n} {c.n === 1 ? 'mark' : 'marks'}
-                  </text>
+                  <circle cx={cx + 1.45} cy={cy} r={1.65} fill="rgba(255,255,255,0.2)" stroke={c.n ? '#14181d' : 'rgba(255,255,255,0.72)'} strokeWidth={0.22} />
+                  <text x={cx + 1.45} y={cy + 0.82} fontSize={2.65} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.8)'}>{c.n}</text>
                   {strokeTotal > 0 && (
-                    <text x={cx} y={cy + 2.45} fontSize={0.92}>
-                      <tspan fill="var(--fh-text)">FH {Math.round((strokes.fh / strokeTotal) * 100)}%</tspan>
+                    <text x={cx} y={cy + 2.7} fontSize={0.82}>
+                      <tspan fill="var(--fh-text)">FH {Math.round((strokes.fh / strokeTotal) * 100)}% ({strokes.fh})</tspan>
                       <tspan fill="#5b6672"> · </tspan>
-                      <tspan fill="var(--bh-text)">BH {Math.round((strokes.bh / strokeTotal) * 100)}%</tspan>
+                      <tspan fill="var(--bh-text)">BH {Math.round((strokes.bh / strokeTotal) * 100)}% ({strokes.bh})</tspan>
                     </text>
                   )}
-                  {typeRows.map((row, index) => (
-                    <text key={index} x={cx} y={cy + 3.75 + index * 0.92} fontSize={0.66} fill="#14181d" opacity={0.82}>
-                      {row.join(' · ')}
-                    </text>
-                  ))}
                 </g>
               )
             })}
@@ -706,15 +720,19 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
               const textColor = c.id === 'net' ? '#ffffff' : inCourt ? '#155d32' : '#8b220f'
               const strokes = placementHeatStrokes.get(c.id) ?? { fh: 0, bh: 0 }
               const strokeTotal = strokes.fh + strokes.bh
+              const mainSize = c.id === 'net' ? 1.15 : 1.65
+              const circleRadius = c.id === 'net' ? 0.78 : 1.05
+              const circleX = cx + (c.id === 'net' ? 0.82 : 1.15)
               return (
                 <g key={c.id} transform={uprightAt(cx, cy, half === 'opposite', rotation)}>
-                  <text x={cx} y={cy - 0.05} fontSize={c.id === 'net' ? 1.35 : 1.75} fill={textColor}>{pctLabel}</text>
-                  <text x={cx} y={cy + (c.id === 'net' ? 0.82 : 1.08)} fontSize={c.id === 'net' ? 0.56 : 0.64} fill={textColor} opacity={0.8}>{c.n} {c.n === 1 ? 'mark' : 'marks'}</text>
+                  <text x={cx - 0.25} y={cy + mainSize * 0.3} textAnchor="end" fontSize={mainSize} fill={textColor}>{pctLabel}</text>
+                  <circle cx={circleX} cy={cy} r={circleRadius} fill="rgba(255,255,255,0.28)" stroke={textColor} strokeWidth={0.16} />
+                  <text x={circleX} y={cy + mainSize * 0.3} fontSize={mainSize} fill={textColor}>{c.n}</text>
                   {strokeTotal > 0 && (
-                    <text x={cx} y={cy + (c.id === 'net' ? 1.7 : 2.05)} fontSize={c.id === 'net' ? 0.55 : 0.65}>
-                      <tspan fill="var(--fh-text)">FH {Math.round((strokes.fh / strokeTotal) * 100)}%</tspan>
+                    <text x={cx} y={cy + (c.id === 'net' ? 1.45 : 1.85)} fontSize={c.id === 'net' ? 0.48 : 0.57}>
+                      <tspan fill="var(--fh-text)">FH {Math.round((strokes.fh / strokeTotal) * 100)}% ({strokes.fh})</tspan>
                       <tspan fill={c.id === 'net' ? '#ffffff' : '#5b6672'}> · </tspan>
-                      <tspan fill="var(--bh-text)">BH {Math.round((strokes.bh / strokeTotal) * 100)}%</tspan>
+                      <tspan fill="var(--bh-text)">BH {Math.round((strokes.bh / strokeTotal) * 100)}% ({strokes.bh})</tspan>
                     </text>
                   )}
                 </g>
@@ -786,6 +804,30 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
         <small>{hoveredPlacement.n} mark{hoveredPlacement.n === 1 ? '' : 's'} in this area</small>
       </div>
     )}
+    {hoveredHeat && heatHoverClient && (() => {
+      const zoneTypes = heatShotTypes.get(hoveredHeat.id)
+      const typed = zoneTypes ? SHOT_TYPES.filter((type) => zoneTypes.counts[type] > 0) : []
+      return (
+        <div className="court-hover-tooltip ball-type-tooltip" style={{ left: heatHoverClient.x + 14, top: heatHoverClient.y + 14 }}>
+          <div className="ball-type-title">Ball types · {hoveredHeat.n}</div>
+          {typed.map((type) => (
+            <div className="ball-type-row" key={type}>
+              <span>{SHOT_TYPE_LABEL[type]}</span>
+              <strong>{zoneTypes!.counts[type]}</strong>
+              <small>{hoveredHeat.n ? Math.round((zoneTypes!.counts[type] / hoveredHeat.n) * 100) : 0}%</small>
+            </div>
+          ))}
+          {!!zoneTypes?.untyped && (
+            <div className="ball-type-row muted">
+              <span>Not selected</span>
+              <strong>{zoneTypes.untyped}</strong>
+              <small>{hoveredHeat.n ? Math.round((zoneTypes.untyped / hoveredHeat.n) * 100) : 0}%</small>
+            </div>
+          )}
+          {typed.length === 0 && !zoneTypes?.untyped && <small>No errors in this area</small>}
+        </div>
+      )
+    })()}
     </>
   )
 }

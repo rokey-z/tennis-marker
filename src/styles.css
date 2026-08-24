@@ -1001,6 +1001,34 @@ textarea.input {
 .court-hover-tooltip small {
   color: var(--muted);
 }
+.ball-type-tooltip {
+  min-width: 160px;
+}
+.ball-type-title {
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.ball-type-row {
+  display: grid;
+  grid-template-columns: 1fr auto 32px;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+}
+.ball-type-row + .ball-type-row {
+  margin-top: 3px;
+}
+.ball-type-row strong {
+  color: var(--text);
+}
+.ball-type-row small {
+  margin: 0;
+  text-align: right;
+}
 .court-hover-tooltip small {
   display: block;
   margin-top: 2px;
