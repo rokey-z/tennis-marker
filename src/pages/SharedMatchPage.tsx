@@ -51,12 +51,12 @@ export function SharedMatchPage() {
             heatTotal={placement ? summary.placements : summary.total}
             showZones
           />
+          {!placement && (
+            <div className="stats-map-winners" aria-label={`${summary.winners} opponent winners`}>
+              Opponent winners <strong>{summary.winners}</strong>
+            </div>
+          )}
         </div>
-        {!placement && (
-          <div className="stats-map-winners" aria-label={`${summary.winners} opponent winners`}>
-            <span aria-hidden="true">★</span> Winners <strong>{summary.winners}</strong>
-          </div>
-        )}
         <MarkLegend mode={placement ? 'placement' : 'errors'} />
         <StatsPanel summary={summary} count={visiblePoints.length} mode={placement ? 'placement' : 'errors'} showExports={false} />
         {session.notes && <div className="card shared-notes"><div className="section-title">Notes</div>{session.notes}</div>}

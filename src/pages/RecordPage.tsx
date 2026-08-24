@@ -409,12 +409,12 @@ export function RecordPage() {
             onCancel={cancel}
           />
           )}
+          {statsMode && !placementMode && (
+            <div className="stats-map-winners" aria-label={`${statsSummary.winners} opponent winners`}>
+              Opponent winners <strong>{statsSummary.winners}</strong>
+            </div>
+          )}
         </div>
-        {statsMode && !placementMode && (
-          <div className="stats-map-winners" aria-label={`${statsSummary.winners} opponent winners`}>
-            <span aria-hidden="true">★</span> Winners <strong>{statsSummary.winners}</strong>
-          </div>
-        )}
       </div>
 
       {isDesktop ? (
