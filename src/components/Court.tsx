@@ -691,25 +691,17 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
               const pctLabel = heatTotal > 0 ? `${Math.round((c.n / heatTotal) * 100)}%` : '0%'
               const strokes = heatStrokes.get(c.id) ?? { fh: 0, bh: 0 }
               const strokeTotal = strokes.fh + strokes.bh
-              const pillY = cy + 1.55
               return (
                 <g key={c.id} transform={uprightAt(cx, cy, half === 'opposite', rotation)}>
-                  <text x={cx - 0.42} y={cy + 0.74} textAnchor="end" fontSize={2.55} fill="rgba(255,255,255,0.72)">
-                    {pctLabel}
-                  </text>
-                  <circle cx={cx + 1.4} cy={cy} r={1.58} fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.72)" strokeWidth={0.22} />
-                  <text x={cx + 1.4} y={cy + 0.79} fontSize={2.55} fill="rgba(255,255,255,0.78)">{c.n}</text>
+                  {c.n > 0 && (
+                    <text x={cx} y={cy + 0.74} fontSize={2.55} fill="rgba(255,255,255,0.46)">
+                      {pctLabel} · {c.n}
+                    </text>
+                  )}
                   {strokeTotal > 0 && (
-                    <g>
-                      <rect x={cx - 6.25} y={pillY} width={6} height={1.65} rx={0.82} fill="var(--fh)" />
-                      <text x={cx - 3.25} y={pillY + 1.13} fontSize={0.78} fill="var(--fh-ink)">
-                        FH {Math.round((strokes.fh / strokeTotal) * 100)}% ({strokes.fh})
-                      </text>
-                      <rect x={cx + 0.25} y={pillY} width={6} height={1.65} rx={0.82} fill="var(--bh)" />
-                      <text x={cx + 3.25} y={pillY + 1.13} fontSize={0.78} fill="var(--bh-ink)">
-                        BH {Math.round((strokes.bh / strokeTotal) * 100)}% ({strokes.bh})
-                      </text>
-                    </g>
+                    <text x={cx} y={cy + 2.65} fontSize={0.94} fill="rgba(255,255,255,0.9)">
+                      FH {Math.round((strokes.fh / strokeTotal) * 100)}% ({strokes.fh}) · BH {Math.round((strokes.bh / strokeTotal) * 100)}% ({strokes.bh})
+                    </text>
                   )}
                 </g>
               )
