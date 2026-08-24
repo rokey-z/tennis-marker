@@ -1144,6 +1144,13 @@ textarea.input {
 .stats-map-winners strong {
   color: inherit;
 }
+.stats-map-winner-mark {
+  color: rgba(20,24,29,0.84);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 0.8;
+  text-shadow: none;
+}
 .record-bottom {
   padding: 4px 8px calc(6px + env(safe-area-inset-bottom));
   display: flex;

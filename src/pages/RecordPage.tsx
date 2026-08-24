@@ -396,6 +396,7 @@ export function RecordPage() {
           )}
           {statsMode && !placementMode && (
             <div className="stats-map-winners" aria-label={`${statsSummary.winners} opponent winners`}>
+              <span className="stats-map-winner-mark" aria-hidden="true">×</span>
               Opponent winners <strong>{statsSummary.winners}</strong>
             </div>
           )}

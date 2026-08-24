@@ -109,6 +109,7 @@ export function SharedMatchPage() {
           />
           {!placement && (
             <div className="stats-map-winners" aria-label={`${summary.winners} opponent winners`}>
+              <span className="stats-map-winner-mark" aria-hidden="true">×</span>
               Opponent winners <strong>{summary.winners}</strong>
             </div>
           )}
