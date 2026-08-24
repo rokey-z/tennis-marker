@@ -248,13 +248,13 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
               <span
                 key={part.key}
                 className={`error-types-segment ${part.key}`}
-                style={{ width: `${pct(part.count, summary.lost)}%`, background: part.color }}
+                style={{ flexGrow: part.count, background: part.color }}
               />
             ))}
           </div>
           <div className="error-types-values">
-            {errorTypeParts.map((part) => (
-              <div key={part.key} className="error-types-value" style={{ '--part-color': part.color } as CSSProperties}>
+            {errorTypeParts.map((part) => part.count > 0 && (
+              <div key={part.key} className="error-types-value" style={{ '--part-color': part.color, flexGrow: part.count } as CSSProperties}>
                 <span>{part.label}</span>
                 <strong>{part.count} · {pct(part.count, summary.lost)}%</strong>
               </div>

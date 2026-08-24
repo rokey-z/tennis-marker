@@ -1848,25 +1848,24 @@ textarea.input {
 }
 .error-types-segment {
   display: block;
+  flex-basis: 0;
   height: 100%;
   min-width: 0;
 }
 .error-types-values {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+  display: flex;
   margin-top: 8px;
 }
 .error-types-value {
+  flex-basis: 0;
   min-width: 0;
+  text-align: center;
   color: var(--part-color);
   font-variant-numeric: tabular-nums;
 }
 .error-types-value span,
 .error-types-value strong {
   display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 .error-types-value span {
