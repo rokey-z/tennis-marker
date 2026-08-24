@@ -1295,20 +1295,28 @@ textarea.input {
   flex: 0 0 auto;
   width: 100%;
   display: flex;
-  gap: 4px;
-  align-items: center;
-  overflow-x: auto;
-  scrollbar-width: none;
+  flex-direction: column;
+  gap: 3px;
+  align-items: stretch;
+  min-width: 0;
   padding: 3px 5px 4px;
 }
-.stats-filters::-webkit-scrollbar {
+.stats-filters-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.stats-filters-row::-webkit-scrollbar {
   display: none;
 }
 .stats-filters .chip-group {
   flex-wrap: nowrap;
   gap: 4px;
 }
-.stats-filters .chip-group + .chip-group {
+.stats-filters-row .chip-group + .chip-group {
   border-left: 1px solid var(--line);
   padding-left: 4px;
 }
