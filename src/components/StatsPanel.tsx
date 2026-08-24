@@ -226,6 +226,10 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
     ballTypeItems.push({ key: 'untyped', label: 'Not selected', count: summary.untypedErrors, ...summary.untypedErrorsByStroke, muted: true })
   }
   ballTypeItems.sort((a, b) => b.count - a.count)
+  const winnerBallTypes = SHOT_TYPES
+    .map((type) => ({ key: type, label: SHOT_TYPE_LABEL[type], count: summary.playerWinnersByShotType[type] }))
+    .filter((item) => item.count > 0)
+    .sort((a, b) => b.count - a.count)
   return (
     <div className="stack stats-panel">
       <div className="card">
@@ -282,6 +286,20 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
           })}
           {ballTypeItems.length === 0 && <p className="muted">No ball types tagged.</p>}
         </div>
+        {summary.playerWinners > 0 && (
+          <>
+            <div className="section-title">Winner ball types · {summary.playerWinners}</div>
+            <div className="winner-type-pills">
+              {winnerBallTypes.map((item) => (
+                <div className="winner-type-pill" key={item.key}>
+                  <strong>{pct(item.count, summary.playerWinners)}%</strong>
+                  <span>{item.label}</span>
+                  <small>{item.count}</small>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
         <div className="section-title">Stroke × error</div>
         <table className="matrix">
           <thead>

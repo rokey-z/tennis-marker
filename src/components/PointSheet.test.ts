@@ -15,7 +15,7 @@ const point = (outcome: Point['outcome']): Point => ({
   error_type: 'net',
   outcome,
   placement_result: outcome === 'placement' ? 'in' : null,
-  shot_type: outcome === 'error' ? 'volley' : null,
+  shot_type: outcome === 'error' || outcome === 'player_winner' ? 'volley' : null,
   forced: false,
   created_at: at,
   updated_at: at,
@@ -38,5 +38,16 @@ describe('PointSheet ball type editor', () => {
     }))
 
     expect(html).not.toContain('point-shot-types')
+  })
+
+  it('shows the stroke and every ball type for a player winner', () => {
+    const html = renderToStaticMarkup(createElement(PointSheet, {
+      point: point('player_winner'), index: 1, onChange: vi.fn(), onDelete: vi.fn(), onClose: vi.fn(),
+    }))
+
+    expect(html).toContain('Winner stroke')
+    expect(html).toContain('Forehand')
+    expect(html).toContain('Backhand')
+    for (const type of SHOT_TYPES) expect(html).toContain(SHOT_TYPE_LABEL[type])
   })
 })

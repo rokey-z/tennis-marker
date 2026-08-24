@@ -147,6 +147,15 @@ export function Tally({ s, mode = 'errors' }: { s: Summary; mode?: 'errors' | 'p
           </span>
         </>
       )}
+      {s.playerWinners > 0 && (
+        <>
+          <span className="sep" />
+          <span className="t-item" title={`Winners hit: ${s.playerWinners}`}>
+            <span className="ml-player-win" aria-hidden="true">★</span>
+            {s.playerWinners}
+          </span>
+        </>
+      )}
     </div>
   )
 }

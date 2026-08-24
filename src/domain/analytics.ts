@@ -45,6 +45,7 @@ export interface SessionStat {
   lost: number
   /** kept apart from the error counts above */
   winners: number
+  playerWinners: number
   placements: number
   firstAt: string | null
   lastAt: string | null
@@ -114,6 +115,7 @@ export function sessionStats(sessions: Session[], points: Iterable<Point>): Sess
       unforced: 0,
       lost: 0,
       winners: 0,
+      playerWinners: 0,
       placements: 0,
       firstAt: pts[0]?.created_at ?? null,
       lastAt: pts.at(-1)?.created_at ?? null,
@@ -126,6 +128,10 @@ export function sessionStats(sessions: Session[], points: Iterable<Point>): Sess
       if (outcome === 'winner') {
         row.winners++
         row.forced++
+        continue
+      }
+      if (outcome === 'player_winner') {
+        row.playerWinners++
         continue
       }
       if (outcome === 'placement') {
@@ -204,9 +210,9 @@ export function pickBucketMin(durationMin: number): number {
  * `bucketMin` defaults to pickBucketMin(window duration). Always ≥ 1 bucket when there are points.
  */
 export function elapsedBuckets(points: Point[], bucketMin?: number): Bucket[] {
-  const seq = sequence(activeWindow(points))
-  if (!seq.length) return []
-  const last = seq[seq.length - 1].elapsedMin
+  const active = sequence(activeWindow(points))
+  if (!active.length) return []
+  const last = active[active.length - 1].elapsedMin
   const bm = bucketMin ?? pickBucketMin(last)
   const n = Math.min(1000, Math.max(1, Math.floor(last / bm) + 1))
   const buckets: Bucket[] = Array.from({ length: n }, (_, i) => ({
@@ -222,7 +228,10 @@ export function elapsedBuckets(points: Point[], bucketMin?: number): Bucket[] {
     forced: 0,
     unforced: 0,
   }))
-  for (const { point: p, elapsedMin } of seq) {
+  // Buckets describe errors, not placements or either player's winners. Keep the activity-window
+  // clock based on all marks, then exclude non-errors from the actual counts.
+  for (const { point: p, elapsedMin } of active) {
+    if ((p.outcome ?? 'error') !== 'error') continue
     const b = buckets[Math.min(n - 1, Math.max(0, Math.floor(elapsedMin / bm)))]
     b.total++
     if (isStroke(p.stroke)) b[p.stroke]++
@@ -241,10 +250,12 @@ export interface Thirds {
 
 /** Errors in the first / middle / last third of the session by elapsed time (by order if the session has no duration). */
 export function thirds(points: Point[]): Thirds {
-  const seq = sequence(activeWindow(points))
+  const active = sequence(activeWindow(points))
   const out: Thirds = { first: 0, middle: 0, last: 0 }
+  if (!active.length) return out
+  const seq = active.filter(({ point }) => (point.outcome ?? 'error') === 'error')
   if (!seq.length) return out
-  const dur = seq[seq.length - 1].elapsedMin
+  const dur = active[active.length - 1].elapsedMin
   seq.forEach((item, i) => {
     const frac = dur > 0 ? item.elapsedMin / dur : seq.length > 1 ? i / (seq.length - 1) : 0
     if (frac < 1 / 3) out.first++

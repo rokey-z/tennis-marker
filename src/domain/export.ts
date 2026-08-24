@@ -46,7 +46,7 @@ export function pointsToCsv(points: Iterable<Point>, sessionsById: Record<string
         csvEscape(p.stroke),
         csvEscape(p.placement_result ?? ''),
         csvEscape(p.error_type),
-        csvEscape((p.outcome ?? 'error') === 'error' ? p.shot_type ?? '' : ''),
+        csvEscape((p.outcome ?? 'error') === 'error' || p.outcome === 'player_winner' ? p.shot_type ?? '' : ''),
         csvEscape(p.forced ? 'forced' : 'unforced'),
       ].join(','),
     )

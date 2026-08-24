@@ -22,6 +22,7 @@ export const ERROR_LETTER: Record<ErrorType, string> = { long: 'L', net: '×', w
 /** Plain-language name of a mark, for tooltips and screen readers. */
 export function markLabel(stroke: PlacementStroke | '', error: ErrorType | '', forced: boolean, outcome: Outcome = 'error', out = false, placementResult?: PlacementResult | null): string {
   if (outcome === 'winner') return 'Opponent winner'
+  if (outcome === 'player_winner') return `${isPlacementStroke(stroke) ? STROKE_LABEL[stroke] : 'Player'} winner`
   if (!isPlacementStroke(stroke)) return 'Point'
   if (outcome === 'placement') {
     const result = placementResult === 'unknown' ? 'landing recorded' : placementResult ? placementResult : out ? 'landed out' : 'landed in'
@@ -60,6 +61,16 @@ export function MarkChip({ stroke, error, forced, outcome = 'error', out = false
       </span>
     )
   }
+  if (outcome === 'player_winner') {
+    const safeStroke = stroke === 'bh' ? 'bh' : 'fh'
+    return (
+      <span className={`mark ${safeStroke} player-winner`} title={markLabel(safeStroke, '', false, outcome)}>
+        <MarkDot stroke={safeStroke} error="" forced={false} outcome={outcome} size={18} />
+        <StrokeTag stroke={safeStroke} />
+        <span className="mark-sign">Winner</span>
+      </span>
+    )
+  }
   const safeStroke = isPlacementStroke(stroke) ? stroke : 'fh'
   const safeError = isErrorType(error) ? error : 'long'
   return (
@@ -75,10 +86,12 @@ export function MarkChip({ stroke, error, forced, outcome = 'error', out = false
 
 /** Round mark used on the court and in the point-by-point strip (DOM version). */
 export function MarkDot({ stroke, error, forced, outcome = 'error', out = false, size = 26, title }: { stroke: PlacementStroke | ''; error: ErrorType | ''; forced: boolean; outcome?: Outcome; out?: boolean; size?: number; title?: string }) {
-  const winner = outcome === 'winner'
+  const opponentWinner = outcome === 'winner'
+  const playerWinner = outcome === 'player_winner'
+  const winner = opponentWinner || playerWinner
   return (
     <span
-      className={`dot ${isPlacementStroke(stroke) ? stroke : 'none'}${forced && !winner ? ' forced' : ''}${winner ? ' winner' : ''}${out ? ' out' : ''}`}
+      className={`dot ${isPlacementStroke(stroke) ? stroke : 'none'}${forced && !winner ? ' forced' : ''}${opponentWinner ? ' winner' : ''}${playerWinner ? ' player-winner' : ''}${out ? ' out' : ''}`}
       style={{ width: size, height: size, fontSize: Math.round(size * (winner ? 0.46 : 0.52)) }}
       title={title ?? markLabel(stroke, error, forced, outcome, out)}
     >
@@ -136,6 +149,10 @@ export function MarkLegend({ className = '', mode = 'errors' }: { className?: st
               </span>
               Opponent winner
             </span>
+            <span className="ml-item">
+              <span className="ml-player-win" aria-hidden="true">★</span>
+              Player winner
+            </span>
           </span>
         </>
       )}
@@ -161,18 +178,22 @@ export function ShotGrid({
   if (strokeOnly) {
     return (
       <div className="shot-grid">
-        {GRID_COLUMNS.map((stroke) => (
-          <button
-            key={stroke}
-            type="button"
-            className={`sg-btn ${stroke}`}
-            aria-label={STROKE_LABEL[stroke]}
-            title={STROKE_LABEL[stroke]}
-            onClick={() => onPick(stroke, 'long')}
-          >
-            {STROKE_LABEL[stroke]}
-          </button>
-        ))}
+        {GRID_COLUMNS.map((stroke) => {
+          const sel = current?.stroke === stroke
+          return (
+            <button
+              key={stroke}
+              type="button"
+              className={`sg-btn ${stroke}${sel ? ' sel' : ''}`}
+              aria-pressed={current ? sel : undefined}
+              aria-label={STROKE_LABEL[stroke]}
+              title={STROKE_LABEL[stroke]}
+              onClick={() => onPick(stroke, 'long')}
+            >
+              {STROKE_LABEL[stroke]}
+            </button>
+          )
+        })}
       </div>
     )
   }

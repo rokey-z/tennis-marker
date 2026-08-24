@@ -31,6 +31,17 @@ describe('sanitizePoint', () => {
     expect(sanitizePoint({ ...good, outcome: 'nonsense' })?.outcome).toBe('error')
   })
 
+  it('keeps a player winner stroke and ball type but removes error-only fields', () => {
+    expect(sanitizePoint({ ...good, outcome: 'player_winner', stroke: 'bh', error_type: 'wide', shot_type: 'overhead', forced: true })).toMatchObject({
+      outcome: 'player_winner',
+      stroke: 'bh',
+      error_type: '',
+      shot_type: 'overhead',
+      forced: false,
+    })
+    expect(sanitizePoint({ ...good, outcome: 'player_winner', stroke: '', error_type: '', shot_type: 'lob' })).toBeNull()
+  })
+
   it('clamps coordinates into the court view', () => {
     expect(sanitizePoint({ ...good, x: 999, y: -5 })).toMatchObject({ x: 24, y: 0 })
   })

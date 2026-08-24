@@ -58,7 +58,7 @@ export function RecordPage() {
     // Versions before multi-turn rotation stored "1" for a single 90° turn.
     return saved === 1 ? 90 : [0, 90, 180, 270].includes(saved) ? saved as CourtRotation : 0
   })
-  const [pending, setPending] = useState<{ x: number; y: number; at: { clientX: number; clientY: number }; surface: 'court' | 'net'; selection?: { stroke: Stroke; error: ErrorType } } | null>(null)
+  const [pending, setPending] = useState<{ x: number; y: number; at: { clientX: number; clientY: number }; surface: 'court' | 'net'; intent?: 'error' | 'player_winner'; selection?: { stroke: Stroke; error: ErrorType } } | null>(null)
   const courtRef = useRef<HTMLDivElement>(null)
   const [forced, setForced] = useState(false)
   const [toast, setToast] = useState<ToastState | null>(null)
@@ -104,7 +104,7 @@ export function RecordPage() {
   const onTap = useCallback((x: number, y: number, at: { clientX: number; clientY: number }, surface: 'court' | 'net' = 'court') => {
     if (performance.now() < ignoreUntil.current) return
     setForced(false)
-    setPending({ x, y, at, surface })
+    setPending({ x, y, at, surface, intent: 'error' })
   }, [])
 
   const cancel = useCallback(() => setPending(null), [])
@@ -112,7 +112,13 @@ export function RecordPage() {
   const onErrorDrag = useCallback((x: number, y: number, stroke: Stroke, error: ErrorType, at: { clientX: number; clientY: number }) => {
     if (performance.now() < ignoreUntil.current) return
     setForced(false)
-    setPending({ x, y, at, surface: 'court', selection: { stroke, error } })
+    setPending({ x, y, at, surface: 'court', intent: 'error', selection: { stroke, error } })
+  }, [])
+
+  const onPlayerWinnerPress = useCallback((x: number, y: number, at: { clientX: number; clientY: number }, surface: 'court' | 'net' = 'court') => {
+    if (performance.now() < ignoreUntil.current || surface === 'net') return
+    setForced(false)
+    setPending({ x, y, at, surface, intent: 'player_winner' })
   }, [])
 
   const onErrorWinner = useCallback((x: number, y: number) => {
@@ -149,6 +155,8 @@ export function RecordPage() {
       text:
         outcome === 'placement'
           ? `${STROKE_SHORT[stroke as Stroke]} landed ${describeMark(p.x, p.y, 'placement').toLowerCase()}`
+          : outcome === 'player_winner'
+          ? `${player.subject} winner · ${STROKE_SHORT[stroke as Stroke]} ${shotType ? SHOT_TYPE_LABEL[shotType] : 'ball'} · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
           : outcome === 'winner'
           ? `Opponent winner · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
           : `${STROKE_SHORT[stroke as Stroke]} ${ERROR_LABEL[error as ErrorType].toLowerCase()} · ${shotType ? SHOT_TYPE_LABEL[shotType] : 'ball'} · ${forced ? 'forced' : 'unforced'} · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`,
@@ -164,6 +172,9 @@ export function RecordPage() {
   }
   /** The opponent hit a winner past her: one tap, nothing of hers to attribute. */
   const logWinner = () => logPoint('', '', 'winner')
+
+  /** Lily hit a winner from this position; retain both her stroke and the selected ball type. */
+  const logPlayerWinner = (stroke: Stroke, shotType: ShotType) => logPoint(stroke, '', 'player_winner', null, shotType)
 
   /** Placement mode: one motion — press where the ball landed, drag left for BH or right for FH. */
   const onStrokeDrag = useCallback(
@@ -360,6 +371,7 @@ export function RecordPage() {
             <Court
               rotation={rotation}
               onTap={finished ? undefined : onTap}
+              onLongPress={!finished && !placementMode ? onPlayerWinnerPress : undefined}
               onStrokeDrag={!finished && placementMode ? onStrokeDrag : undefined}
               onErrorSelect={!finished && !placementMode ? onErrorDrag : undefined}
               onErrorWinner={!finished && !placementMode ? onErrorWinner : undefined}
@@ -385,14 +397,16 @@ export function RecordPage() {
             initialErrorPick={pending.selection}
             onPick={pick}
             onWinner={logWinner}
+            winnerOnly={pending.intent === 'player_winner'}
+            onPlayerWinner={logPlayerWinner}
             player={player}
             onCancel={cancel}
           />
           )}
           {statsMode && !placementMode && (
-            <div className="stats-map-winners" aria-label={`${statsSummary.winners} opponent winners`}>
-              <span className="stats-map-winner-mark" aria-hidden="true">×</span>
-              Opponent winners <strong>{statsSummary.winners}</strong>
+            <div className="stats-map-winners">
+              {statsSummary.winners > 0 && <span aria-label={`${statsSummary.winners} opponent winners`}><span className="stats-map-winner-mark" aria-hidden="true">×</span> Opponent winners <strong>{statsSummary.winners}</strong></span>}
+              {statsSummary.playerWinners > 0 && <span aria-label={`${statsSummary.playerWinners} ${player.subject} winners`}><span className="stats-map-player-winner-mark" aria-hidden="true">★</span> {player.subject} winners <strong>{statsSummary.playerWinners}</strong></span>}
             </div>
           )}
         </div>
@@ -406,7 +420,7 @@ export function RecordPage() {
                 ? 'Session finished and locked. Unlock it to record or edit points.'
                 : placementMode
                 ? `Click where the ball landed, then pick the stroke ${player.name ? `${player.name} hit it with` : 'she hit it with'}. Swipe up to record a serve; mark the net for a Net error.`
-                : `Press where ${player.subject} lost the point, drag toward FH/BH × Wide/Long/Net, then choose the ball type. Drag beyond the wheel for a winner; tap for buttons.`}
+                : `Press where ${player.subject} lost the point, drag toward FH/BH × Wide/Long/Net, then choose the ball type. Drag beyond the wheel for an opponent winner. Long-press where ${player.subject} stood to record ${player.possessive} winner.`}
             </div>
           )}
           {actions}

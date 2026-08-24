@@ -76,7 +76,9 @@ export function decodeSharedMatch(encoded: string): SharedMatch | null {
       const createdAt = Array.isArray(p) ? p[v2 ? 8 : 7] : null
       const shotType = Array.isArray(p) && v2 ? p[7] : null
       if (!Array.isArray(p) || p.length !== (v2 ? 9 : 8) || typeof p[0] !== 'number' || typeof p[1] !== 'number' || !isPlacementStroke(p[2]) && p[2] !== '' || !isErrorType(p[3]) && p[3] !== '' || typeof p[4] !== 'boolean' || !isOutcome(p[5]) || p[6] !== null && !isPlacementResult(p[6]) || shotType !== null && !isShotType(shotType) || typeof createdAt !== 'string') return null
-      points.push({ id: `shared-${index}`, user_id: null, session_id: session.id, x: p[0], y: p[1], stroke: p[2], error_type: p[3], forced: p[4], outcome: p[5], placement_result: p[6], shot_type: shotType, created_at: createdAt, updated_at: createdAt, deleted_at: null })
+      const decoded = sanitizePoint({ id: `shared-${index}`, user_id: null, session_id: session.id, x: p[0], y: p[1], stroke: p[2], error_type: p[3], forced: p[4], outcome: p[5], placement_result: p[6], shot_type: shotType, created_at: createdAt, updated_at: createdAt, deleted_at: null })
+      if (!decoded) return null
+      points.push(decoded)
     }
     return { session, points }
   } catch {

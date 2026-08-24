@@ -16,6 +16,7 @@ export interface PointSheetProps {
 
 export function PointSheet({ point, index, onChange, onDelete, onClose }: PointSheetProps) {
   const winner = point.outcome === 'winner'
+  const playerWinner = point.outcome === 'player_winner'
   const placement = point.outcome === 'placement'
   const out = placement && point.stroke !== 'serve' && isOut(point.x, point.y)
   // a placement lives on the far half: the only thing to correct is which stroke played it
@@ -52,7 +53,7 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
               {describeMark(point.x, point.y, point.outcome)} · {formatTime(point.created_at)}
             </div>
           </div>
-          {!winner && !placement && (
+          {!winner && !playerWinner && !placement && (
             <button
               type="button"
               className={`forced-toggle${point.forced ? ' on' : ''}`}
@@ -65,8 +66,15 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
           )}
         </div>
 
-        <div className="section-title">{placement ? 'Change the stroke' : 'Change it to'}</div>
-        <ShotGrid current={{ stroke: point.stroke, error: point.error_type, outcome: point.outcome }} forced={point.forced} strokeOnly={placement} onPick={pick} />
+        <div className="section-title">{playerWinner ? 'Winner stroke' : placement ? 'Change the stroke' : 'Change it to'}</div>
+        {!winner && (
+          <ShotGrid
+            current={{ stroke: point.stroke, error: point.error_type, outcome: point.outcome }}
+            forced={point.forced}
+            strokeOnly={placement || playerWinner}
+            onPick={playerWinner ? (stroke) => onChange({ stroke }) : pick}
+          />
+        )}
         {!winner && !placement && (
           <div className="point-shot-types">
             <div className="section-title">Ball type</div>
@@ -90,7 +98,7 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
             ))}
           </div>
         )}
-        {!winner && !placement && (
+        {!winner && !playerWinner && !placement && (
           <>
             <div className="section-title">or</div>
             <button type="button" className="winner-toggle block" onClick={makeWinner} title="The opponent hit a winner here">

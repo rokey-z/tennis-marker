@@ -91,7 +91,7 @@ export function describeLanding(x: number, y: number): string {
 }
 
 /** One description helper for both kinds of mark, so callers never mix the two vocabularies. */
-export function describeMark(x: number, y: number, outcome: 'error' | 'winner' | 'placement'): string {
+export function describeMark(x: number, y: number, outcome: 'error' | 'winner' | 'player_winner' | 'placement'): string {
   return outcome === 'placement' ? describeLanding(x, y) : describeZone(zoneFor(x, y))
 }
 

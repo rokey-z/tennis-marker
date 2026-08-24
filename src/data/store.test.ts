@@ -86,6 +86,15 @@ describe('store', () => {
     expect(store.getState().points[e.id]).toMatchObject({ outcome: 'winner', stroke: '', error_type: '', shot_type: null })
   })
 
+  it('records a player winner with its stroke and ball type, separate from error fields', () => {
+    const store = createStore(memoryStorage(), { ...clock(), newId: ids() })
+    const s = store.createSession()
+    const w = store.addPoint({ session_id: s.id, x: -4, y: 32, stroke: 'bh', error_type: 'wide', forced: true, outcome: 'player_winner', shot_type: 'swing_volley' })
+    expect(w).toMatchObject({ outcome: 'player_winner', stroke: 'bh', error_type: '', forced: false, shot_type: 'swing_volley' })
+    store.updatePoint(w.id, { stroke: 'fh', shot_type: 'overhead', forced: true })
+    expect(store.getState().points[w.id]).toMatchObject({ outcome: 'player_winner', stroke: 'fh', error_type: '', forced: false, shot_type: 'overhead' })
+  })
+
   it('undo can be narrowed to the marks in view, so a hidden one is never dropped', () => {
     const store = createStore(memoryStorage(), { ...clock(), newId: ids() })
     const s = store.createSession()

@@ -20,7 +20,7 @@ const point = (id: string, error_type: Point['error_type'], outcome: Point['outc
   error_type: outcome === 'winner' ? '' : error_type,
   outcome,
   placement_result: null,
-  shot_type: outcome === 'error' ? shot_type : null,
+  shot_type: outcome === 'error' || outcome === 'player_winner' ? shot_type : null,
   forced: false,
   created_at: at,
   updated_at: at,
@@ -65,6 +65,21 @@ describe('StatsPanel error type summary', () => {
     expect(html.indexOf('<span>Lob</span>')).toBeLessThan(html.indexOf('<span>Volley</span>'))
     expect(html.indexOf('<span>Volley</span>')).toBeLessThan(html.indexOf('<span>Neutral</span>'))
     expect(html).not.toContain('<strong>0%</strong>')
+  })
+
+  it('shows player-winner ball types separately from error ball types', () => {
+    const summary = summarize([
+      point('error', 'long', 'error', 'ground'),
+      point('winner-1', '', 'player_winner', 'volley'),
+      point('winner-2', '', 'player_winner', 'volley'),
+      point('winner-3', '', 'player_winner', 'lob'),
+    ])
+    const html = renderToStaticMarkup(createElement(StatsPanel, { summary, count: 4, showExports: false }))
+
+    expect(html).toContain('Winner ball types · 3')
+    expect(html).toContain('<strong>67%</strong><span>Volley</span><small>2</small>')
+    expect(html).toContain('<strong>33%</strong><span>Lob</span><small>1</small>')
+    expect(summary.total).toBe(1)
   })
 })
 

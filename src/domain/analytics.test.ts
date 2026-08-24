@@ -105,13 +105,25 @@ describe('sessionStats outcomes', () => {
       pt({ session_id: 's1', error_type: 'long', stroke: 'fh' }),
       pt({ session_id: 's1', error_type: 'net', stroke: 'bh', forced: true }),
       pt({ session_id: 's1', error_type: '', outcome: 'winner', stroke: 'fh' }),
+      pt({ session_id: 's1', error_type: '', outcome: 'player_winner', stroke: 'bh', shot_type: 'volley' }),
       pt({ session_id: 's1', error_type: '', outcome: 'placement', stroke: 'bh' }),
       pt({ session_id: 's1', error_type: '', outcome: 'placement', stroke: 'fh' }),
     ]
     const row = sessionStats([sess()], points)[0]
-    expect(row).toMatchObject({ total: 2, fh: 1, bh: 1, long: 1, net: 1, forced: 2, unforced: 1, winners: 1, lost: 3, placements: 2 })
+    expect(row).toMatchObject({ total: 2, fh: 1, bh: 1, long: 1, net: 1, forced: 2, unforced: 1, winners: 1, playerWinners: 1, lost: 3, placements: 2 })
     // only errors have meaningful placement on this map; winners and placements are excluded
     expect(Object.values(row.byZone).reduce((a, b) => a + b, 0)).toBe(2)
+  })
+
+  it('excludes winners and placements from error buckets and thirds', () => {
+    const points = [
+      pt({ created_at: T(0), outcome: 'player_winner', error_type: '', shot_type: 'volley' }),
+      pt({ created_at: T(10), outcome: 'error', error_type: 'long' }),
+      pt({ created_at: T(20), outcome: 'winner', stroke: '', error_type: '' }),
+      pt({ created_at: T(30), outcome: 'placement', error_type: '' }),
+    ]
+    expect(elapsedBuckets(points, 10).map((bucket) => bucket.total)).toEqual([0, 1, 0, 0])
+    expect(thirds(points)).toEqual({ first: 0, middle: 1, last: 0 })
   })
 })
 

@@ -82,12 +82,12 @@ export function normalizePoint(r: Record<string, unknown>): Point {
     session_id: String(r.session_id),
     x: Number(r.x),
     y: Number(r.y),
-    // a winner is the opponent's shot: no stroke of hers, no error type, never forced
+    // an opponent winner has no stroke of hers; a player winner keeps her stroke and ball type
     stroke: outcome === 'winner' ? '' : r.stroke === 'serve' ? 'serve' : r.stroke === 'bh' ? 'bh' : 'fh',
     error_type: legacyNet ? 'net' : outcome === 'error' ? (r.error_type === 'net' ? 'net' : r.error_type === 'wide' ? 'wide' : 'long') : '',
     outcome,
     placement_result: outcome === 'placement' ? (isPlacementResult(r.placement_result) ? r.placement_result : 'unknown') : null,
-    shot_type: outcome === 'error' && isShotType(r.shot_type) ? r.shot_type : null,
+    shot_type: (outcome === 'error' || outcome === 'player_winner') && isShotType(r.shot_type) ? r.shot_type : null,
     forced: outcome === 'error' && Boolean(r.forced),
     created_at: toIso(r.created_at),
     updated_at: toIso(r.updated_at),

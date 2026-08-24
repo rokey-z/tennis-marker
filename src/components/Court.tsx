@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import {
   COURT,
   VIEW,
@@ -21,6 +21,8 @@ import { ERROR_LETTER, markLabel } from './marks'
 /** Extra headroom above the net line so the net band is visible (presentational only). */
 // A deliberately thick target keeps a net strike easy to mark courtside.
 const NET_BAND = 5
+const LONG_PRESS_MS = 550
+const LONG_PRESS_MOVE_PX = 10
 /**
  * Drawn margins: half of what the data model keeps (6 ft beside the lines, 12 ft behind the
  * baseline), so the court is large on a phone while a band of green stays visible around it.
@@ -143,6 +145,8 @@ export interface CourtProps {
   rotation?: CourtRotation
   /** Receives coordinates in feet, in the player's frame (already clamped to the court area), plus where on screen the tap landed. */
   onTap?: (x: number, y: number, at: { clientX: number; clientY: number }, surface?: 'court' | 'net') => void
+  /** Errors mode: a stationary long press records a winner hit from this player position. */
+  onLongPress?: (x: number, y: number, at: { clientX: number; clientY: number }, surface?: 'court' | 'net') => void
   /** Ignore input (e.g. while the shot sheet is open). */
   disabled?: boolean
   points?: Point[]
@@ -174,9 +178,11 @@ export interface CourtProps {
   className?: string
 }
 
-export function Court({ rotation = 0, onTap, disabled = false, points, highlightedPointId = null, emphasizeLast = false, compactMarks, half = 'own', sideLabel, onStrokeDrag, onErrorSelect, onErrorWinner, dragNetOnly = false, pending, showZones = false, heat, placementHeat, heatTotal = 0, className }: CourtProps) {
+export function Court({ rotation = 0, onTap, onLongPress, disabled = false, points, highlightedPointId = null, emphasizeLast = false, compactMarks, half = 'own', sideLabel, onStrokeDrag, onErrorSelect, onErrorWinner, dragNetOnly = false, pending, showZones = false, heat, placementHeat, heatTotal = 0, className }: CourtProps) {
   const gRef = useRef<SVGGElement>(null)
   const down = useRef<{ id: number; x: number; y: number; t: number } | null>(null)
+  const longPressTimer = useRef<number | null>(null)
+  const longPressFired = useRef(false)
   // the ref is authoritative (pointer events can arrive faster than React re-renders); state drives the drawing
   const dragRef = useRef<DragState | null>(null)
   const [drag, setDrag] = useState<DragState | null>(null)
@@ -186,7 +192,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
   const [hoveredHeatCell, setHoveredHeatCell] = useState<string | null>(null)
   const [heatHoverClient, setHeatHoverClient] = useState<{ x: number; y: number } | null>(null)
   const [pinnedHeatCell, setPinnedHeatCell] = useState<string | null>(null)
-  const interactive = !!onTap
+  const interactive = !!onTap || !!onLongPress
   const hasDrag = !!onStrokeDrag || !!onErrorSelect
   const errorWheelRadius = typeof window !== 'undefined' && window.innerWidth <= 600 ? ERROR_WHEEL_RADIUS * 1.15 : ERROR_WHEEL_RADIUS
 
@@ -202,13 +208,42 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
     return { ...clampToView(p.x, p.y), net }
   }, [half])
 
+  const clearLongPress = () => {
+    if (longPressTimer.current !== null) window.clearTimeout(longPressTimer.current)
+    longPressTimer.current = null
+  }
+
+  useEffect(() => () => {
+    if (longPressTimer.current !== null) window.clearTimeout(longPressTimer.current)
+  }, [])
+
   // Taps are driven by the browser's own `click`: every platform synthesises it for a real tap and
   // withholds it for scrolls/drags/long-press menus, which is exactly the tap-vs-gesture rule we want.
   // We only remember where the pointer went down to reject mouse drags (mouse fires click regardless).
   const onPointerDown = (e: ReactPointerEvent<SVGSVGElement>) => {
+    clearLongPress()
+    longPressFired.current = false
     down.current = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() }
-    if (!hasDrag || disabled) return
     const c = toCourt(e.clientX, e.clientY)
+    if (onLongPress && !disabled && c) {
+      const pointerId = e.pointerId
+      const at = { clientX: e.clientX, clientY: e.clientY }
+      longPressTimer.current = window.setTimeout(() => {
+        if (down.current?.id !== pointerId) return
+        longPressTimer.current = null
+        longPressFired.current = true
+        down.current = null
+        dragRef.current = null
+        setDrag(null)
+        try {
+          navigator.vibrate?.(18)
+        } catch {
+          /* ignore */
+        }
+        onLongPress(c.x, c.y, at, c.net ? 'net' : 'court')
+      }, LONG_PRESS_MS)
+    }
+    if (!hasDrag || disabled) return
     if (!c || (!onErrorSelect && dragNetOnly && !c.net)) return
     try {
       e.currentTarget.setPointerCapture(e.pointerId)
@@ -223,6 +258,8 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
   }
 
   const onPointerMove = (e: ReactPointerEvent<SVGSVGElement>) => {
+    const press = down.current
+    if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > LONG_PRESS_MOVE_PX) clearLongPress()
     const d = dragRef.current
     if (!d) return
     const c = toCourt(e.clientX, e.clientY)
@@ -232,6 +269,14 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
   }
 
   const endDrag = (e: ReactPointerEvent<SVGSVGElement>) => {
+    clearLongPress()
+    if (longPressFired.current) {
+      longPressFired.current = false
+      down.current = null
+      dragRef.current = null
+      setDrag(null)
+      return
+    }
     const d = dragRef.current
     if (!d) return
     const dx = e.clientX - d.at.x
@@ -256,11 +301,18 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
   }
 
   const onPointerCancel = () => {
+    clearLongPress()
+    longPressFired.current = false
     down.current = null
     dragRef.current = null
     setDrag(null)
   }
   const onClick = (e: ReactMouseEvent<SVGSVGElement>) => {
+    clearLongPress()
+    if (longPressFired.current) {
+      longPressFired.current = false
+      return
+    }
     // Placement mode handles short taps at pointer-up. In errors mode only the net owns a drag,
     // so a regular court press still falls through to the normal tap chooser.
     if (!interactive || disabled || (hasDrag && (onErrorSelect || !dragNetOnly || down.current === null))) return
@@ -485,7 +537,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
       viewBox={quarterTurned ? ROTATED_VIEWBOX : VIEWBOX}
       preserveAspectRatio="xMidYMid meet"
       role={interactive ? 'button' : 'img'}
-      aria-label={interactive ? 'Half tennis court — tap where the point was lost' : 'Half tennis court'}
+      aria-label={interactive ? 'Half tennis court — tap where the point was lost; long press where the player hit a winner' : 'Half tennis court'}
       onPointerDown={onPointerDown}
       onPointerMove={hasDrag ? onPointerMove : undefined}
       onPointerUp={hasDrag ? endDrag : undefined}
@@ -1036,8 +1088,8 @@ function Marker({ p: pt, rotation, compact, selected = false }: { p: Point; rota
           <circle cx={p.x} cy={p.y} r={2.8} fill="none" stroke="var(--mark-outline)" strokeWidth={0.22} />
         </g>
       )}
-      {/* colour carries her stroke; a dark outline marks a forced error. A winner is the opponent's
-          shot, so it is a green diamond with no stroke colour at all. */}
+      {/* Colour carries her stroke; a dark outline marks a forced error. Opponent winners use the
+          neutral green diamond, while winners hit by the player keep the selected FH/BH colour. */}
       {net ? (
         <g strokeLinecap="round">
           <g stroke="#ffffff" strokeWidth={1} opacity={0.85}>
@@ -1065,6 +1117,8 @@ function Marker({ p: pt, rotation, compact, selected = false }: { p: Point; rota
         ) : (
           <circle cx={p.x} cy={p.y} r={r * 0.82} fill={color} stroke="#ffffff" strokeWidth={0.26} />
         )
+      ) : p.outcome === 'player_winner' ? (
+        <circle cx={p.x} cy={p.y} r={r} fill={color} stroke="#ffffff" strokeWidth={0.3} />
       ) : p.outcome === 'winner' ? (
         <rect
           x={p.x - r * 0.82}
@@ -1090,7 +1144,7 @@ function Marker({ p: pt, rotation, compact, selected = false }: { p: Point; rota
         fill={p.outcome === 'winner' ? 'var(--win-ink)' : ink}
         fontFamily="var(--font)"
       >
-        {p.outcome === 'winner' ? '★' : ERROR_LETTER[error]}
+        {p.outcome === 'winner' || p.outcome === 'player_winner' ? '★' : ERROR_LETTER[error]}
       </text>
       )}
     </g>

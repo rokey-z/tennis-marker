@@ -25,10 +25,10 @@ export function filterPoints(points: Iterable<Point>, f: Filters = {}): Point[] 
     if (f.stroke && f.stroke !== 'all' && p.stroke !== f.stroke) continue
     if (f.error && f.error !== 'all' && p.error_type !== f.error) continue
     if (f.shotType && f.shotType !== 'all' && p.shot_type !== f.shotType) continue
-    // An opponent winner is treated as forced; placements are neither forced nor unforced.
+    // An opponent winner is treated as forced; player winners and placements are neither.
     if (f.forced && f.forced !== 'all') {
       const outcome = p.outcome ?? 'error'
-      if (outcome === 'placement') continue
+      if (outcome === 'placement' || outcome === 'player_winner') continue
       const forced = outcome === 'winner' || p.forced
       if (f.forced === 'forced' && !forced) continue
       if (f.forced === 'unforced' && forced) continue
@@ -65,6 +65,10 @@ export interface Summary {
   lost: number
   /** winners and placements are counted apart — neither is an error */
   winners: number
+  /** Winners hit by the player, kept apart from both errors and opponent winners. */
+  playerWinners: number
+  playerWinnersByStroke: Record<Stroke, number>
+  playerWinnersByShotType: Record<ShotType, number>
   placements: number
   /** Serves are recorded as landings but deliberately have no in/out result. */
   serveLandings: number
@@ -101,6 +105,9 @@ export function summarize(points: Iterable<Point>): Summary {
     byStrokeForced: { fh: 0, bh: 0 },
     lost: 0,
     winners: 0,
+    playerWinners: 0,
+    playerWinnersByStroke: { fh: 0, bh: 0 },
+    playerWinnersByShotType: Object.fromEntries(SHOT_TYPES.map((type) => [type, 0])) as Record<ShotType, number>,
     placements: 0,
     serveLandings: 0,
     placementsOut: 0,
@@ -126,6 +133,12 @@ export function summarize(points: Iterable<Point>): Summary {
       s.winners++
       s.lost++
       s.byForced.forced++
+      continue
+    }
+    if (outcome === 'player_winner') {
+      s.playerWinners++
+      if (isStroke(p.stroke)) s.playerWinnersByStroke[p.stroke]++
+      if (isShotType(p.shot_type)) s.playerWinnersByShotType[p.shot_type]++
       continue
     }
     if (outcome === 'placement') {

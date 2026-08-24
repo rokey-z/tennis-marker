@@ -108,9 +108,9 @@ export function SharedMatchPage() {
             showZones
           />
           {!placement && (
-            <div className="stats-map-winners" aria-label={`${summary.winners} opponent winners`}>
-              <span className="stats-map-winner-mark" aria-hidden="true">×</span>
-              Opponent winners <strong>{summary.winners}</strong>
+            <div className="stats-map-winners">
+              {summary.winners > 0 && <span aria-label={`${summary.winners} opponent winners`}><span className="stats-map-winner-mark" aria-hidden="true">×</span> Opponent winners <strong>{summary.winners}</strong></span>}
+              {summary.playerWinners > 0 && <span aria-label={`${summary.playerWinners} player winners`}><span className="stats-map-player-winner-mark" aria-hidden="true">★</span> Player winners <strong>{summary.playerWinners}</strong></span>}
             </div>
           )}
         </div>

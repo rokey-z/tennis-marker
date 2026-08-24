@@ -113,6 +113,22 @@ describe('summarize', () => {
     expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(2)
   })
 
+  it('counts player winners by stroke and ball type without treating them as errors or lost points', () => {
+    const s = summarize([
+      point({ stroke: 'fh', error_type: '', outcome: 'player_winner', shot_type: 'volley' }),
+      point({ stroke: 'bh', error_type: '', outcome: 'player_winner', shot_type: 'lob' }),
+      point({ stroke: 'fh', error_type: 'long', outcome: 'error', shot_type: 'ground' }),
+    ])
+    expect(s.playerWinners).toBe(2)
+    expect(s.playerWinnersByStroke).toEqual({ fh: 1, bh: 1 })
+    expect(s.playerWinnersByShotType.volley).toBe(1)
+    expect(s.playerWinnersByShotType.lob).toBe(1)
+    expect(s.total).toBe(1)
+    expect(s.lost).toBe(1)
+    expect(s.byForced).toEqual({ forced: 0, unforced: 1 })
+    expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(1)
+  })
+
   it('counts every selected ball type, including swing volleys, for errors only', () => {
     const s = summarize([
       point({ shot_type: 'ground' }),

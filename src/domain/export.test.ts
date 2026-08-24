@@ -62,6 +62,13 @@ describe('winners in the csv', () => {
     expect(line).toContain(',winner,')
     expect(line.endsWith(',fh,,,,unforced')).toBe(true)
   })
+
+  it('keeps the stroke and ball type for a player winner', () => {
+    const w: Point = { ...p1, id: 'w2', outcome: 'player_winner', error_type: '', stroke: 'bh', shot_type: 'lob', forced: false }
+    const line = pointsToCsv([w], { s1 }).trimEnd().split('\r\n')[1]
+    expect(line).toContain(',player_winner,')
+    expect(line).toContain(',bh,,,lob,unforced')
+  })
 })
 
 describe('json bundle', () => {

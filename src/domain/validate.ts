@@ -60,7 +60,7 @@ export function sanitizePoint(raw: unknown): Point | null {
   const rawOutcome = isOutcome(r.outcome) ? r.outcome : 'error'
   const legacyNet = rawOutcome === 'placement' && r.placement_result === 'net'
   const outcome = legacyNet ? 'error' : rawOutcome
-  // an opponent winner has neither stroke nor error type; anything else must name a stroke
+  // an opponent winner has neither stroke nor error type; Lily's winner keeps her stroke
   if (outcome !== 'winner' && !(outcome === 'placement' ? isPlacementStroke(r.stroke) : isStroke(r.stroke))) return null
   if (outcome === 'error' && !legacyNet && !isErrorType(r.error_type)) return null
   const c = clampToView(x, y)
@@ -74,7 +74,7 @@ export function sanitizePoint(raw: unknown): Point | null {
     error_type: legacyNet ? 'net' : outcome === 'error' ? (r.error_type as Point['error_type']) : '',
     outcome,
     placement_result: outcome === 'placement' ? (isPlacementResult(r.placement_result) ? r.placement_result : 'unknown') : null,
-    shot_type: outcome === 'error' && isShotType(r.shot_type) ? r.shot_type : null,
+    shot_type: (outcome === 'error' || outcome === 'player_winner') && isShotType(r.shot_type) ? r.shot_type : null,
     forced: outcome === 'error' && (r.forced === true || r.forced === 'true' || r.forced === 1),
     created_at: created,
     updated_at: isoOrNull(r.updated_at) ?? created,

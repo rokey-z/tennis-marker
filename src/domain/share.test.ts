@@ -13,8 +13,15 @@ const point: Point = {
 
 describe('shared match links', () => {
   it('round-trips match metadata and live marks without account identifiers', () => {
-    const shared = decodeSharedMatch(encodeSharedMatch(session, [point]))
-    expect(shared).toMatchObject({ session: { kind: 'match', opponent: 'Sam', opponent_utr: 9.25, user_id: null, self_rating: 84 }, points: [{ user_id: null, x: 6, outcome: 'error', shot_type: 'lob' }] })
+    const playerWinner: Point = { ...point, id: 'point-2', outcome: 'player_winner', error_type: '', stroke: 'bh', shot_type: 'volley' }
+    const shared = decodeSharedMatch(encodeSharedMatch(session, [point, playerWinner]))
+    expect(shared).toMatchObject({
+      session: { kind: 'match', opponent: 'Sam', opponent_utr: 9.25, user_id: null, self_rating: 84 },
+      points: [
+        { user_id: null, x: 6, outcome: 'error', shot_type: 'lob' },
+        { user_id: null, outcome: 'player_winner', stroke: 'bh', shot_type: 'volley' },
+      ],
+    })
   })
 
   it('rejects malformed links', () => {
