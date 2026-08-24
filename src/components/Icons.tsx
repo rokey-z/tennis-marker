@@ -109,6 +109,12 @@ export const DownloadIcon = () => (
     <path d="M12 3v12M7 10l5 5 5-5M4 21h16" />
   </svg>
 )
+export const LinkIcon = () => (
+  <svg {...base}>
+    <path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1" />
+    <path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1" />
+  </svg>
+)
 
 /** App mark: green rounded square, white half-court, amber ball. */
 export const LogoIcon = () => (

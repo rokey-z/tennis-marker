@@ -5,7 +5,7 @@ import { useIsDesktop, usePlayer } from '../components/hooks'
 import { shortDate } from '../lib/format'
 import { Court, type CourtRotation } from '../components/Court'
 import { StatsFilters, StatsPanel, type StatsFilterState } from '../components/StatsPanel'
-import { BackIcon, CloseIcon, FullscreenIcon, ListIcon, LockIcon, PencilIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
+import { BackIcon, CloseIcon, FullscreenIcon, LinkIcon, ListIcon, LockIcon, PencilIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
 import { ShotPopover } from '../components/ShotPopover'
 import { store, supabase, sync, useAppState } from '../data/app'
 import { defaultId, livePointsForSession } from '../data/store'
@@ -75,6 +75,7 @@ export function RecordPage() {
   const justCreated = (useLocation().state as { justCreated?: boolean } | null)?.justCreated === true
   const [showDetails, setShowDetails] = useState(justCreated)
   const [showFinish, setShowFinish] = useState(false)
+  const [statsShareStatus, setStatsShareStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const [openPoint, setOpenPoint] = useState<{ id: string; index: number } | null>(null)
   const ignoreUntil = useRef(0)
 
@@ -172,6 +173,8 @@ export function RecordPage() {
       onAction: () => store.deletePoint(p.id),
     })
   }, [id])
+
+  useEffect(() => setStatsShareStatus('idle'), [id, statsMode])
 
   const logPoint = (stroke: PlacementStroke | '', error: ErrorType | '', outcome: Outcome, placementResult: Point['placement_result'] = null, shotType: ShotType | null = null) => {
     if (!pending) return
@@ -310,9 +313,24 @@ export function RecordPage() {
 
   const actions = (
     <div className="record-actions">
-      <button type="button" className="btn" onClick={undo} disabled={statsMode || finished || points.length === 0}>
-        <UndoIcon /> Undo
-      </button>
+      {statsMode ? (
+        <button
+          type="button"
+          className="btn"
+          onClick={async () => {
+            setStatsShareStatus('copying')
+            setStatsShareStatus(await copyMatchLink(session) ? 'copied' : 'error')
+          }}
+          disabled={session.kind !== 'match' || statsShareStatus === 'copying'}
+          title={session.kind === 'match' ? 'Copy live public stats link' : 'Public links are available for matches'}
+        >
+          <LinkIcon /> {statsShareStatus === 'copying' ? 'Copying…' : statsShareStatus === 'copied' ? 'Copied' : statsShareStatus === 'error' ? 'Try again' : 'Copy link'}
+        </button>
+      ) : (
+        <button type="button" className="btn" onClick={undo} disabled={finished || points.length === 0}>
+          <UndoIcon /> Undo
+        </button>
+      )}
       <div className="view-mode-toggle" role="group" aria-label="Court view mode">
         <button type="button" className={!statsMode ? 'active' : ''} onClick={() => setView('court')} aria-pressed={!statsMode}>
           Marker mode
@@ -522,7 +540,6 @@ export function RecordPage() {
         <SessionDetails
           session={session}
           isNew={justCreated}
-          onCopyLink={copyMatchLink}
           onClose={() => setShowDetails(false)}
           onDeleted={() => {
             setShowDetails(false)
@@ -585,7 +602,7 @@ function FinishSessionModal({ session, onClose }: { session: Session; onClose: (
   )
 }
 
-function SessionDetails({ session, isNew = false, onCopyLink, onClose, onDeleted }: { session: Session; isNew?: boolean; onCopyLink: (match: Session) => Promise<boolean>; onClose: () => void; onDeleted: () => void }) {
+function SessionDetails({ session, isNew = false, onClose, onDeleted }: { session: Session; isNew?: boolean; onClose: () => void; onDeleted: () => void }) {
   const state = useAppState()
   const [mode, setMode] = useState(session.mode)
   const [opponent, setOpponent] = useState(session.opponent ?? '')
@@ -595,7 +612,6 @@ function SessionDetails({ session, isNew = false, onCopyLink, onClose, onDeleted
   const [kind, setKind] = useState(session.kind)
   const [notes, setNotes] = useState(session.notes)
   const [confirm, setConfirm] = useState(false)
-  const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'error'>('idle')
   const known = useMemo(() => opponentRowsWithRoster(Object.values(state.sessions), state.meta.roster), [state.sessions, state.meta.roster])
   const venues = useMemo(() => venueRows(Object.values(state.sessions)), [state.sessions])
   const utrValue = cleanUtr(opponentUtr)
@@ -662,24 +678,6 @@ function SessionDetails({ session, isNew = false, onCopyLink, onClose, onDeleted
         <span>Notes</span>
         <textarea className="input" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Conditions, what to work on…" />
       </label>
-      {kind === 'match' && (
-        <div className="field">
-          <span>Public stats link</span>
-          <button
-            type="button"
-            className="btn ghost block"
-            onClick={async () => {
-              const draft = { ...session, opponent, opponent_utr: utrValue, venue, date, kind, mode, notes }
-              setShareStatus(await onCopyLink(draft) ? 'copied' : 'error')
-            }}
-            disabled={utrInvalid}
-          >
-            {shareStatus === 'copied' ? 'Link copied' : 'Copy link'}
-          </button>
-          <p className="kbd-hint" style={{ marginTop: 6 }}>Anyone with the link can view only this match’s latest read-only statistics.</p>
-          {shareStatus === 'error' && <div className="notice err" style={{ marginTop: 8 }}>Could not create the live link. Check that sync is online and the latest Supabase migration is installed.</div>}
-        </div>
-      )}
       <div className="row">
         <button type="button" className="btn primary grow" onClick={save} disabled={utrInvalid}>
           {isNew ? 'Start recording' : 'Save'}
