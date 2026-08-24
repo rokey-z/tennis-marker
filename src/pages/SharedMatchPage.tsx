@@ -1,14 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { Court } from '../components/Court'
 import { MarkLegend } from '../components/marks'
-import { StatsPanel } from '../components/StatsPanel'
-import { summarize } from '../domain/stats'
+import { StatsFilters, StatsPanel, type StatsFilterState } from '../components/StatsPanel'
+import { filterPoints, summarize } from '../domain/stats'
 import { decodeLiveSharedMatch, decodeSharedMatch, type SharedMatch } from '../domain/share'
 import { sessionLabel } from '../domain/session'
 import { formatDate } from '../lib/format'
 import { supabase } from '../data/app'
 import { isUuid } from '../domain/validate'
+
+const DEFAULT_STATS_FILTERS: StatsFilterState = { stroke: 'all', error: 'all', shotType: 'all', forced: 'all' }
 
 /** Isolated, read-only public stats viewer with no navigation into the private app. */
 export function SharedMatchPage() {
@@ -16,25 +18,52 @@ export function SharedMatchPage() {
   const liveToken = isUuid(payload)
   const [liveShared, setLiveShared] = useState<SharedMatch | null>(null)
   const [loading, setLoading] = useState(liveToken)
+  const [filters, setFilters] = useState<StatsFilterState>(DEFAULT_STATS_FILTERS)
+  const requestId = useRef(0)
   const shared = liveToken ? liveShared : decodeSharedMatch(payload)
 
   useEffect(() => {
     if (!liveToken) return
     let active = true
-    setLoading(true)
-    setLiveShared(null)
-    void (async () => {
+    const refresh = async (initial = false) => {
+      const id = ++requestId.current
+      if (initial) setLoading(true)
       if (!supabase) {
-        if (active) setLoading(false)
+        if (active && id === requestId.current) setLoading(false)
         return
       }
       const { data, error } = await supabase.rpc('get_shared_match', { p_token: payload })
-      if (!active) return
-      setLiveShared(error ? null : decodeLiveSharedMatch(data))
+      if (!active || id !== requestId.current) return
+      const next = error ? null : decodeLiveSharedMatch(data)
+      // A transient refresh failure should not replace statistics already on screen.
+      if (next || initial) setLiveShared(next)
       setLoading(false)
-    })()
-    return () => { active = false }
+    }
+    setLiveShared(null)
+    setFilters(DEFAULT_STATS_FILTERS)
+    void refresh(true)
+    const interval = window.setInterval(() => void refresh(), 10_000)
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') void refresh()
+    }
+    window.addEventListener('focus', refreshWhenVisible)
+    document.addEventListener('visibilitychange', refreshWhenVisible)
+    return () => {
+      active = false
+      window.clearInterval(interval)
+      window.removeEventListener('focus', refreshWhenVisible)
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
+    }
   }, [liveToken, payload])
+
+  const placement = shared?.session.mode === 'placement'
+  const visiblePoints = useMemo(
+    () => (shared?.points ?? []).filter((point) => placement ? point.outcome === 'placement' || point.error_type === 'net' : point.outcome !== 'placement'),
+    [shared, placement],
+  )
+  const shownPoints = useMemo(() => placement ? visiblePoints : filterPoints(visiblePoints, filters), [visiblePoints, placement, filters])
+  const summary = useMemo(() => summarize(shownPoints), [shownPoints])
+  const mapPoints = placement ? shownPoints : shownPoints.filter((point) => point.outcome !== 'winner')
 
   if (loading) {
     return (
@@ -54,13 +83,7 @@ export function SharedMatchPage() {
     )
   }
 
-  const { session, points } = shared
-  const placement = session.mode === 'placement'
-  // Match the private record view exactly: a placement map contains only ball landings and net
-  // strikes. Historical errors and winners from another mode are neither counted nor drawn.
-  const visiblePoints = points.filter((point) => placement ? point.outcome === 'placement' || point.error_type === 'net' : point.outcome !== 'placement')
-  const summary = summarize(visiblePoints)
-  const mapPoints = placement ? visiblePoints : visiblePoints.filter((point) => point.outcome !== 'winner')
+  const { session } = shared
   return (
     <main className="public-share">
       <section className="shared-match page-in">
@@ -72,6 +95,7 @@ export function SharedMatchPage() {
           </div>
           {session.self_rating && <div className="shared-rating"><strong>{session.self_rating}</strong><span>/100</span></div>}
         </header>
+        {!placement && <StatsFilters value={filters} points={visiblePoints} onChange={setFilters} />}
         <div className="shared-court">
           <Court
             points={mapPoints}
@@ -90,7 +114,7 @@ export function SharedMatchPage() {
           )}
         </div>
         <MarkLegend mode={placement ? 'placement' : 'errors'} />
-        <StatsPanel summary={summary} count={visiblePoints.length} mode={placement ? 'placement' : 'errors'} showExports={false} />
+        <StatsPanel summary={summary} count={shownPoints.length} mode={placement ? 'placement' : 'errors'} showExports={false} />
         {session.notes && <div className="card shared-notes"><div className="section-title">Notes</div>{session.notes}</div>}
       </section>
     </main>
