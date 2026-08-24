@@ -315,18 +315,19 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
 
   /** Ball-type counts per error zone, including legacy errors that have no selected type. */
   const heatShotTypes = useMemo(() => {
-    type ZoneTypes = { counts: Record<ShotType, number>; untyped: number }
+    type StrokeCounts = { fh: number; bh: number }
+    type ZoneTypes = { counts: Record<ShotType, StrokeCounts>; untyped: StrokeCounts }
     const byZone = new Map<string, ZoneTypes>()
     if (!heat) return byZone
     for (const p of points ?? []) {
-      if ((p.outcome ?? 'error') !== 'error') continue
+      if ((p.outcome ?? 'error') !== 'error' || (p.stroke !== 'fh' && p.stroke !== 'bh')) continue
       const id = zoneId(zoneFor(p.x, p.y))
       const row = byZone.get(id) ?? {
-        counts: Object.fromEntries(SHOT_TYPES.map((type) => [type, 0])) as Record<ShotType, number>,
-        untyped: 0,
+        counts: Object.fromEntries(SHOT_TYPES.map((type) => [type, { fh: 0, bh: 0 }])) as Record<ShotType, StrokeCounts>,
+        untyped: { fh: 0, bh: 0 },
       }
-      if (isShotType(p.shot_type)) row.counts[p.shot_type]++
-      else row.untyped++
+      if (isShotType(p.shot_type)) row.counts[p.shot_type][p.stroke]++
+      else row.untyped[p.stroke]++
       byZone.set(id, row)
     }
     return byZone
@@ -698,7 +699,7 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
                   <circle cx={cx + 1.45} cy={cy} r={1.65} fill="rgba(255,255,255,0.2)" stroke={c.n ? '#14181d' : 'rgba(255,255,255,0.72)'} strokeWidth={0.22} />
                   <text x={cx + 1.45} y={cy + 0.82} fontSize={2.65} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.8)'}>{c.n}</text>
                   {strokeTotal > 0 && (
-                    <text x={cx} y={cy + 2.7} fontSize={0.82}>
+                    <text x={cx} y={cy + 2.85} fontSize={1.02}>
                       <tspan fill="var(--fh-text)">FH {Math.round((strokes.fh / strokeTotal) * 100)}% ({strokes.fh})</tspan>
                       <tspan fill="#5b6672"> · </tspan>
                       <tspan fill="var(--bh-text)">BH {Math.round((strokes.bh / strokeTotal) * 100)}% ({strokes.bh})</tspan>
@@ -806,25 +807,34 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
     )}
     {hoveredHeat && heatHoverClient && (() => {
       const zoneTypes = heatShotTypes.get(hoveredHeat.id)
-      const typed = zoneTypes ? SHOT_TYPES.filter((type) => zoneTypes.counts[type] > 0) : []
+      const typed = zoneTypes ? SHOT_TYPES.filter((type) => zoneTypes.counts[type].fh + zoneTypes.counts[type].bh > 0) : []
+      const untypedTotal = zoneTypes ? zoneTypes.untyped.fh + zoneTypes.untyped.bh : 0
       return (
         <div className="court-hover-tooltip ball-type-tooltip" style={{ left: heatHoverClient.x + 14, top: heatHoverClient.y + 14 }}>
-          <div className="ball-type-title">Ball types · {hoveredHeat.n}</div>
+          <div className="ball-type-title"><span>Ball types</span><strong>{hoveredHeat.n} error{hoveredHeat.n === 1 ? '' : 's'}</strong></div>
+          <div className="ball-type-chart-head" aria-hidden="true">
+            <span>Type</span>
+            <span className="fh">FH</span>
+            <span className="bh">BH</span>
+            <span>All</span>
+          </div>
           {typed.map((type) => (
             <div className="ball-type-row" key={type}>
               <span>{SHOT_TYPE_LABEL[type]}</span>
-              <strong>{zoneTypes!.counts[type]}</strong>
-              <small>{hoveredHeat.n ? Math.round((zoneTypes!.counts[type] / hoveredHeat.n) * 100) : 0}%</small>
+              <strong className="fh">{zoneTypes!.counts[type].fh}</strong>
+              <strong className="bh">{zoneTypes!.counts[type].bh}</strong>
+              <strong>{zoneTypes!.counts[type].fh + zoneTypes!.counts[type].bh}</strong>
             </div>
           ))}
-          {!!zoneTypes?.untyped && (
+          {untypedTotal > 0 && (
             <div className="ball-type-row muted">
               <span>Not selected</span>
-              <strong>{zoneTypes.untyped}</strong>
-              <small>{hoveredHeat.n ? Math.round((zoneTypes.untyped / hoveredHeat.n) * 100) : 0}%</small>
+              <strong className="fh">{zoneTypes!.untyped.fh}</strong>
+              <strong className="bh">{zoneTypes!.untyped.bh}</strong>
+              <strong>{untypedTotal}</strong>
             </div>
           )}
-          {typed.length === 0 && !zoneTypes?.untyped && <small>No errors in this area</small>}
+          {typed.length === 0 && untypedTotal === 0 && <small>No errors in this area</small>}
         </div>
       )
     })()}
