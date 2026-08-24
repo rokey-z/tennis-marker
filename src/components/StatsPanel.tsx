@@ -204,6 +204,12 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
     )
   }
   const errorFocus = STROKES.flatMap((stroke) => ERROR_TYPES.map((error) => ({ stroke, error, count: summary.matrix[stroke][error] }))).sort((a, b) => b.count - a.count)[0]
+  const errorTypeParts = [
+    { key: 'long', label: 'Long', count: summary.byError.long, color: 'var(--err-long)' },
+    { key: 'net', label: 'Net', count: summary.byError.net, color: 'var(--err-net)' },
+    { key: 'wide', label: 'Wide', count: summary.byError.wide, color: 'var(--err-wide)' },
+    { key: 'winners', label: 'Winners', count: summary.winners, color: 'var(--win)' },
+  ]
   return (
     <div className="stack stats-panel">
       {errorFocus?.count > 0 && (
@@ -245,19 +251,29 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
       </div>
 
       <div className="card">
-        <div className="section-title">Where the ball went</div>
-        <div className="bars">
-          {ERROR_TYPES.map((e) => (
-            <div className="bar-row" key={e}>
-              <span>{ERROR_LABEL[e]}</span>
-              <div className="track">
-                <div className="fill" style={{ width: `${pct(summary.byError[e], summary.total)}%` }} />
+        <div className="section-title">Error types</div>
+        <div className="error-types-summary">
+          <div
+            className="error-types-track"
+            role="img"
+            aria-label={errorTypeParts.map((part) => `${part.label} ${part.count}, ${pct(part.count, summary.lost)}%`).join('; ')}
+          >
+            {errorTypeParts.map((part) => part.count > 0 && (
+              <span
+                key={part.key}
+                className={`error-types-segment ${part.key}`}
+                style={{ width: `${pct(part.count, summary.lost)}%`, background: part.color }}
+              />
+            ))}
+          </div>
+          <div className="error-types-values">
+            {errorTypeParts.map((part) => (
+              <div key={part.key} className="error-types-value" style={{ '--part-color': part.color } as React.CSSProperties}>
+                <span>{part.label}</span>
+                <strong>{part.count} · {pct(part.count, summary.lost)}%</strong>
               </div>
-              <span className="val">
-                {summary.byError[e]} · {pct(summary.byError[e], summary.total)}%
-              </span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
         <div className="section-title">Ball types · {summary.total - summary.untypedErrors} tagged</div>
         <div className="bars">
