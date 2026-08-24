@@ -809,6 +809,24 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
       const untypedTotal = zoneTypes ? zoneTypes.untyped.fh + zoneTypes.untyped.bh : 0
       return (
         <div className="court-hover-tooltip ball-type-tooltip" style={{ left: heatHoverClient.x + 14, top: heatHoverClient.y + 14 }}>
+          <div className="zone-share-chart" aria-label="Percentage distribution across all court blocks">
+            {heatCells!.map((cell) => {
+              const pct = heatTotal > 0 ? Math.round((cell.n / heatTotal) * 100) : 0
+              const selected = cell.id === hoveredHeat.id
+              return (
+                <div
+                  className={`zone-share-bar${selected ? ' selected' : ' dimmed'}`}
+                  key={cell.id}
+                  aria-label={`${cell.id}: ${pct}%${selected ? ', selected' : ''}`}
+                >
+                  <span>{pct}%</span>
+                  <i aria-hidden="true">
+                    <b style={{ height: pct > 0 ? `${Math.max(2, pct * 0.32)}px` : 0, background: cell.fill }} />
+                  </i>
+                </div>
+              )
+            })}
+          </div>
           <div className="ball-type-chart-head" aria-hidden="true">
             <span>Type</span>
             <span className="fh">FH</span>

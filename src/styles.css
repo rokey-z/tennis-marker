@@ -1004,6 +1004,46 @@ textarea.input {
 .ball-type-tooltip {
   min-width: 210px;
 }
+.zone-share-chart {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  align-items: end;
+  gap: 3px;
+  margin: 0 0 4px;
+  padding: 1px 0 6px;
+  border-bottom: 1px solid var(--line);
+}
+.zone-share-bar {
+  display: grid;
+  grid-template-rows: 10px 33px;
+  min-width: 0;
+  color: var(--text);
+  font-size: 7px;
+  font-weight: 850;
+  line-height: 1;
+  text-align: center;
+  transition: opacity 100ms ease;
+}
+.zone-share-bar.dimmed {
+  opacity: 0.24;
+}
+.zone-share-bar.selected {
+  opacity: 1;
+}
+.zone-share-bar i {
+  display: flex;
+  align-items: flex-end;
+  justify-content: stretch;
+  height: 33px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.zone-share-bar b {
+  display: block;
+  width: 100%;
+  border-radius: 2px 2px 0 0;
+}
 .ball-type-chart-head,
 .ball-type-row {
   display: grid;
