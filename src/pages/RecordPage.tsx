@@ -476,7 +476,18 @@ export function RecordPage() {
 
       <Toast toast={toast} onDismiss={dismissToast} />
 
-      {showFinish && <FinishSessionModal session={session} onClose={() => setShowFinish(false)} />}
+      {showFinish && (
+        <FinishSessionModal
+          session={session}
+          onClose={() => setShowFinish(false)}
+          onFinished={() => {
+            setShowFinish(false)
+            setPending(null)
+            setOpenPoint(null)
+            setView('stats')
+          }}
+        />
+      )}
 
       {showDetails && (
         <SessionDetails
@@ -493,7 +504,15 @@ export function RecordPage() {
   )
 }
 
-function FinishSessionModal({ session, onClose }: { session: Session; onClose: () => void }) {
+function FinishSessionModal({
+  session,
+  onClose,
+  onFinished,
+}: {
+  session: Session
+  onClose: () => void
+  onFinished: () => void
+}) {
   const [rating, setRating] = useState(session.self_rating ?? 50)
   const finished = !!session.finished_at
 
@@ -502,7 +521,8 @@ function FinishSessionModal({ session, onClose }: { session: Session; onClose: (
       self_rating: rating,
       finished_at: session.finished_at ?? new Date().toISOString(),
     })
-    onClose()
+    if (finished) onClose()
+    else onFinished()
   }
 
   const unlock = () => {
