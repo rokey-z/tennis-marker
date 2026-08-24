@@ -1313,23 +1313,25 @@ textarea.input {
 .stats-filters {
   flex: 0 0 auto;
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  align-items: stretch;
   min-width: 0;
   padding: 3px 5px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.stats-filters::-webkit-scrollbar {
+  display: none;
+}
+.stats-filters-track {
+  display: grid;
+  gap: 3px;
+  width: max-content;
+  min-width: 100%;
 }
 .stats-filters-row {
   display: flex;
   gap: 4px;
   align-items: center;
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.stats-filters-row::-webkit-scrollbar {
-  display: none;
+  width: 100%;
 }
 .stats-filters .chip-group {
   flex-wrap: nowrap;
