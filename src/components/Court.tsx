@@ -117,27 +117,19 @@ function ErrorDragWheel({ x, y, radius, rotation, selected, winner }: { x: numbe
               stroke="#ffffff"
               strokeWidth={active ? 0.42 : 0.24}
             />
-            <text x={ball.x} y={ball.y - ballRadius * 0.15} textAnchor="middle" fill="rgba(255,255,255,0.66)" fontFamily="var(--font)" fontSize={ballRadius * 0.56} fontWeight={750}>
+            <text x={ball.x} y={ball.y - ballRadius * 0.32} textAnchor="middle" dominantBaseline="middle" fill="rgba(255,255,255,0.66)" fontFamily="var(--font)" fontSize={ballRadius * 0.42} fontWeight={750}>
               {sector.stroke.toUpperCase()}
             </text>
-            <text x={ball.x} y={ball.y + ballRadius * 0.58} textAnchor="middle" fill="#ffffff" fontFamily="var(--font)" fontSize={ballRadius * 0.72} fontWeight={900}>
+            <text x={ball.x} y={ball.y + ballRadius * 0.32} textAnchor="middle" dominantBaseline="middle" fill="#ffffff" fontFamily="var(--font)" fontSize={ballRadius * 0.48} fontWeight={900}>
               {sector.error.toUpperCase()}
             </text>
           </g>
         )
       })}
       <circle cx={x} cy={y} r={0.46} fill="#73777c" stroke="#ffffff" strokeWidth={0.18} />
-      {!winner && (
-        <text x={x} y={y + radius - 0.48} textAnchor="middle" fill="rgba(255,255,255,0.88)" fontFamily="var(--font)" fontSize={0.72} fontWeight={850} letterSpacing={0.08}>
-          PAST LINE = WINNER
-        </text>
-      )}
-      {winner && (
-        <g>
-          <rect x={x - 3.5} y={y - 1.15} width={7} height={2.3} rx={1.15} fill="var(--win)" stroke="#ffffff" strokeWidth={0.18} />
-          <text x={x} y={y + 0.48} textAnchor="middle" fill="var(--win-ink)" fontFamily="var(--font)" fontSize={1.18} fontWeight={850}>★ WINNER</text>
-        </g>
-      )}
+      <text x={x} y={y + radius + 0.82} textAnchor="middle" fill={winner ? 'var(--win)' : 'rgba(255,255,255,0.88)'} fontFamily="var(--font)" fontSize={0.7} fontWeight={850} letterSpacing={0.04}>
+        Winner
+      </text>
     </g>
   )
 }
