@@ -648,9 +648,12 @@ textarea.input {
 }
 .record-head {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 6px;
   padding: 4px 8px;
+}
+.record-head > .icon-btn {
+  align-self: flex-start;
 }
 .record-head .title-btn {
   flex: 1;
@@ -713,13 +716,13 @@ textarea.input {
 }
 .record-head-actions {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 5px;
   flex-shrink: 0;
 }
 .header-finish {
   min-height: 40px;
-  height: 40px;
+  height: auto;
   padding: 0 11px;
   border-radius: 12px;
 }
@@ -746,8 +749,9 @@ textarea.input {
 }
 .flip-fab {
   width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  height: auto;
+  min-height: 40px;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -755,7 +759,7 @@ textarea.input {
   border: 1px solid var(--line);
   color: var(--text);
   flex-shrink: 0;
-  align-self: flex-start;
+  align-self: stretch;
 }
 .flip-fab svg {
   width: 20px;
