@@ -18,6 +18,17 @@ export function StatsFilters({ value, points, onChange }: { value: StatsFilterSt
   const label = (text: string, n: number) => <>{text}<span className="stats-filter-count">{n}</span></>
   return (
     <div className="stats-filters" role="group" aria-label="Filters">
+      <div className="chip-group" role="group" aria-label="Forced">
+        <Chip on={value.forced === 'all'} onClick={() => set({ forced: 'all' })}>
+          {label('All', count({ forced: 'all' }))}
+        </Chip>
+        <Chip on={value.forced === 'unforced'} onClick={() => set({ forced: 'unforced' })}>
+          {label('Unforced', count({ forced: 'unforced' }))}
+        </Chip>
+        <Chip on={value.forced === 'forced'} onClick={() => set({ forced: 'forced' })}>
+          {label('Forced', count({ forced: 'forced' }))}
+        </Chip>
+      </div>
       <div className="chip-group" role="group" aria-label="Stroke">
         <Chip on={value.stroke === 'all'} onClick={() => set({ stroke: 'all' })}>
           {label('All strokes', count({ stroke: 'all' }))}
@@ -47,17 +58,6 @@ export function StatsFilters({ value, points, onChange }: { value: StatsFilterSt
             {label(SHOT_TYPE_LABEL[type], count({ shotType: type }))}
           </Chip>
         ))}
-      </div>
-      <div className="chip-group" role="group" aria-label="Forced">
-        <Chip on={value.forced === 'all'} onClick={() => set({ forced: 'all' })}>
-          {label('All', count({ forced: 'all' }))}
-        </Chip>
-        <Chip on={value.forced === 'unforced'} onClick={() => set({ forced: 'unforced' })}>
-          {label('Unforced', count({ forced: 'unforced' }))}
-        </Chip>
-        <Chip on={value.forced === 'forced'} onClick={() => set({ forced: 'forced' })}>
-          {label('Forced', count({ forced: 'forced' }))}
-        </Chip>
       </div>
     </div>
   )
