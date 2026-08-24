@@ -1792,8 +1792,7 @@ textarea.input {
 }
 .error-types-value {
   min-width: 0;
-  padding-top: 5px;
-  border-top: 3px solid var(--part-color);
+  color: var(--part-color);
   font-variant-numeric: tabular-nums;
 }
 .error-types-value span,
@@ -1804,7 +1803,6 @@ textarea.input {
   white-space: nowrap;
 }
 .error-types-value span {
-  color: var(--muted);
   font-size: 12px;
   font-weight: 700;
 }
