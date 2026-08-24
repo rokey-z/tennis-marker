@@ -691,19 +691,25 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
               const pctLabel = heatTotal > 0 ? `${Math.round((c.n / heatTotal) * 100)}%` : '0%'
               const strokes = heatStrokes.get(c.id) ?? { fh: 0, bh: 0 }
               const strokeTotal = strokes.fh + strokes.bh
+              const pillY = cy + 1.55
               return (
                 <g key={c.id} transform={uprightAt(cx, cy, half === 'opposite', rotation)}>
-                  <text x={cx - 0.45} y={cy + 0.75} textAnchor="end" fontSize={2.65} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.7)'}>
+                  <text x={cx - 0.35} y={cy + 0.62} textAnchor="end" fontSize={2.18} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.7)'}>
                     {pctLabel}
                   </text>
-                  <circle cx={cx + 1.45} cy={cy} r={1.65} fill="rgba(255,255,255,0.2)" stroke={c.n ? '#14181d' : 'rgba(255,255,255,0.72)'} strokeWidth={0.22} />
-                  <text x={cx + 1.45} y={cy + 0.82} fontSize={2.65} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.8)'}>{c.n}</text>
+                  <circle cx={cx + 1.18} cy={cy} r={1.38} fill="rgba(255,255,255,0.2)" stroke={c.n ? '#14181d' : 'rgba(255,255,255,0.72)'} strokeWidth={0.2} />
+                  <text x={cx + 1.18} y={cy + 0.67} fontSize={2.18} fill={c.n ? '#14181d' : 'rgba(255,255,255,0.8)'}>{c.n}</text>
                   {strokeTotal > 0 && (
-                    <text x={cx} y={cy + 2.85} fontSize={1.02}>
-                      <tspan fill="var(--fh-text)">FH {Math.round((strokes.fh / strokeTotal) * 100)}% ({strokes.fh})</tspan>
-                      <tspan fill="#5b6672"> · </tspan>
-                      <tspan fill="var(--bh-text)">BH {Math.round((strokes.bh / strokeTotal) * 100)}% ({strokes.bh})</tspan>
-                    </text>
+                    <g>
+                      <rect x={cx - 6.25} y={pillY} width={6} height={1.65} rx={0.82} fill="var(--fh)" />
+                      <text x={cx - 3.25} y={pillY + 1.13} fontSize={0.78} fill="var(--fh-ink)">
+                        FH {Math.round((strokes.fh / strokeTotal) * 100)}% ({strokes.fh})
+                      </text>
+                      <rect x={cx + 0.25} y={pillY} width={6} height={1.65} rx={0.82} fill="var(--bh)" />
+                      <text x={cx + 3.25} y={pillY + 1.13} fontSize={0.78} fill="var(--bh-ink)">
+                        BH {Math.round((strokes.bh / strokeTotal) * 100)}% ({strokes.bh})
+                      </text>
+                    </g>
                   )}
                 </g>
               )
@@ -811,7 +817,6 @@ export function Court({ rotation = 0, onTap, disabled = false, points, highlight
       const untypedTotal = zoneTypes ? zoneTypes.untyped.fh + zoneTypes.untyped.bh : 0
       return (
         <div className="court-hover-tooltip ball-type-tooltip" style={{ left: heatHoverClient.x + 14, top: heatHoverClient.y + 14 }}>
-          <div className="ball-type-title"><span>Ball types</span><strong>{hoveredHeat.n} error{hoveredHeat.n === 1 ? '' : 's'}</strong></div>
           <div className="ball-type-chart-head" aria-hidden="true">
             <span>Type</span>
             <span className="fh">FH</span>
@@ -893,15 +898,21 @@ function Marker({ p: pt, rotation, compact, selected = false }: { p: Point; rota
   // letters, or outlines compete with the newest mark.
   if (compact && !selected) {
     const overview = compact === 'overview'
-    const compactRadius = overview ? 0.58 : 0.42
-    const compactOpacity = overview ? 0.58 : 0.34
+    const compactRadius = overview ? 0.68 : 0.56
+    const compactOpacity = overview ? 0.76 : 0.62
     return (
       <g transform={uprightAt(p.x, p.y, false, rotation)} opacity={compactOpacity}>
         <title>{label}</title>
         {miss ? (
-          <g stroke={color} strokeWidth={0.28} strokeLinecap="round">
-            <line x1={p.x - compactRadius} y1={p.y - compactRadius} x2={p.x + compactRadius} y2={p.y + compactRadius} />
-            <line x1={p.x - compactRadius} y1={p.y + compactRadius} x2={p.x + compactRadius} y2={p.y - compactRadius} />
+          <g strokeLinecap="round">
+            <g stroke="#ffffff" strokeWidth={0.68} opacity={0.55}>
+              <line x1={p.x - compactRadius} y1={p.y - compactRadius} x2={p.x + compactRadius} y2={p.y + compactRadius} />
+              <line x1={p.x - compactRadius} y1={p.y + compactRadius} x2={p.x + compactRadius} y2={p.y - compactRadius} />
+            </g>
+            <g stroke={color} strokeWidth={0.4}>
+              <line x1={p.x - compactRadius} y1={p.y - compactRadius} x2={p.x + compactRadius} y2={p.y + compactRadius} />
+              <line x1={p.x - compactRadius} y1={p.y + compactRadius} x2={p.x + compactRadius} y2={p.y - compactRadius} />
+            </g>
           </g>
         ) : (
           <circle cx={p.x} cy={p.y} r={compactRadius} fill={p.outcome === 'winner' ? 'var(--win)' : color} />

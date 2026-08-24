@@ -1004,24 +1004,6 @@ textarea.input {
 .ball-type-tooltip {
   min-width: 210px;
 }
-.ball-type-title {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 5px;
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-}
-.ball-type-title strong {
-  color: var(--text);
-  font-size: 11px;
-  letter-spacing: 0;
-  text-transform: none;
-}
 .ball-type-chart-head,
 .ball-type-row {
   display: grid;
