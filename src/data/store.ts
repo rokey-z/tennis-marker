@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { roundFeet } from '../domain/court'
 import { compareSessionDesc } from '../domain/stats'
-import { isShotType, isStroke, type NewPoint, type Point, type Session } from '../domain/types'
+import { isPlacementStroke, isShotType, type NewPoint, type Point, type Session } from '../domain/types'
 import { cleanOpponent, cleanUtr, opponentFromLegacyTitle, opponentKey } from '../domain/session'
 import { todayLocalISO } from '../lib/format'
 import { isUuid, sanitizePoint, sanitizeSession } from '../domain/validate'
@@ -306,7 +306,7 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
         next.forced = false
         next.shot_type = null
       } else if (next.outcome === 'player_winner') {
-        if (!isStroke(next.stroke)) next.stroke = 'fh'
+        if (!isPlacementStroke(next.stroke)) next.stroke = 'fh'
         next.error_type = ''
         next.forced = false
         if (!isShotType(next.shot_type)) next.shot_type = null

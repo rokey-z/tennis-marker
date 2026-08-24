@@ -46,8 +46,9 @@ describe('PointSheet ball type editor', () => {
     }))
 
     expect(html).toContain('Winner stroke')
-    expect(html).toContain('Forehand')
-    expect(html).toContain('Backhand')
+    expect(html).toContain('>FH<')
+    expect(html).toContain('>BH<')
+    expect(html).toContain('Serve')
     for (const type of SHOT_TYPES) expect(html).toContain(SHOT_TYPE_LABEL[type])
   })
 })

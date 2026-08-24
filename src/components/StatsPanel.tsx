@@ -1,11 +1,11 @@
 import type { CSSProperties } from 'react'
 import { filterPoints, pct, type Filters, type Summary } from '../domain/stats'
-import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, SHOT_TYPES, SHOT_TYPE_LABEL, STROKE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type PlacementResult, type Point, type Stroke } from '../domain/types'
+import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, SHOT_TYPES, SHOT_TYPE_LABEL, STROKE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type PlacementResult, type PlacementStroke, type Point } from '../domain/types'
 import { Chip } from './Bits'
 import { DownloadIcon } from './Icons'
 
 export interface StatsFilterState {
-  stroke: Stroke | 'all'
+  stroke: PlacementStroke | 'all'
   error: ErrorType | 'all'
   shotType: NonNullable<Filters['shotType']>
   forced: NonNullable<Filters['forced']>
@@ -21,7 +21,7 @@ export function StatsFilters({ value, points, onChange }: { value: StatsFilterSt
     unforced: count({ forced: 'unforced' }),
     forced: count({ forced: 'forced' }),
   }
-  const strokeCounts = Object.fromEntries(['all', ...STROKES].map((stroke) => [stroke, count({ stroke: stroke as StatsFilterState['stroke'] })])) as Record<StatsFilterState['stroke'], number>
+  const strokeCounts = Object.fromEntries(['all', ...PLACEMENT_STROKES].map((stroke) => [stroke, count({ stroke: stroke as StatsFilterState['stroke'] })])) as Record<StatsFilterState['stroke'], number>
   const errorCounts = Object.fromEntries(['all', ...ERROR_TYPES].map((error) => [error, count({ error: error as StatsFilterState['error'] })])) as Record<StatsFilterState['error'], number>
   const shotTypeCounts = Object.fromEntries(['all', ...SHOT_TYPES].map((shotType) => [shotType, count({ shotType: shotType as StatsFilterState['shotType'] })])) as Record<StatsFilterState['shotType'], number>
   return (
@@ -35,7 +35,7 @@ export function StatsFilters({ value, points, onChange }: { value: StatsFilterSt
           </div>}
           {strokeCounts.all > 0 && <div className="chip-group" role="group" aria-label="Stroke">
             {strokeCounts.all > 0 && <Chip on={value.stroke === 'all'} onClick={() => set({ stroke: 'all' })}>{label('All strokes', strokeCounts.all)}</Chip>}
-            {STROKES.map((s) => (
+            {PLACEMENT_STROKES.map((s) => (
               strokeCounts[s] > 0 && <Chip key={s} on={value.stroke === s} cls={s} onClick={() => set({ stroke: s })}>{label(STROKE_SHORT[s], strokeCounts[s])}</Chip>
             ))}
           </div>}

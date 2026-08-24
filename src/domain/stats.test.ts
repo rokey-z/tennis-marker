@@ -117,10 +117,11 @@ describe('summarize', () => {
     const s = summarize([
       point({ stroke: 'fh', error_type: '', outcome: 'player_winner', shot_type: 'volley' }),
       point({ stroke: 'bh', error_type: '', outcome: 'player_winner', shot_type: 'lob' }),
+      point({ stroke: 'serve', error_type: '', outcome: 'player_winner', shot_type: null }),
       point({ stroke: 'fh', error_type: 'long', outcome: 'error', shot_type: 'ground' }),
     ])
-    expect(s.playerWinners).toBe(2)
-    expect(s.playerWinnersByStroke).toEqual({ fh: 1, bh: 1 })
+    expect(s.playerWinners).toBe(3)
+    expect(s.playerWinnersByStroke).toEqual({ fh: 1, bh: 1, serve: 1 })
     expect(s.playerWinnersByShotType.volley).toBe(1)
     expect(s.playerWinnersByShotType.lob).toBe(1)
     expect(s.total).toBe(1)

@@ -21,7 +21,7 @@ import { pointsToCsv, safeFilename, toExportBundle } from '../domain/export'
 import { decodeLiveSharedMatch } from '../domain/share'
 import { downloadText } from '../lib/format'
 import { isUuid } from '../domain/validate'
-import { ERROR_LABEL, ERROR_TYPES, KIND_LABEL, MODE_HINT, MODE_LABEL, PLACEMENT_STROKES, SESSION_MODES, SHOT_TYPES, SHOT_TYPE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type Outcome, type PlacementStroke, type Point, type Session, type ShotType, type Stroke } from '../domain/types'
+import { ERROR_LABEL, ERROR_TYPES, KIND_LABEL, MODE_HINT, MODE_LABEL, PLACEMENT_STROKES, SESSION_MODES, SHOT_TYPES, SHOT_TYPE_LABEL, STROKE_SHORT, type ErrorType, type Outcome, type PlacementStroke, type Point, type Session, type ShotType, type Stroke } from '../domain/types'
 
 const ROTATE_90_KEY = 'tennis-marker.rotate90'
 const AFTER_SAVE_IGNORE_MS = 300
@@ -154,9 +154,9 @@ export function RecordPage() {
       id: Date.now(),
       text:
         outcome === 'placement'
-          ? `${STROKE_SHORT[stroke as Stroke]} landed ${describeMark(p.x, p.y, 'placement').toLowerCase()}`
+          ? `${STROKE_SHORT[stroke as PlacementStroke]} landed ${describeMark(p.x, p.y, 'placement').toLowerCase()}`
           : outcome === 'player_winner'
-          ? `${player.subject} winner · ${STROKE_SHORT[stroke as Stroke]} ${shotType ? SHOT_TYPE_LABEL[shotType] : 'ball'} · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
+          ? `${player.subject} winner · ${STROKE_SHORT[stroke as PlacementStroke]}${shotType ? ` ${SHOT_TYPE_LABEL[shotType]}` : ''} · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
           : outcome === 'winner'
           ? `Opponent winner · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
           : `${STROKE_SHORT[stroke as Stroke]} ${ERROR_LABEL[error as ErrorType].toLowerCase()} · ${shotType ? SHOT_TYPE_LABEL[shotType] : 'ball'} · ${forced ? 'forced' : 'unforced'} · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`,
@@ -174,7 +174,7 @@ export function RecordPage() {
   const logWinner = () => logPoint('', '', 'winner')
 
   /** Lily hit a winner from this position; retain both her stroke and the selected ball type. */
-  const logPlayerWinner = (stroke: Stroke, shotType: ShotType) => logPoint(stroke, '', 'player_winner', null, shotType)
+  const logPlayerWinner = (stroke: PlacementStroke, shotType: ShotType | null) => logPoint(stroke, '', 'player_winner', null, shotType)
 
   /** Placement mode: one motion — press where the ball landed, drag left for BH or right for FH. */
   const onStrokeDrag = useCallback(
@@ -529,7 +529,7 @@ function LogFilterHeader({ points, mode, value, playerName, onChange }: { points
   const main: Array<{ key: LogFilter; label: string }> = [{ key: 'all', label: 'All' }]
   if (mode === 'errors') {
     main.push(
-      ...STROKES.map((stroke) => ({ key: `stroke:${stroke}` as LogFilter, label: STROKE_SHORT[stroke] })),
+      ...PLACEMENT_STROKES.map((stroke) => ({ key: `stroke:${stroke}` as LogFilter, label: STROKE_SHORT[stroke] })),
       ...ERROR_TYPES.map((error) => ({ key: `error:${error}` as LogFilter, label: ERROR_LABEL[error] })),
       { key: 'forced', label: 'Forced' },
       { key: 'opponent_winner', label: 'Opponent winner' },

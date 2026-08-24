@@ -62,7 +62,7 @@ export function MarkChip({ stroke, error, forced, outcome = 'error', out = false
     )
   }
   if (outcome === 'player_winner') {
-    const safeStroke = stroke === 'bh' ? 'bh' : 'fh'
+    const safeStroke = isPlacementStroke(stroke) ? stroke : 'fh'
     return (
       <span className={`mark ${safeStroke} player-winner`} title={markLabel(safeStroke, '', false, outcome)}>
         <MarkDot stroke={safeStroke} error="" forced={false} outcome={outcome} size={18} />

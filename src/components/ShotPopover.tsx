@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
-import { ERROR_LABEL, SHOT_TYPE_GROUPS, SHOT_TYPE_LABEL, STROKE_SHORT, type ErrorType, type ShotType, type Stroke } from '../domain/types'
+import { ERROR_LABEL, SHOT_TYPE_GROUPS, SHOT_TYPE_LABEL, STROKE_SHORT, type ErrorType, type PlacementStroke, type ShotType, type Stroke } from '../domain/types'
 import { ShotGrid } from './marks'
 import { capitalise, type PlayerWords } from '../domain/session'
 import { CloseIcon } from './Icons'
+import { WinnerStrokeToggle } from './WinnerStrokeToggle'
 
 export interface ShotPopoverProps {
   /** Screen position of the tap; the popover is placed next to it. */
@@ -20,7 +21,7 @@ export interface ShotPopoverProps {
   onWinner: () => void
   /** A long press opens directly on Lily's winner details instead of the error chooser. */
   winnerOnly?: boolean
-  onPlayerWinner?: (stroke: Stroke, shotType: ShotType) => void
+  onPlayerWinner?: (stroke: PlacementStroke, shotType: ShotType | null) => void
   /** Placement mode fallback for a tap: just the two strokes. */
   strokeOnly?: boolean
   /** How to name the player in the tooltips. */
@@ -42,7 +43,8 @@ export function ShotPopover({ anchor, containerRef, where, forced, onForcedChang
   const ref = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState<{ left: number; top: number; placement: 'below' | 'above' } | null>(null)
   const [errorPick, setErrorPick] = useState<{ stroke: Stroke; error: ErrorType } | null>(initialErrorPick)
-  const [winnerStroke, setWinnerStroke] = useState<Stroke>('fh')
+  const [winnerStroke, setWinnerStroke] = useState<PlacementStroke>('fh')
+  const [winnerShotType, setWinnerShotType] = useState<ShotType | null>(null)
 
   useLayoutEffect(() => {
     const el = ref.current
@@ -71,7 +73,7 @@ export function ShotPopover({ anchor, containerRef, where, forced, onForcedChang
       top = Math.max(EDGE, Math.min(c.height - h - EDGE, placement === 'below' ? y + OFFSET : y - OFFSET - h))
     }
     setPos({ left, top, placement })
-  }, [anchor.clientX, anchor.clientY, containerRef, errorPick, winnerOnly])
+  }, [anchor.clientX, anchor.clientY, containerRef, errorPick, winnerOnly, winnerShotType, winnerStroke])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -110,29 +112,32 @@ export function ShotPopover({ anchor, containerRef, where, forced, onForcedChang
         {winnerOnly ? (
           <div className="shot-type-step winner-type-step">
             <div className="shot-type-title">{capitalise(player.possessive)} winner</div>
-            <div className="winner-stroke-toggle" role="group" aria-label="Winner stroke">
-              {(['bh', 'fh'] as Stroke[]).map((stroke) => (
-                <button
-                  type="button"
-                  key={stroke}
-                  className={`${stroke}${winnerStroke === stroke ? ' on' : ''}`}
-                  aria-pressed={winnerStroke === stroke}
-                  onClick={() => setWinnerStroke(stroke)}
-                >
-                  {STROKE_SHORT[stroke]}
-                </button>
-              ))}
-            </div>
-            <div className="shot-type-title">Ball type</div>
-            {SHOT_TYPE_GROUPS.map((group, index) => (
-              <div className="shot-type-group" key={index}>
-                {group.map((type) => (
-                  <button type="button" className="shot-type-btn" key={type} onClick={() => onPlayerWinner?.(winnerStroke, type)}>
-                    {SHOT_TYPE_LABEL[type]}
-                  </button>
+            <WinnerStrokeToggle value={winnerStroke} onChange={(stroke) => {
+              setWinnerStroke(stroke)
+              if (stroke === 'serve') setWinnerShotType(null)
+            }} />
+            {winnerStroke !== 'serve' && (
+              <>
+                <div className="shot-type-title">Ball type</div>
+                {SHOT_TYPE_GROUPS.map((group, index) => (
+                  <div className="shot-type-group" key={index}>
+                    {group.map((type) => (
+                      <button type="button" className={`shot-type-btn${winnerShotType === type ? ' sel' : ''}`} key={type} aria-pressed={winnerShotType === type} onClick={() => setWinnerShotType(type)}>
+                        {SHOT_TYPE_LABEL[type]}
+                      </button>
+                    ))}
+                  </div>
                 ))}
-              </div>
-            ))}
+              </>
+            )}
+            <button
+              type="button"
+              className="winner-confirm"
+              disabled={winnerStroke !== 'serve' && !winnerShotType}
+              onClick={() => onPlayerWinner?.(winnerStroke, winnerShotType)}
+            >
+              ✓ Winner
+            </button>
           </div>
         ) : errorPick ? (
           <div className="shot-type-step">

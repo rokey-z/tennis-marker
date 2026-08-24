@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
 import { describeMark, isOut } from '../domain/court'
-import { SHOT_TYPE_GROUPS, SHOT_TYPE_LABEL, isShotType, type ErrorType, type Point, type Stroke } from '../domain/types'
+import { SHOT_TYPE_GROUPS, SHOT_TYPE_LABEL, isPlacementStroke, isShotType, type ErrorType, type Point, type Stroke } from '../domain/types'
 import { formatTime } from '../lib/format'
 import { CloseIcon, TrashIcon } from './Icons'
 import { MarkDot, ShotGrid, markLabel } from './marks'
+import { WinnerStrokeToggle } from './WinnerStrokeToggle'
 
 export interface PointSheetProps {
   point: Point
@@ -67,15 +68,21 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
         </div>
 
         <div className="section-title">{playerWinner ? 'Winner stroke' : placement ? 'Change the stroke' : 'Change it to'}</div>
-        {!winner && (
+        {playerWinner && (
+          <WinnerStrokeToggle
+            value={isPlacementStroke(point.stroke) ? point.stroke : 'fh'}
+            onChange={(stroke) => onChange(stroke === 'serve' ? { stroke, shot_type: null } : { stroke })}
+          />
+        )}
+        {!winner && !playerWinner && (
           <ShotGrid
             current={{ stroke: point.stroke, error: point.error_type, outcome: point.outcome }}
             forced={point.forced}
-            strokeOnly={placement || playerWinner}
-            onPick={playerWinner ? (stroke) => onChange({ stroke }) : pick}
+            strokeOnly={placement}
+            onPick={pick}
           />
         )}
-        {!winner && !placement && (
+        {!winner && !placement && (!playerWinner || point.stroke !== 'serve') && (
           <div className="point-shot-types">
             <div className="section-title">Ball type</div>
             {SHOT_TYPE_GROUPS.map((group, index) => (

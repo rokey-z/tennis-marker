@@ -6,7 +6,7 @@ export type ForcedFilter = 'all' | 'forced' | 'unforced'
 
 export interface Filters {
   sessionId?: string | 'all'
-  stroke?: Stroke | 'all'
+  stroke?: PlacementStroke | 'all'
   error?: ErrorType | 'all'
   shotType?: ShotType | 'all'
   forced?: ForcedFilter
@@ -67,7 +67,7 @@ export interface Summary {
   winners: number
   /** Winners hit by the player, kept apart from both errors and opponent winners. */
   playerWinners: number
-  playerWinnersByStroke: Record<Stroke, number>
+  playerWinnersByStroke: Record<PlacementStroke, number>
   playerWinnersByShotType: Record<ShotType, number>
   placements: number
   /** Serves are recorded as landings but deliberately have no in/out result. */
@@ -106,7 +106,7 @@ export function summarize(points: Iterable<Point>): Summary {
     lost: 0,
     winners: 0,
     playerWinners: 0,
-    playerWinnersByStroke: { fh: 0, bh: 0 },
+    playerWinnersByStroke: { fh: 0, bh: 0, serve: 0 },
     playerWinnersByShotType: Object.fromEntries(SHOT_TYPES.map((type) => [type, 0])) as Record<ShotType, number>,
     placements: 0,
     serveLandings: 0,
@@ -137,7 +137,7 @@ export function summarize(points: Iterable<Point>): Summary {
     }
     if (outcome === 'player_winner') {
       s.playerWinners++
-      if (isStroke(p.stroke)) s.playerWinnersByStroke[p.stroke]++
+      if (isPlacementStroke(p.stroke)) s.playerWinnersByStroke[p.stroke]++
       if (isShotType(p.shot_type)) s.playerWinnersByShotType[p.shot_type]++
       continue
     }

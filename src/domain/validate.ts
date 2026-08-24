@@ -1,7 +1,7 @@
 import { clampToView, roundFeet } from './court'
 import { isValidIso, YMD_RE } from '../lib/format'
 import { cleanOpponent, cleanUtr } from './session'
-import { isErrorType, isOutcome, isPlacementResult, isPlacementStroke, isSessionKind, isSessionMode, isShotType, isStroke, type Point, type Session, type Stroke } from './types'
+import { isErrorType, isOutcome, isPlacementResult, isPlacementStroke, isSessionKind, isSessionMode, isShotType, isStroke, type Point, type Session } from './types'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -60,8 +60,9 @@ export function sanitizePoint(raw: unknown): Point | null {
   const rawOutcome = isOutcome(r.outcome) ? r.outcome : 'error'
   const legacyNet = rawOutcome === 'placement' && r.placement_result === 'net'
   const outcome = legacyNet ? 'error' : rawOutcome
-  // an opponent winner has neither stroke nor error type; Lily's winner keeps her stroke
-  if (outcome !== 'winner' && !(outcome === 'placement' ? isPlacementStroke(r.stroke) : isStroke(r.stroke))) return null
+  // an opponent winner has no stroke; placements and player winners may also be serves
+  const acceptsServe = outcome === 'placement' || outcome === 'player_winner'
+  if (outcome !== 'winner' && !(acceptsServe ? isPlacementStroke(r.stroke) : isStroke(r.stroke))) return null
   if (outcome === 'error' && !legacyNet && !isErrorType(r.error_type)) return null
   const c = clampToView(x, y)
   return {
@@ -70,7 +71,7 @@ export function sanitizePoint(raw: unknown): Point | null {
     session_id,
     x: roundFeet(c.x),
     y: roundFeet(c.y),
-    stroke: outcome === 'winner' ? '' : (r.stroke as Stroke),
+    stroke: outcome === 'winner' ? '' : (r.stroke as Point['stroke']),
     error_type: legacyNet ? 'net' : outcome === 'error' ? (r.error_type as Point['error_type']) : '',
     outcome,
     placement_result: outcome === 'placement' ? (isPlacementResult(r.placement_result) ? r.placement_result : 'unknown') : null,

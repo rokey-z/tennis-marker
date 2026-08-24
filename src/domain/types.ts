@@ -1,5 +1,5 @@
 export type Stroke = 'fh' | 'bh'
-/** A serve is only recorded as a landing in Placement mode, never as an error stroke. */
+/** Serve is recorded for serve landings and for player winners, never as an error stroke. */
 export type PlacementStroke = Stroke | 'serve'
 export type PlacementResult = 'in' | 'net' | 'wide' | 'long' | 'unknown'
 export type ErrorType = 'long' | 'net' | 'wide'

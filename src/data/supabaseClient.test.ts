@@ -47,6 +47,11 @@ describe('normalizePoint', () => {
       shot_type: 'lob',
       forced: false,
     })
+    expect(normalizePoint({ ...row, stroke: 'serve', error_type: '', outcome: 'player_winner', shot_type: null })).toMatchObject({
+      outcome: 'player_winner',
+      stroke: 'serve',
+      shot_type: null,
+    })
   })
 
   it('falls back to an error when the column is missing or junk', () => {
