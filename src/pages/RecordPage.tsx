@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router'
-import { Modal, PointList, SyncBadge, Tally, Toast, type ToastState } from '../components/Bits'
+import { Chip, Modal, PointList, SyncBadge, Toast, type ToastState } from '../components/Bits'
 import { useIsDesktop, usePlayer } from '../components/hooks'
 import { shortDate } from '../lib/format'
 import { Court, type CourtRotation } from '../components/Court'
@@ -21,12 +21,12 @@ import { pointsToCsv, safeFilename, toExportBundle } from '../domain/export'
 import { decodeLiveSharedMatch } from '../domain/share'
 import { downloadText } from '../lib/format'
 import { isUuid } from '../domain/validate'
-import { ERROR_LABEL, KIND_LABEL, MODE_HINT, MODE_LABEL, SESSION_MODES, SHOT_TYPE_LABEL, STROKE_SHORT, type ErrorType, type Outcome, type PlacementStroke, type Point, type Session, type ShotType, type Stroke } from '../domain/types'
+import { ERROR_LABEL, ERROR_TYPES, KIND_LABEL, MODE_HINT, MODE_LABEL, PLACEMENT_STROKES, SESSION_MODES, SHOT_TYPES, SHOT_TYPE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type Outcome, type PlacementStroke, type Point, type Session, type ShotType, type Stroke } from '../domain/types'
 
-const LOG_KEY = 'tennis-marker.logOpen'
 const ROTATE_90_KEY = 'tennis-marker.rotate90'
 const AFTER_SAVE_IGNORE_MS = 300
 const DEFAULT_STATS_FILTERS: StatsFilterState = { stroke: 'all', error: 'all', shotType: 'all', forced: 'all' }
+type LogFilter = 'all' | `stroke:${PlacementStroke}` | `error:${ErrorType}` | `shot:${ShotType}` | 'forced' | 'opponent_winner' | 'player_winner' | 'placement:in' | 'placement:out'
 
 export function RecordPage() {
   const { id = '' } = useParams()
@@ -48,8 +48,6 @@ export function RecordPage() {
     () => allPoints.filter((p) => placementMode ? p.outcome === 'placement' || p.error_type === 'net' : p.outcome !== 'placement'),
     [allPoints, placementMode],
   )
-  // the tally counts what the court and the log show: the marks of the mode being recorded
-  const summary = useMemo(() => summarize(points), [points])
   /** marks of the other kind, recorded before the session's mode was switched — hidden here, not lost */
   const otherMode = allPoints.length - points.length
 
@@ -62,7 +60,7 @@ export function RecordPage() {
   const courtRef = useRef<HTMLDivElement>(null)
   const [forced, setForced] = useState(false)
   const [toast, setToast] = useState<ToastState | null>(null)
-  const [logOpen, setLogOpen] = useState(() => localStorage.getItem(LOG_KEY) !== '0')
+  const [logFilter, setLogFilter] = useState<LogFilter>('all')
   const [view, setView] = useState<'court' | 'stats'>('court')
   const [statsMapCompact, setStatsMapCompact] = useState(false)
   const statsPanelScrollTop = useRef(0)
@@ -70,6 +68,7 @@ export function RecordPage() {
   const statsMode = view === 'stats'
   const shownPoints = useMemo(() => (statsMode ? filterPoints(points, filters) : points), [statsMode, points, filters])
   const statsSummary = useMemo(() => summarize(shownPoints), [shownPoints])
+  const loggedPoints = useMemo(() => points.filter((point) => matchesLogFilter(point, logFilter)), [points, logFilter])
   const justCreated = (useLocation().state as { justCreated?: boolean } | null)?.justCreated === true
   const [showDetails, setShowDetails] = useState(justCreated)
   const [showFinish, setShowFinish] = useState(false)
@@ -81,11 +80,12 @@ export function RecordPage() {
     localStorage.setItem(ROTATE_90_KEY, String(rotation))
   }, [rotation])
   useEffect(() => {
-    localStorage.setItem(LOG_KEY, logOpen ? '1' : '0')
-  }, [logOpen])
-  useEffect(() => {
     setPending(null)
-  }, [placementMode])
+    setLogFilter('all')
+  }, [id, placementMode])
+  useEffect(() => {
+    if (logFilter !== 'all' && !points.some((point) => matchesLogFilter(point, logFilter))) setLogFilter('all')
+  }, [logFilter, points])
   useEffect(() => {
     if (!statsMode || isDesktop) {
       statsPanelScrollTop.current = 0
@@ -428,11 +428,8 @@ export function RecordPage() {
             <StatsPanel summary={statsSummary} count={shownPoints.length} mode={placementMode ? 'placement' : 'errors'} onExportCsv={exportCsv} onExportJson={exportJson} />
           ) : (
             <div className="card side-list">
-              <div className="side-list-head">
-                <div className="section-title">Points</div>
-                <Tally s={summary} mode={placementMode ? 'placement' : 'errors'} />
-              </div>
-              <PointList points={points} onOpen={finished ? undefined : (p, index) => setOpenPoint({ id: p.id, index })} onDelete={finished ? undefined : deletePoint} />
+              <LogFilterHeader points={points} mode={placementMode ? 'placement' : 'errors'} value={logFilter} playerName={player.name || 'Player'} onChange={setLogFilter} />
+              <PointList points={loggedPoints} indexSource={points} onOpen={finished ? undefined : (p, index) => setOpenPoint({ id: p.id, index })} onDelete={finished ? undefined : deletePoint} />
             </div>
           )}
         </aside>
@@ -456,22 +453,16 @@ export function RecordPage() {
           <div className="record-bottom">
             {actions}
           </div>
-          <section className={`record-log${logOpen ? ' open' : ''}`} aria-label="Logged points">
-            <button type="button" className="log-head" onClick={() => setLogOpen((v) => !v)} aria-expanded={logOpen}>
-              <ListIcon />
-              <Tally s={summary} mode={placementMode ? 'placement' : 'errors'} />
-              <span className="chev" aria-hidden="true">{logOpen ? '▾' : '▴'}</span>
-            </button>
-            {logOpen && (
-              <div className="log-body">
-                <PointList points={points} onOpen={finished ? undefined : (p, index) => setOpenPoint({ id: p.id, index })} onDelete={finished ? undefined : deletePoint} />
-                {otherMode > 0 && (
-                  <p className="log-note">
-                    {otherMode} {otherMode === 1 ? 'mark' : 'marks'} recorded in {placementMode ? MODE_LABEL.errors : MODE_LABEL.placement} mode {otherMode === 1 ? 'is' : 'are'} hidden here — switch this session’s mode to see {otherMode === 1 ? 'it' : 'them'}.
-                  </p>
-                )}
-              </div>
-            )}
+          <section className="record-log" aria-label="Logged points">
+            <LogFilterHeader points={points} mode={placementMode ? 'placement' : 'errors'} value={logFilter} playerName={player.name || 'Player'} onChange={setLogFilter} />
+            <div className="log-body">
+              <PointList points={loggedPoints} indexSource={points} onOpen={finished ? undefined : (p, index) => setOpenPoint({ id: p.id, index })} onDelete={finished ? undefined : deletePoint} />
+              {otherMode > 0 && (
+                <p className="log-note">
+                  {otherMode} {otherMode === 1 ? 'mark' : 'marks'} recorded in {placementMode ? MODE_LABEL.errors : MODE_LABEL.placement} mode {otherMode === 1 ? 'is' : 'are'} hidden here — switch this session’s mode to see {otherMode === 1 ? 'it' : 'them'}.
+                </p>
+              )}
+            </div>
           </section>
         </>
       )}
@@ -514,6 +505,62 @@ export function RecordPage() {
             nav('/')
           }}
         />
+      )}
+    </div>
+  )
+}
+
+function matchesLogFilter(point: Point, filter: LogFilter): boolean {
+  if (filter === 'all') return true
+  if (filter.startsWith('stroke:')) return point.stroke === filter.slice(7)
+  if (filter.startsWith('error:')) return (point.outcome ?? 'error') === 'error' && point.error_type === filter.slice(6)
+  if (filter.startsWith('shot:')) return point.shot_type === filter.slice(5)
+  if (filter === 'forced') return point.outcome === 'winner' || point.forced
+  if (filter === 'opponent_winner') return point.outcome === 'winner'
+  if (filter === 'player_winner') return point.outcome === 'player_winner'
+  if (point.outcome !== 'placement' || point.stroke === 'serve') return false
+  const result = point.placement_result && point.placement_result !== 'unknown' ? point.placement_result : placementResultFor(point.x, point.y)
+  return filter === 'placement:in' ? result === 'in' : result === 'wide' || result === 'long'
+}
+
+function LogFilterHeader({ points, mode, value, playerName, onChange }: { points: Point[]; mode: 'errors' | 'placement'; value: LogFilter; playerName: string; onChange: (value: LogFilter) => void }) {
+  const count = (filter: LogFilter) => points.reduce((total, point) => total + (matchesLogFilter(point, filter) ? 1 : 0), 0)
+  const choose = (filter: LogFilter) => onChange(filter !== 'all' && value === filter ? 'all' : filter)
+  const main: Array<{ key: LogFilter; label: string }> = [{ key: 'all', label: 'All' }]
+  if (mode === 'errors') {
+    main.push(
+      ...STROKES.map((stroke) => ({ key: `stroke:${stroke}` as LogFilter, label: STROKE_SHORT[stroke] })),
+      ...ERROR_TYPES.map((error) => ({ key: `error:${error}` as LogFilter, label: ERROR_LABEL[error] })),
+      { key: 'forced', label: 'Forced' },
+      { key: 'opponent_winner', label: 'Opponent winner' },
+      { key: 'player_winner', label: `${playerName} winner` },
+    )
+  } else {
+    main.push(
+      ...PLACEMENT_STROKES.map((stroke) => ({ key: `stroke:${stroke}` as LogFilter, label: STROKE_SHORT[stroke] })),
+      { key: 'placement:in', label: 'In' },
+      { key: 'placement:out', label: 'Out' },
+      { key: 'error:net', label: 'Net' },
+    )
+  }
+  const visibleMain = main.filter((item) => item.key === 'all' || count(item.key) > 0)
+  const types = SHOT_TYPES
+    .map((shotType) => ({ key: `shot:${shotType}` as LogFilter, label: SHOT_TYPE_LABEL[shotType] }))
+    .filter((item) => count(item.key) > 0)
+  const filterChip = (item: { key: LogFilter; label: string }) => (
+    <Chip key={item.key} on={value === item.key} cls="log-filter-chip" onClick={() => choose(item.key)}>
+      <span>{item.label}</span><strong>{count(item.key)}</strong>
+    </Chip>
+  )
+  return (
+    <div className="log-filter-head">
+      <div className="log-title"><ListIcon /><strong>Log</strong></div>
+      <div className="log-filter-row" role="group" aria-label="Log filters">{visibleMain.map(filterChip)}</div>
+      {mode === 'errors' && (
+        <div className="log-filter-row log-filter-types" role="group" aria-label="Ball type filters">
+          <span className="log-filter-label">Ball types</span>
+          {types.length ? types.map(filterChip) : <span className="log-filter-empty">None tagged</span>}
+        </div>
       )}
     </div>
   )

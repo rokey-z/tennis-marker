@@ -852,7 +852,7 @@ textarea.input {
     max-height: 100%; /* only letterboxes on very short screens, so the tally/undo row always fits */
   }
   /* the log is as long as it needs to be — the page scrolls, not a box inside it */
-  .record-log.open {
+  .record-log {
     flex: 0 0 auto;
     height: auto;
     min-height: 0;
@@ -862,7 +862,7 @@ textarea.input {
     overflow: visible;
     max-height: none;
   }
-  .record-log .log-head {
+  .record-log .log-filter-head {
     position: sticky;
     top: 0;
     z-index: 5;
@@ -1441,31 +1441,63 @@ textarea.input {
   min-height: 0;
   padding-bottom: env(safe-area-inset-bottom);
 }
-.record-log.open {
-  height: clamp(96px, 24dvh, 220px);
+.log-filter-head {
+  display: grid;
+  gap: 5px;
+  padding: 7px 10px 8px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
 }
-.log-head {
+.log-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 0 12px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--muted);
-  text-align: left;
+  gap: 7px;
+  min-height: 25px;
+  color: var(--text);
+  font-size: 14px;
 }
-.log-head svg {
+.log-title svg {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
 }
-.log-head .tally {
-  flex: 1;
+.log-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
-.log-head .chev {
-  font-size: 12px;
+.log-filter-row::-webkit-scrollbar {
+  display: none;
+}
+.chip.log-filter-chip {
+  flex: 0 0 auto;
+  gap: 5px;
+  min-height: 28px;
+  padding: 0 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 750;
+}
+.log-filter-chip strong {
+  min-width: 15px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.log-filter-label,
+.log-filter-empty {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.log-filter-types {
+  min-height: 28px;
 }
 .log-body {
   flex: 1 1 auto;
@@ -1477,14 +1509,6 @@ textarea.input {
 }
 .log-body .point-list li {
   padding: 4px 0;
-}
-.side-list-head {
-  display: grid;
-  gap: 4px;
-  margin-bottom: 6px;
-}
-.side-list-head .section-title {
-  margin-bottom: 0;
 }
 .record-hint {
   font-size: 14px;

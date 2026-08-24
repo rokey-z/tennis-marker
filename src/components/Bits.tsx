@@ -161,13 +161,14 @@ export function Tally({ s, mode = 'errors' }: { s: Summary; mode?: 'errors' | 'p
 }
 
 // ---------- point list ----------
-export function PointList({ points, onOpen, onDelete }: { points: Point[]; onOpen?: (point: Point, index: number) => void; onDelete?: (point: Point) => void }) {
+export function PointList({ points, indexSource = points, onOpen, onDelete }: { points: Point[]; indexSource?: Point[]; onOpen?: (point: Point, index: number) => void; onDelete?: (point: Point) => void }) {
   if (!points.length) return <p className="muted">No points logged yet.</p>
+  const originalIndex = new Map(indexSource.map((point, index) => [point.id, index + 1]))
   const rows = [...points].reverse()
   return (
     <ul className="point-list">
       {rows.map((p, i) => {
-        const index = points.length - i
+        const index = originalIndex.get(p.id) ?? points.length - i
         return (
           <li key={p.id} className="row-btn">
             {onOpen ? <button type="button" className="row-open" onClick={() => onOpen(p, index)}>
