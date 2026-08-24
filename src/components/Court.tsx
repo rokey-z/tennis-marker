@@ -1132,7 +1132,7 @@ function Marker({ p: pt, rotation, compact, selected = false }: { p: Point; rota
         ) : (
           <circle cx={p.x} cy={p.y} r={r * 0.82} fill={color} stroke="#ffffff" strokeWidth={0.26} />
         )
-      ) : p.outcome === 'player_winner' ? (
+      ) : p.outcome === 'player_winner' || p.outcome === 'winning_serve' ? (
         <circle cx={p.x} cy={p.y} r={r} fill={color} stroke="#ffffff" strokeWidth={0.3} />
       ) : p.outcome === 'winner' ? (
         <rect
@@ -1159,7 +1159,7 @@ function Marker({ p: pt, rotation, compact, selected = false }: { p: Point; rota
         fill={p.outcome === 'winner' ? 'var(--win-ink)' : ink}
         fontFamily="var(--font)"
       >
-        {p.outcome === 'winner' || p.outcome === 'player_winner' ? '★' : ERROR_LETTER[error]}
+        {p.outcome === 'winner' || p.outcome === 'player_winner' ? '★' : p.outcome === 'winning_serve' ? 'S' : ERROR_LETTER[error]}
       </text>
       )}
     </g>

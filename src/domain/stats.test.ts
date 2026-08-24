@@ -131,6 +131,20 @@ describe('summarize', () => {
     expect(Object.values(s.byZone).reduce((a, b) => a + b, 0)).toBe(1)
   })
 
+  it('counts winning serves separately from player winners', () => {
+    const s = summarize([
+      point({ stroke: 'serve', error_type: '', outcome: 'winning_serve', shot_type: 'winning_serve' }),
+      point({ stroke: 'serve', error_type: '', outcome: 'player_winner', shot_type: 'ace' }),
+    ])
+
+    expect(s.winningServes).toBe(1)
+    expect(s.playerWinners).toBe(1)
+    expect(s.playerWinnersByShotType.ace).toBe(1)
+    expect(s.playerWinnersByShotType.winning_serve).toBe(0)
+    expect(s.total).toBe(0)
+    expect(s.lost).toBe(0)
+  })
+
   it('counts every selected ball type, including swing volleys, for errors only', () => {
     const s = summarize([
       point({ shot_type: 'ground' }),

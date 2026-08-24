@@ -45,7 +45,12 @@ describe('sanitizePoint', () => {
       stroke: 'serve',
       shot_type: 'ace',
     })
-    expect(sanitizePoint({ ...good, outcome: 'player_winner', stroke: 'serve', error_type: '', shot_type: 'winning_serve' })?.shot_type).toBe('winning_serve')
+    expect(sanitizePoint({ ...good, outcome: 'winning_serve', stroke: 'serve', error_type: '', shot_type: 'winning_serve' })).toMatchObject({
+      outcome: 'winning_serve',
+      stroke: 'serve',
+      shot_type: 'winning_serve',
+      forced: false,
+    })
     expect(sanitizePoint({ ...good, outcome: 'error', stroke: 'fh', error_type: 'long', shot_type: 'ace' })?.shot_type).toBeNull()
   })
 

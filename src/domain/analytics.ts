@@ -46,6 +46,7 @@ export interface SessionStat {
   /** kept apart from the error counts above */
   winners: number
   playerWinners: number
+  winningServes: number
   placements: number
   firstAt: string | null
   lastAt: string | null
@@ -116,6 +117,7 @@ export function sessionStats(sessions: Session[], points: Iterable<Point>): Sess
       lost: 0,
       winners: 0,
       playerWinners: 0,
+      winningServes: 0,
       placements: 0,
       firstAt: pts[0]?.created_at ?? null,
       lastAt: pts.at(-1)?.created_at ?? null,
@@ -132,6 +134,10 @@ export function sessionStats(sessions: Session[], points: Iterable<Point>): Sess
       }
       if (outcome === 'player_winner') {
         row.playerWinners++
+        continue
+      }
+      if (outcome === 'winning_serve') {
+        row.winningServes++
         continue
       }
       if (outcome === 'placement') {

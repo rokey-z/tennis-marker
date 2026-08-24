@@ -64,4 +64,15 @@ describe('PointSheet ball type editor', () => {
     expect(html).toContain('class="shot-type-btn sel"')
     expect(html).not.toContain('Neutral')
   })
+
+  it('edits a winning serve as a serve result rather than a winner', () => {
+    const winningServe = { ...point('player_winner'), outcome: 'winning_serve' as const, stroke: 'serve' as const, shot_type: 'winning_serve' as const }
+    const html = renderToStaticMarkup(createElement(PointSheet, {
+      point: winningServe, index: 1, onChange: vi.fn(), onDelete: vi.fn(), onClose: vi.fn(),
+    }))
+
+    expect(html).toContain('Winning serve')
+    expect(html).toContain('Serve result')
+    expect(html).toContain('class="shot-type-btn sel"')
+  })
 })

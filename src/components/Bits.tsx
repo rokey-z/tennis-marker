@@ -156,6 +156,15 @@ export function Tally({ s, mode = 'errors' }: { s: Summary; mode?: 'errors' | 'p
           </span>
         </>
       )}
+      {s.winningServes > 0 && (
+        <>
+          <span className="sep" />
+          <span className="t-item" title={`Winning serves: ${s.winningServes}`}>
+            <span className="tag serve" aria-hidden="true">S</span>
+            {s.winningServes}
+          </span>
+        </>
+      )}
     </div>
   )
 }
@@ -176,14 +185,14 @@ export function PointList({ points, indexSource = points, onOpen, onDelete }: { 
               <span className="desc">
                   <MarkChip stroke={p.stroke} error={p.error_type} forced={p.forced} outcome={p.outcome} out={(p.outcome ?? 'error') === 'placement' && p.stroke !== 'serve' && isOut(p.x, p.y)} placementResult={p.placement_result} />
                 <small>
-                  {isPointShotType(p.shot_type) ? `${SHOT_TYPE_LABEL[p.shot_type]} · ` : ''}{describeMark(p.x, p.y, p.outcome ?? 'error')} · {formatTime(p.created_at)}
+                  {isPointShotType(p.shot_type) && p.outcome !== 'winning_serve' ? `${SHOT_TYPE_LABEL[p.shot_type]} · ` : ''}{describeMark(p.x, p.y, p.outcome ?? 'error')} · {formatTime(p.created_at)}
                 </small>
               </span>
             </button> : <div className="row-open">
               <span className="n">{index}</span>
               <span className="desc">
                 <MarkChip stroke={p.stroke} error={p.error_type} forced={p.forced} outcome={p.outcome} out={(p.outcome ?? 'error') === 'placement' && p.stroke !== 'serve' && isOut(p.x, p.y)} placementResult={p.placement_result} />
-                <small>{isPointShotType(p.shot_type) ? `${SHOT_TYPE_LABEL[p.shot_type]} · ` : ''}{describeMark(p.x, p.y, p.outcome ?? 'error')} · {formatTime(p.created_at)}</small>
+                <small>{isPointShotType(p.shot_type) && p.outcome !== 'winning_serve' ? `${SHOT_TYPE_LABEL[p.shot_type]} · ` : ''}{describeMark(p.x, p.y, p.outcome ?? 'error')} · {formatTime(p.created_at)}</small>
               </span>
             </div>}
             {onDelete && <button type="button" className="icon-btn row-del" aria-label={`Delete point ${index}`} onClick={() => onDelete(p)}>

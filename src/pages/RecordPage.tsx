@@ -26,7 +26,7 @@ import { ERROR_LABEL, ERROR_TYPES, KIND_LABEL, MODE_HINT, MODE_LABEL, PLACEMENT_
 const ROTATE_90_KEY = 'tennis-marker.rotate90'
 const AFTER_SAVE_IGNORE_MS = 300
 const DEFAULT_STATS_FILTERS: StatsFilterState = { stroke: 'all', error: 'all', shotType: 'all', forced: 'all' }
-type LogFilter = 'all' | `stroke:${PlacementStroke}` | `error:${ErrorType}` | `shot:${PointShotType}` | 'forced' | 'opponent_winner' | 'player_winner' | 'placement:in' | 'placement:out'
+type LogFilter = 'all' | `stroke:${PlacementStroke}` | `error:${ErrorType}` | `shot:${PointShotType}` | 'forced' | 'opponent_winner' | 'player_winner' | 'winning_serve' | 'placement:in' | 'placement:out'
 
 export function RecordPage() {
   const { id = '' } = useParams()
@@ -157,6 +157,8 @@ export function RecordPage() {
           ? `${STROKE_SHORT[stroke as PlacementStroke]} landed ${describeMark(p.x, p.y, 'placement').toLowerCase()}`
           : outcome === 'player_winner'
           ? `${player.subject} winner · ${STROKE_SHORT[stroke as PlacementStroke]}${shotType ? ` ${SHOT_TYPE_LABEL[shotType]}` : ''} · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
+          : outcome === 'winning_serve'
+          ? `Winning serve · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
           : outcome === 'winner'
           ? `Opponent winner · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
           : `${STROKE_SHORT[stroke as Stroke]} ${ERROR_LABEL[error as ErrorType].toLowerCase()} · ${shotType ? SHOT_TYPE_LABEL[shotType] : 'ball'} · ${forced ? 'forced' : 'unforced'} · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`,
@@ -174,7 +176,8 @@ export function RecordPage() {
   const logWinner = () => logPoint('', '', 'winner')
 
   /** Lily hit a winner from this position; retain both her stroke and the selected ball type. */
-  const logPlayerWinner = (stroke: PlacementStroke, shotType: PointShotType) => logPoint(stroke, '', 'player_winner', null, shotType)
+  const logPlayerWinner = (stroke: PlacementStroke, shotType: PointShotType) =>
+    logPoint(stroke, '', stroke === 'serve' && shotType === 'winning_serve' ? 'winning_serve' : 'player_winner', null, shotType)
 
   /** Placement mode: one motion — press where the ball landed, drag left for BH or right for FH. */
   const onStrokeDrag = useCallback(
@@ -406,6 +409,7 @@ export function RecordPage() {
           {statsMode && !placementMode && (
             <div className="stats-map-winners">
               {statsSummary.winners > 0 && <span aria-label={`${statsSummary.winners} opponent winners`}><span className="stats-map-winner-mark" aria-hidden="true">×</span> Opponent winners <strong>{statsSummary.winners}</strong></span>}
+              {statsSummary.winningServes > 0 && <span aria-label={`${statsSummary.winningServes} winning serves`}><span className="stats-map-winning-serve-mark" aria-hidden="true">S</span> Winning serves <strong>{statsSummary.winningServes}</strong></span>}
               {statsSummary.playerWinners > 0 && <span aria-label={`${statsSummary.playerWinners} ${player.subject} winners`}><span className="stats-map-player-winner-mark" aria-hidden="true">★</span> {player.subject} winners <strong>{statsSummary.playerWinners}</strong></span>}
             </div>
           )}
@@ -518,6 +522,7 @@ function matchesLogFilter(point: Point, filter: LogFilter): boolean {
   if (filter === 'forced') return point.outcome === 'winner' || point.forced
   if (filter === 'opponent_winner') return point.outcome === 'winner'
   if (filter === 'player_winner') return point.outcome === 'player_winner'
+  if (filter === 'winning_serve') return point.outcome === 'winning_serve'
   if (point.outcome !== 'placement' || point.stroke === 'serve') return false
   const result = point.placement_result && point.placement_result !== 'unknown' ? point.placement_result : placementResultFor(point.x, point.y)
   return filter === 'placement:in' ? result === 'in' : result === 'wide' || result === 'long'
@@ -534,6 +539,7 @@ function LogFilterHeader({ points, mode, value, playerName, onChange }: { points
       { key: 'forced', label: 'Forced' },
       { key: 'opponent_winner', label: 'Opponent winner' },
       { key: 'player_winner', label: `${playerName} winner` },
+      { key: 'winning_serve', label: 'Winning serve' },
     )
   } else {
     main.push(

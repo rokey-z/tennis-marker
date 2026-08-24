@@ -1,7 +1,7 @@
 import { clampToView, roundFeet } from './court'
 import { isValidIso, YMD_RE } from '../lib/format'
 import { cleanOpponent, cleanUtr } from './session'
-import { isErrorType, isOutcome, isPlacementResult, isPlacementStroke, isPointShotType, isSessionKind, isSessionMode, isShotType, isStroke, isWinnerServeType, type Point, type Session } from './types'
+import { isErrorType, isOutcome, isPlacementResult, isPlacementStroke, isPointShotType, isSessionKind, isSessionMode, isShotType, isStroke, type Point, type Session } from './types'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -61,7 +61,7 @@ export function sanitizePoint(raw: unknown): Point | null {
   const legacyNet = rawOutcome === 'placement' && r.placement_result === 'net'
   const outcome = legacyNet ? 'error' : rawOutcome
   // an opponent winner has no stroke; placements and player winners may also be serves
-  const acceptsServe = outcome === 'placement' || outcome === 'player_winner'
+  const acceptsServe = outcome === 'placement' || outcome === 'player_winner' || outcome === 'winning_serve'
   if (outcome !== 'winner' && !(acceptsServe ? isPlacementStroke(r.stroke) : isStroke(r.stroke))) return null
   if (outcome === 'error' && !legacyNet && !isErrorType(r.error_type)) return null
   const c = clampToView(x, y)
@@ -78,8 +78,10 @@ export function sanitizePoint(raw: unknown): Point | null {
     shot_type:
       outcome === 'error' && isShotType(r.shot_type)
         ? r.shot_type
-        : outcome === 'player_winner' && (r.stroke === 'serve' ? isWinnerServeType(r.shot_type) : isShotType(r.shot_type)) && isPointShotType(r.shot_type)
+        : outcome === 'player_winner' && (r.stroke === 'serve' ? r.shot_type === 'ace' : isShotType(r.shot_type)) && isPointShotType(r.shot_type)
           ? r.shot_type
+          : outcome === 'winning_serve' && r.stroke === 'serve' && r.shot_type === 'winning_serve'
+            ? 'winning_serve'
           : null,
     forced: outcome === 'error' && (r.forced === true || r.forced === 'true' || r.forced === 1),
     created_at: created,

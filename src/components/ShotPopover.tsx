@@ -19,7 +19,7 @@ export interface ShotPopoverProps {
   initialErrorPick?: { stroke: Stroke; error: ErrorType } | null
   /** The opponent hit a winner: nothing of hers to pick, so this logs the point straight away. */
   onWinner: () => void
-  /** A long press opens directly on Lily's winner details instead of the error chooser. */
+  /** A long press opens directly on the player's won-point details instead of the error chooser. */
   winnerOnly?: boolean
   onPlayerWinner?: (stroke: PlacementStroke, shotType: PointShotType) => void
   /** Placement mode fallback for a tap: just the two strokes. */
@@ -121,7 +121,17 @@ export function ShotPopover({ anchor, containerRef, where, forced, onForcedChang
                 <div className="shot-type-title">Serve result</div>
                 <div className="shot-type-group winner-serve-group">
                   {WINNER_SERVE_TYPES.map((type) => (
-                    <button type="button" tabIndex={winnerStroke === 'serve' ? 0 : -1} className={`shot-type-btn${winnerShotType === type ? ' sel' : ''}`} key={type} aria-pressed={winnerShotType === type} onClick={() => setWinnerShotType(type)}>
+                    <button
+                      type="button"
+                      tabIndex={winnerStroke === 'serve' ? 0 : -1}
+                      className={`shot-type-btn${winnerShotType === type ? ' sel' : ''}`}
+                      key={type}
+                      aria-pressed={winnerShotType === type}
+                      onClick={() => {
+                        setWinnerShotType(type)
+                        onPlayerWinner?.('serve', type)
+                      }}
+                    >
                       {SHOT_TYPE_LABEL[type]}
                     </button>
                   ))}

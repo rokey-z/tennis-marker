@@ -18,8 +18,10 @@ export interface PointSheetProps {
 export function PointSheet({ point, index, onChange, onDelete, onClose }: PointSheetProps) {
   const winner = point.outcome === 'winner'
   const playerWinner = point.outcome === 'player_winner'
+  const winningServe = point.outcome === 'winning_serve'
+  const playerResult = playerWinner || winningServe
   const placement = point.outcome === 'placement'
-  const serveWinner = playerWinner && point.stroke === 'serve'
+  const serveWinner = playerResult && point.stroke === 'serve'
   const shotTypeGroups = serveWinner ? [WINNER_SERVE_TYPES] : SHOT_TYPE_GROUPS
   const out = placement && point.stroke !== 'serve' && isOut(point.x, point.y)
   // a placement lives on the far half: the only thing to correct is which stroke played it
@@ -51,12 +53,12 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
         <div className="ps-head">
           <MarkDot stroke={point.stroke} error={point.error_type} forced={point.forced} outcome={point.outcome} out={out} size={34} />
           <div className="grow">
-            <div className="ps-now">{markLabel(point.stroke, point.error_type, point.forced, point.outcome, out, point.placement_result)}{isPointShotType(point.shot_type) ? ` · ${SHOT_TYPE_LABEL[point.shot_type]}` : ''}</div>
+            <div className="ps-now">{markLabel(point.stroke, point.error_type, point.forced, point.outcome, out, point.placement_result)}{isPointShotType(point.shot_type) && !winningServe ? ` · ${SHOT_TYPE_LABEL[point.shot_type]}` : ''}</div>
             <div className="ps-meta">
               {describeMark(point.x, point.y, point.outcome)} · {formatTime(point.created_at)}
             </div>
           </div>
-          {!winner && !playerWinner && !placement && (
+          {!winner && !playerResult && !placement && (
             <button
               type="button"
               className={`forced-toggle${point.forced ? ' on' : ''}`}
@@ -69,14 +71,16 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
           )}
         </div>
 
-        <div className="section-title">{playerWinner ? 'Winner stroke' : placement ? 'Change the stroke' : 'Change it to'}</div>
-        {playerWinner && (
+        <div className="section-title">{playerResult ? 'Result stroke' : placement ? 'Change the stroke' : 'Change it to'}</div>
+        {playerResult && (
           <WinnerStrokeToggle
             value={isPlacementStroke(point.stroke) ? point.stroke : 'fh'}
-            onChange={(stroke) => onChange(stroke === 'serve' || isWinnerServeType(point.shot_type) ? { stroke, shot_type: null } : { stroke })}
+            onChange={(stroke) => onChange(stroke === 'serve'
+              ? { stroke, shot_type: null, outcome: 'player_winner' }
+              : { stroke, shot_type: isWinnerServeType(point.shot_type) ? null : point.shot_type, outcome: 'player_winner' })}
           />
         )}
-        {!winner && !playerWinner && (
+        {!winner && !playerResult && (
           <ShotGrid
             current={{ stroke: point.stroke, error: point.error_type, outcome: point.outcome }}
             forced={point.forced}
@@ -97,7 +101,7 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
                       className={`shot-type-btn${selected ? ' sel' : ''}`}
                       key={type}
                       aria-pressed={selected}
-                      onClick={() => onChange({ shot_type: type })}
+                      onClick={() => onChange({ shot_type: type, ...(serveWinner ? { outcome: type === 'winning_serve' ? 'winning_serve' : 'player_winner' } : {}) })}
                     >
                       {SHOT_TYPE_LABEL[type]}
                     </button>
@@ -107,7 +111,7 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
             ))}
           </div>
         )}
-        {!winner && !playerWinner && !placement && (
+        {!winner && !playerResult && !placement && (
           <>
             <div className="section-title">or</div>
             <button type="button" className="winner-toggle block" onClick={makeWinner} title="The opponent hit a winner here">

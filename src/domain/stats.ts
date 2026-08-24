@@ -28,7 +28,7 @@ export function filterPoints(points: Iterable<Point>, f: Filters = {}): Point[] 
     // An opponent winner is treated as forced; player winners and placements are neither.
     if (f.forced && f.forced !== 'all') {
       const outcome = p.outcome ?? 'error'
-      if (outcome === 'placement' || outcome === 'player_winner') continue
+      if (outcome === 'placement' || outcome === 'player_winner' || outcome === 'winning_serve') continue
       const forced = outcome === 'winner' || p.forced
       if (f.forced === 'forced' && !forced) continue
       if (f.forced === 'unforced' && forced) continue
@@ -67,6 +67,8 @@ export interface Summary {
   winners: number
   /** Winners hit by the player, kept apart from both errors and opponent winners. */
   playerWinners: number
+  /** Serve points won through a return error; deliberately not counted as winners. */
+  winningServes: number
   playerWinnersByStroke: Record<PlacementStroke, number>
   playerWinnersByShotType: Record<PointShotType, number>
   placements: number
@@ -106,6 +108,7 @@ export function summarize(points: Iterable<Point>): Summary {
     lost: 0,
     winners: 0,
     playerWinners: 0,
+    winningServes: 0,
     playerWinnersByStroke: { fh: 0, bh: 0, serve: 0 },
     playerWinnersByShotType: Object.fromEntries(POINT_SHOT_TYPES.map((type) => [type, 0])) as Record<PointShotType, number>,
     placements: 0,
@@ -139,6 +142,10 @@ export function summarize(points: Iterable<Point>): Summary {
       s.playerWinners++
       if (isPlacementStroke(p.stroke)) s.playerWinnersByStroke[p.stroke]++
       if (isPointShotType(p.shot_type)) s.playerWinnersByShotType[p.shot_type]++
+      continue
+    }
+    if (outcome === 'winning_serve') {
+      s.winningServes++
       continue
     }
     if (outcome === 'placement') {

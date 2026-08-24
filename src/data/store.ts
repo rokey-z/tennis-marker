@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { roundFeet } from '../domain/court'
 import { compareSessionDesc } from '../domain/stats'
-import { isPlacementStroke, isShotType, isWinnerServeType, type NewPoint, type Point, type Session } from '../domain/types'
+import { isPlacementStroke, isShotType, type NewPoint, type Point, type Session } from '../domain/types'
 import { cleanOpponent, cleanUtr, opponentFromLegacyTitle, opponentKey } from '../domain/session'
 import { todayLocalISO } from '../lib/format'
 import { isUuid, sanitizePoint, sanitizeSession } from '../domain/validate'
@@ -290,8 +290,10 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
         shot_type:
           (input.outcome ?? 'error') === 'error' && isShotType(input.shot_type)
             ? input.shot_type
-            : input.outcome === 'player_winner' && (input.stroke === 'serve' ? isWinnerServeType(input.shot_type) : isShotType(input.shot_type))
+            : input.outcome === 'player_winner' && (input.stroke === 'serve' ? input.shot_type === 'ace' : isShotType(input.shot_type))
               ? input.shot_type
+              : input.outcome === 'winning_serve' && input.stroke === 'serve' && input.shot_type === 'winning_serve'
+                ? 'winning_serve'
               : null,
         forced: (input.outcome ?? 'error') === 'error' && !!input.forced,
         created_at: t,
@@ -314,7 +316,12 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
         if (!isPlacementStroke(next.stroke)) next.stroke = 'fh'
         next.error_type = ''
         next.forced = false
-        if (!(next.stroke === 'serve' ? isWinnerServeType(next.shot_type) : isShotType(next.shot_type))) next.shot_type = null
+        if (!(next.stroke === 'serve' ? next.shot_type === 'ace' : isShotType(next.shot_type))) next.shot_type = null
+      } else if (next.outcome === 'winning_serve') {
+        next.stroke = 'serve'
+        next.error_type = ''
+        next.forced = false
+        next.shot_type = 'winning_serve'
       } else if (next.outcome !== 'error' || !isShotType(next.shot_type)) {
         next.shot_type = null
       }

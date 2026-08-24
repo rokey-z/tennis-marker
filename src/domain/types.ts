@@ -14,10 +14,10 @@ export type SessionKind = 'match' | 'practice'
 export type SessionMode = 'errors' | 'placement'
 /**
  * What a mark records:
- *   error / winner / player_winner — recorded in Errors mode, positioned where SHE was on her half
+ *   error / winner / player_winner / winning_serve — Errors mode, positioned where SHE was
  *   placement      — recorded in Placement mode, positioned where the BALL LANDED on the far half
  */
-export type Outcome = 'error' | 'winner' | 'player_winner' | 'placement'
+export type Outcome = 'error' | 'winner' | 'player_winner' | 'winning_serve' | 'placement'
 
 export const STROKES: Stroke[] = ['fh', 'bh']
 export const PLACEMENT_STROKES: PlacementStroke[] = ['fh', 'bh', 'serve']
@@ -30,7 +30,7 @@ export const SHOT_TYPE_GROUPS: ShotType[][] = [
 export const SHOT_TYPES: ShotType[] = SHOT_TYPE_GROUPS.flat()
 export const WINNER_SERVE_TYPES: WinnerServeType[] = ['winning_serve', 'ace']
 export const POINT_SHOT_TYPES: PointShotType[] = [...SHOT_TYPES, ...WINNER_SERVE_TYPES]
-export const OUTCOMES: Outcome[] = ['error', 'winner', 'player_winner', 'placement']
+export const OUTCOMES: Outcome[] = ['error', 'winner', 'player_winner', 'winning_serve', 'placement']
 
 export const STROKE_LABEL: Record<PlacementStroke, string> = { fh: 'Forehand', bh: 'Backhand', serve: 'Serve' }
 export const STROKE_SHORT: Record<PlacementStroke, string> = { fh: 'FH', bh: 'BH', serve: 'S' }
@@ -75,7 +75,7 @@ export const isErrorType = (v: unknown): v is ErrorType => v === 'long' || v ===
 export const isShotType = (v: unknown): v is ShotType => v === 'ground' || v === 'slice' || v === 'approach' || v === 'volley' || v === 'swing_volley' || v === 'overhead' || v === 'lob' || v === 'drop'
 export const isWinnerServeType = (v: unknown): v is WinnerServeType => v === 'winning_serve' || v === 'ace'
 export const isPointShotType = (v: unknown): v is PointShotType => isShotType(v) || isWinnerServeType(v)
-export const isOutcome = (v: unknown): v is Outcome => v === 'error' || v === 'winner' || v === 'player_winner' || v === 'placement'
+export const isOutcome = (v: unknown): v is Outcome => v === 'error' || v === 'winner' || v === 'player_winner' || v === 'winning_serve' || v === 'placement'
 export const isSessionKind = (v: unknown): v is SessionKind => v === 'match' || v === 'practice'
 export const isSessionMode = (v: unknown): v is SessionMode => v === 'errors' || v === 'placement'
 
@@ -110,7 +110,7 @@ export interface Session {
 /**
  * One recorded mark. What x/y MEAN depends on the outcome — these are two different measurements
  * that happen to share a column:
- *   error / winner / player_winner → where the PLAYER was standing, on her half
+ *   error / winner / player_winner / winning_serve → where the PLAYER was standing, on her half
  *   placement      → where the BALL LANDED, on the far half (y is depth from the net)
  * Position is in court feet, in the player's own frame:
  * x: 0 = center line, positive = deuce side (her right when facing the net)

@@ -1201,6 +1201,10 @@ textarea.input {
   color: var(--win);
   font-weight: 900;
 }
+.stats-map-winning-serve-mark {
+  color: var(--serve);
+  font-weight: 900;
+}
 .record-bottom {
   padding: 4px 8px calc(6px + env(safe-area-inset-bottom));
   display: flex;

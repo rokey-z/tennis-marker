@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { cleanUtr } from '../domain/session'
-import { isOutcome, isPlacementResult, isPointShotType, isShotType, isWinnerServeType, type Outcome, type Point, type Session } from '../domain/types'
+import { isOutcome, isPlacementResult, isPointShotType, isShotType, type Outcome, type Point, type Session } from '../domain/types'
 import type { Remote, RemoteError } from './syncEngine'
 
 export const SUPABASE_URL: string | undefined = import.meta.env.VITE_SUPABASE_URL
@@ -90,8 +90,10 @@ export function normalizePoint(r: Record<string, unknown>): Point {
     shot_type:
       outcome === 'error' && isShotType(r.shot_type)
         ? r.shot_type
-        : outcome === 'player_winner' && (r.stroke === 'serve' ? isWinnerServeType(r.shot_type) : isShotType(r.shot_type)) && isPointShotType(r.shot_type)
+        : outcome === 'player_winner' && (r.stroke === 'serve' ? r.shot_type === 'ace' : isShotType(r.shot_type)) && isPointShotType(r.shot_type)
           ? r.shot_type
+          : outcome === 'winning_serve' && r.stroke === 'serve' && r.shot_type === 'winning_serve'
+            ? 'winning_serve'
           : null,
     forced: outcome === 'error' && Boolean(r.forced),
     created_at: toIso(r.created_at),

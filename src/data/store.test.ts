@@ -95,6 +95,8 @@ describe('store', () => {
     expect(store.getState().points[w.id]).toMatchObject({ outcome: 'player_winner', stroke: 'fh', error_type: '', forced: false, shot_type: 'overhead' })
     store.updatePoint(w.id, { stroke: 'serve', shot_type: 'ace' })
     expect(store.getState().points[w.id]).toMatchObject({ outcome: 'player_winner', stroke: 'serve', error_type: '', forced: false, shot_type: 'ace' })
+    const serve = store.addPoint({ session_id: s.id, x: 0, y: 30, stroke: 'serve', error_type: '', forced: true, outcome: 'winning_serve', shot_type: 'winning_serve' })
+    expect(serve).toMatchObject({ outcome: 'winning_serve', stroke: 'serve', error_type: '', forced: false, shot_type: 'winning_serve' })
   })
 
   it('undo can be narrowed to the marks in view, so a hidden one is never dropped', () => {
