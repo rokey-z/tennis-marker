@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import { summarize } from '../domain/stats'
 import type { Point } from '../domain/types'
-import { StatsPanel } from './StatsPanel'
+import { StatsFilters, StatsPanel } from './StatsPanel'
 
 vi.mock('../data/app', () => ({
   useSyncStatus: () => ({ phase: 'local', pending: 0, blocked: 0, lastSyncAt: null, error: null }),
@@ -65,5 +65,22 @@ describe('StatsPanel error type summary', () => {
     expect(html.indexOf('<span>Lob</span>')).toBeLessThan(html.indexOf('<span>Volley</span>'))
     expect(html.indexOf('<span>Volley</span>')).toBeLessThan(html.indexOf('<span>Neutral</span>'))
     expect(html).not.toContain('<strong>0%</strong>')
+  })
+})
+
+describe('StatsFilters', () => {
+  it('hides filter options whose available count is zero', () => {
+    const html = renderToStaticMarkup(createElement(StatsFilters, {
+      value: { stroke: 'all', error: 'all', shotType: 'all', forced: 'all' },
+      points: [point('only', 'long', 'error', 'ground')],
+      onChange: vi.fn(),
+    }))
+
+    const filterLabel = (text: string) => `>${text}<span class="stats-filter-count"`
+    for (const visible of ['Unforced', 'FH', 'Long', 'Neutral']) expect(html).toContain(filterLabel(visible))
+    for (const hidden of ['Forced', 'BH', 'Net', 'Wide', 'Attack', 'Slice', 'Volley', 'Swing volley', 'Overhead', 'Lob', 'Drop shot']) {
+      expect(html).not.toContain(filterLabel(hidden))
+    }
+    expect(html).not.toContain('>0</span>')
   })
 })
