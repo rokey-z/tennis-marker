@@ -293,12 +293,10 @@ export function RecordPage() {
   const where = pending ? pending.surface === 'net' ? 'Net' : describeZone(zoneFor(pending.x, pending.y)) : ''
 
   const actions = (
-    <div className={`record-actions${statsMode ? ' stats-only' : ''}`}>
-      {!statsMode && (
-        <button type="button" className="btn" onClick={undo} disabled={finished || points.length === 0}>
-          <UndoIcon /> Undo
-        </button>
-      )}
+    <div className="record-actions">
+      <button type="button" className="btn" onClick={undo} disabled={statsMode || finished || points.length === 0}>
+        <UndoIcon /> Undo
+      </button>
       <div className="view-mode-toggle" role="group" aria-label="Court view mode">
         <button type="button" className={!statsMode ? 'active' : ''} onClick={() => setView('court')} aria-pressed={!statsMode}>
           Marker mode
