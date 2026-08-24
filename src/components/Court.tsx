@@ -891,13 +891,13 @@ function Marker({ p: pt, rotation, compact, selected = false }: { p: Point; rota
   // letters, or outlines compete with the newest mark.
   if (compact && !selected) {
     const overview = compact === 'overview'
-    const compactRadius = overview ? 0.56 : 0.45
+    const compactRadius = overview ? 0.46 : 0.36
     const compactOpacity = overview ? 0.76 : 0.62
     return (
       <g transform={uprightAt(p.x, p.y, false, rotation)}>
         <title>{label}</title>
         {miss ? (
-          <g stroke={color} strokeWidth={0.34} strokeLinecap="round">
+          <g stroke={color} strokeWidth={0.24} strokeLinecap="round">
             <line x1={p.x - compactRadius} y1={p.y - compactRadius} x2={p.x + compactRadius} y2={p.y + compactRadius} />
             <line x1={p.x - compactRadius} y1={p.y + compactRadius} x2={p.x + compactRadius} y2={p.y - compactRadius} />
           </g>
