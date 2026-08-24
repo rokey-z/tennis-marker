@@ -58,6 +58,8 @@ Installed apps open full-screen and keep local data longer.
 - **Cloud sync (optional).** With Supabase configured and a sign-in, a small sync engine uploads
   changes in the background and pulls the latest on start/focus, so phone and desktop show the
   same data. Rows are soft-deleted; merges are tombstone-wins, then last-write-wins by `updated_at`.
+- **Live public match links.** A match's settings can copy an unguessable, read-only URL. Each open
+  loads the latest synced session and points; it does not expose the rest of the app or the account.
 - **Without Supabase** the app runs in *local-only* mode (the badge says "Local only"). Use
   **Settings → Backup (JSON)** to move data between devices by file.
 - Coordinates are stored in **court feet** in the player's frame (`x`: 0 = center line, + = deuce
@@ -103,7 +105,7 @@ The build is fully functional without this; do it when you want phone ↔ deskto
 1. **Create a Supabase project** at https://supabase.com/dashboard (free tier is fine).
 2. **Create the tables:** Dashboard → *SQL Editor* → paste `supabase/migrations/0001_init.sql` → Run,
    then run the remaining numbered migrations in order (session details/mode, winners,
-   finished-session locking, and self-ratings).
+   finished-session locking, self-ratings, ball types, and live match sharing).
    (Or with the CLI: `supabase link` then `supabase db push`.) If a migration is missing, the app
    still syncs everything else — it drops the unknown columns and warns in the console — and picks
    the fields up automatically once you run it.

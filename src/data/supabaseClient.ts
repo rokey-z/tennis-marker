@@ -46,7 +46,7 @@ export function toIso(v: unknown): string {
 }
 
 function normalizeSession(r: Record<string, unknown>): Session {
-  return {
+  const session: Session = {
     id: String(r.id),
     user_id: r.user_id === null || r.user_id === undefined ? null : String(r.user_id),
     title: String(r.title ?? ''),
@@ -62,6 +62,8 @@ function normalizeSession(r: Record<string, unknown>): Session {
     updated_at: toIso(r.updated_at),
     deleted_at: r.deleted_at ? toIso(r.deleted_at) : null,
   }
+  if ('share_token' in r) session.share_token = typeof r.share_token === 'string' ? r.share_token : null
+  return session
 }
 
 /**

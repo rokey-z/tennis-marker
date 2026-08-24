@@ -87,7 +87,7 @@ export function saveState(storage: StorageLike, state: RepoState): void {
 function upgradeSessions(sessions: Record<string, Session>): Record<string, Session> {
   let out = sessions
   for (const [id, s] of Object.entries(sessions)) {
-    if (typeof s?.opponent === 'string' && typeof s?.venue === 'string' && typeof s?.mode === 'string' && 'finished_at' in s && 'self_rating' in s) continue
+    if (typeof s?.opponent === 'string' && typeof s?.venue === 'string' && typeof s?.mode === 'string' && 'finished_at' in s && 'self_rating' in s && (!('share_token' in s) || s.share_token === null || typeof s.share_token === 'string')) continue
     if (out === sessions) out = { ...sessions }
     out[id] = {
       ...s,
@@ -96,6 +96,7 @@ function upgradeSessions(sessions: Record<string, Session>): Record<string, Sess
       mode: s?.mode === 'placement' ? 'placement' : 'errors',
       finished_at: typeof s?.finished_at === 'string' ? s.finished_at : null,
       self_rating: Number.isInteger(s?.self_rating) && Number(s.self_rating) >= 1 && Number(s.self_rating) <= 100 ? Number(s.self_rating) : null,
+      share_token: typeof s?.share_token === 'string' ? s.share_token : null,
     }
   }
   return out

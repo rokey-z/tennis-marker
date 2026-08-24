@@ -1,16 +1,48 @@
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import { Court } from '../components/Court'
 import { MarkLegend } from '../components/marks'
 import { StatsPanel } from '../components/StatsPanel'
 import { summarize } from '../domain/stats'
-import { decodeSharedMatch } from '../domain/share'
+import { decodeLiveSharedMatch, decodeSharedMatch, type SharedMatch } from '../domain/share'
 import { sessionLabel } from '../domain/session'
 import { formatDate } from '../lib/format'
+import { supabase } from '../data/app'
+import { isUuid } from '../domain/validate'
 
 /** Isolated, read-only public stats viewer with no navigation into the private app. */
 export function SharedMatchPage() {
   const { payload = '' } = useParams()
-  const shared = decodeSharedMatch(payload)
+  const liveToken = isUuid(payload)
+  const [liveShared, setLiveShared] = useState<SharedMatch | null>(null)
+  const [loading, setLoading] = useState(liveToken)
+  const shared = liveToken ? liveShared : decodeSharedMatch(payload)
+
+  useEffect(() => {
+    if (!liveToken) return
+    let active = true
+    setLoading(true)
+    setLiveShared(null)
+    void (async () => {
+      if (!supabase) {
+        if (active) setLoading(false)
+        return
+      }
+      const { data, error } = await supabase.rpc('get_shared_match', { p_token: payload })
+      if (!active) return
+      setLiveShared(error ? null : decodeLiveSharedMatch(data))
+      setLoading(false)
+    })()
+    return () => { active = false }
+  }, [liveToken, payload])
+
+  if (loading) {
+    return (
+      <main className="public-share public-share-invalid">
+        <div className="empty"><strong>Loading current match statistics…</strong></div>
+      </main>
+    )
+  }
 
   if (!shared) {
     return (

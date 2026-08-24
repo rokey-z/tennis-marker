@@ -88,6 +88,8 @@ export interface Session {
   finished_at?: string | null
   /** Player's editable 1–100 assessment of the finished session. */
   self_rating?: number | null
+  /** Unguessable token used by the read-only live stats link. */
+  share_token?: string | null
   created_at: string
   updated_at: string
   deleted_at: string | null

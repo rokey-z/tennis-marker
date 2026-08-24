@@ -7,8 +7,8 @@ import { Court, type CourtRotation } from '../components/Court'
 import { StatsFilters, StatsPanel, type StatsFilterState } from '../components/StatsPanel'
 import { BackIcon, CloseIcon, FullscreenIcon, ListIcon, LockIcon, PencilIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
 import { ShotPopover } from '../components/ShotPopover'
-import { store, useAppState } from '../data/app'
-import { livePointsForSession } from '../data/store'
+import { store, supabase, sync, useAppState } from '../data/app'
+import { defaultId, livePointsForSession } from '../data/store'
 import { describeMark, describeZone, placementResultFor, zoneFor } from '../domain/court'
 import { capitalise, cleanOpponent } from '../domain/session'
 import { opponentRowsWithRoster, sessionLabel, venueRows } from '../domain/session'
@@ -18,8 +18,9 @@ import { OpponentPicker } from '../components/OpponentPicker'
 import { VenuePicker } from '../components/VenuePicker'
 import { filterPoints, summarize } from '../domain/stats'
 import { pointsToCsv, safeFilename, toExportBundle } from '../domain/export'
-import { encodeSharedMatch } from '../domain/share'
+import { decodeLiveSharedMatch } from '../domain/share'
 import { downloadText } from '../lib/format'
+import { isUuid } from '../domain/validate'
 import { ERROR_LABEL, KIND_LABEL, MODE_HINT, MODE_LABEL, SESSION_MODES, SHOT_TYPE_LABEL, STROKE_SHORT, type ErrorType, type Outcome, type PlacementStroke, type Point, type Session, type ShotType, type Stroke } from '../domain/types'
 
 const LOG_KEY = 'tennis-marker.logOpen'
@@ -267,9 +268,23 @@ export function RecordPage() {
     downloadText(safeFilename('tennis-marker-backup', 'json'), JSON.stringify(bundle, null, 2), 'application/json')
   }
   const copyMatchLink = async (match: Session) => {
-    if (match.kind !== 'match') return false
-    const payload = encodeSharedMatch(match, allPoints)
-    const url = `${window.location.origin}${window.location.pathname}#/share/${payload}`
+    if (match.kind !== 'match' || !supabase) return false
+    const token = isUuid(match.share_token) ? match.share_token : defaultId()
+    store.updateSession(match.id, {
+      opponent: match.opponent,
+      venue: match.venue,
+      date: match.date,
+      kind: match.kind,
+      mode: match.mode,
+      notes: match.notes,
+      share_token: token,
+    })
+    await sync.flush()
+    // Verify the public function can see this token before handing out the link. This also gives a
+    // useful failure when migration 0010 has not been applied yet.
+    const { data, error } = await supabase.rpc('get_shared_match', { p_token: token })
+    if (error || !decodeLiveSharedMatch(data)) return false
+    const url = `${window.location.origin}${window.location.pathname}#/share/${token}`
     try {
       await navigator.clipboard.writeText(url)
       return true
@@ -632,8 +647,8 @@ function SessionDetails({ session, isNew = false, onCopyLink, onClose, onDeleted
           >
             {shareStatus === 'copied' ? 'Link copied' : 'Copy link'}
           </button>
-          <p className="kbd-hint" style={{ marginTop: 6 }}>Anyone with the link can view only this match’s read-only statistics.</p>
-          {shareStatus === 'error' && <div className="notice err" style={{ marginTop: 8 }}>Could not copy the link. Try again from a secure browser tab.</div>}
+          <p className="kbd-hint" style={{ marginTop: 6 }}>Anyone with the link can view only this match’s latest read-only statistics.</p>
+          {shareStatus === 'error' && <div className="notice err" style={{ marginTop: 8 }}>Could not create the live link. Check that sync is online and the latest Supabase migration is installed.</div>}
         </div>
       )}
       <div className="row">

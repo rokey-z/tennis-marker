@@ -1,4 +1,5 @@
 import { isErrorType, isOutcome, isPlacementResult, isPlacementStroke, isSessionMode, isShotType, type Point, type Session } from './types'
+import { sanitizePoint, sanitizeSession } from './validate'
 
 type SharedSession = Pick<Session, 'title' | 'opponent' | 'venue' | 'date' | 'mode' | 'notes' | 'finished_at' | 'self_rating'>
 type SharedPayloadV1 = {
@@ -16,6 +17,21 @@ type SharedPayload = SharedPayloadV1 | SharedPayloadV2
 export interface SharedMatch {
   session: Session
   points: Point[]
+}
+
+/** Validate the deliberately-limited JSON returned by the public Supabase share function. */
+export function decodeLiveSharedMatch(raw: unknown): SharedMatch | null {
+  if (!raw || typeof raw !== 'object') return null
+  const value = raw as { session?: unknown; points?: unknown }
+  const session = sanitizeSession(value.session)
+  if (!session || session.kind !== 'match' || !Array.isArray(value.points)) return null
+  const points: Point[] = []
+  for (const rawPoint of value.points) {
+    const point = sanitizePoint(rawPoint)
+    if (!point || point.session_id !== session.id) return null
+    points.push(point)
+  }
+  return { session: { ...session, user_id: null, share_token: null }, points: points.map((point) => ({ ...point, user_id: null })) }
 }
 
 /** A self-contained public link: no account or database row is needed to view it. */

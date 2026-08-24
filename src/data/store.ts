@@ -32,7 +32,7 @@ export interface Store {
   /** Re-read from storage (another tab wrote). */
   reload(): void
   createSession(input?: Partial<Pick<Session, 'opponent' | 'venue' | 'date' | 'kind' | 'mode' | 'notes'>>): Session
-  updateSession(id: string, patch: Partial<Pick<Session, 'opponent' | 'venue' | 'date' | 'kind' | 'mode' | 'notes' | 'finished_at' | 'self_rating'>>): void
+  updateSession(id: string, patch: Partial<Pick<Session, 'opponent' | 'venue' | 'date' | 'kind' | 'mode' | 'notes' | 'finished_at' | 'self_rating' | 'share_token'>>): void
   /** Add an opponent before she has played them (device-local until used in a session). Returns false if blank/duplicate. */
   addRosterOpponent(name: string): boolean
   /** Rename an opponent across every session that uses it (case-insensitive match). Returns sessions changed. */

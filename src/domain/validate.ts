@@ -26,7 +26,7 @@ export function sanitizeSession(raw: unknown): Session | null {
   const date = str(r.date)
   const created = isoOrNull(r.created_at)
   if (!id || !date || !YMD_RE.test(date) || !created) return null
-  return {
+  const session: Session = {
     id,
     user_id: str(r.user_id),
     title: typeof r.title === 'string' ? r.title : '',
@@ -42,6 +42,8 @@ export function sanitizeSession(raw: unknown): Session | null {
     updated_at: isoOrNull(r.updated_at) ?? created,
     deleted_at: isoOrNull(r.deleted_at),
   }
+  if ('share_token' in r) session.share_token = isUuid(r.share_token) ? r.share_token : null
+  return session
 }
 
 /** Coerce an untrusted point row or reject it (unknown stroke/error, bad coords or timestamps are rejected). */
