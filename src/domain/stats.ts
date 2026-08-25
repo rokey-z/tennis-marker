@@ -101,8 +101,10 @@ export interface Summary {
   playerWinnersByShotType: Record<PointShotType, number>
   /** Non-serve placement landings. Serves are counted only in `serveLandings`. */
   placements: number
-  /** Serves are tracked separately and never enter placement, zone, or in/out totals. */
+  /** Successful serve landings, tracked separately from placement, zone, and in/out totals. */
   serveLandings: number
+  /** Serves that hit the net, tracked separately from both serve landings and ordinary net errors. */
+  serveNetMisses: number
   /** placements that landed outside the singles lines */
   placementsOut: number
   /** zoneId → count for placements — where the BALL landed, never mixed with the error zones */
@@ -142,6 +144,7 @@ export function summarize(points: Iterable<Point>): Summary {
     playerWinnersByShotType: Object.fromEntries(POINT_SHOT_TYPES.map((type) => [type, 0])) as Record<PointShotType, number>,
     placements: 0,
     serveLandings: 0,
+    serveNetMisses: 0,
     placementsOut: 0,
     placementZones: {},
     maxPlacementZone: 0,
@@ -179,7 +182,8 @@ export function summarize(points: Iterable<Point>): Summary {
     }
     if (outcome === 'placement') {
       if (p.stroke === 'serve') {
-        s.serveLandings++
+        if (p.placement_result === 'net') s.serveNetMisses++
+        else s.serveLandings++
         s.placementsByStroke.serve++
         continue
       }

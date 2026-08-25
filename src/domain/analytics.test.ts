@@ -122,7 +122,7 @@ describe('sessionStats outcomes', () => {
       pt({ session_id: 's1', error_type: '', outcome: 'placement', stroke: 'serve', placement_result: 'net' }),
     ]
 
-    expect(sessionStats([sess()], points)[0]).toMatchObject({ placements: 1, serveLandings: 2 })
+    expect(sessionStats([sess()], points)[0]).toMatchObject({ placements: 1, serveLandings: 1, serveNetMisses: 1 })
   })
 
   it('excludes winners and placements from error buckets and thirds', () => {

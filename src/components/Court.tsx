@@ -201,8 +201,9 @@ function placementSplitFor(placementHeat: PlacementHeat | null | undefined) {
   }
 }
 
-export function PlacementSplit({ placementHeat, serveCount, value, onChange }: { placementHeat: PlacementHeat | null | undefined; serveCount: number; value: PlacementFilter; onChange: (value: Exclude<PlacementFilter, 'all'>) => void }) {
+export function PlacementSplit({ placementHeat, serveLandings, serveNetMisses, value, onChange }: { placementHeat: PlacementHeat | null | undefined; serveLandings: number; serveNetMisses: number; value: PlacementFilter; onChange: (value: Exclude<PlacementFilter, 'all'>) => void }) {
   const split = placementSplitFor(placementHeat)
+  const serveCount = serveLandings + serveNetMisses
   if (!split || split.scored + serveCount === 0) return null
   const scored = split.scored
   return (
@@ -221,7 +222,7 @@ export function PlacementSplit({ placementHeat, serveCount, value, onChange }: {
       </button>
       <button type="button" className={`placement-split-group serve${value === 'serve' ? ' active' : ''}`} aria-pressed={value === 'serve'} onClick={() => onChange('serve')}>
         <div><span>SERVE</span><strong>{serveCount}</strong></div>
-        <small>Counted separately</small>
+        <small>{serveLandings} landed · {serveNetMisses} net {serveNetMisses === 1 ? 'miss' : 'misses'}</small>
       </button>
     </div>
   )

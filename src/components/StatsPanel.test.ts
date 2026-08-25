@@ -96,14 +96,16 @@ describe('StatsPanel placement summary', () => {
       placement('fh-in', 'fh', 'in'),
       placement('bh-wide', 'bh', 'wide'),
       placement('serve', 'serve', 'unknown'),
+      placement('serve-net', 'serve', 'net'),
     ])
-    const html = renderToStaticMarkup(createElement(StatsPanel, { summary, count: 3, mode: 'placement', showExports: false }))
+    const html = renderToStaticMarkup(createElement(StatsPanel, { summary, count: 4, mode: 'placement', showExports: false }))
 
     expect(summary.placements).toBe(2)
     expect(summary.serveLandings).toBe(1)
+    expect(summary.serveNetMisses).toBe(1)
     expect(html).toContain('<div class="label">Balls placed</div><div class="value">2</div>')
-    expect(html).toContain('<div class="label">Serve</div><div class="value">1<small>Counted separately</small>')
-    expect(html).toContain('1 serve counted separately from every placement and in/out total.')
+    expect(html).toContain('<div class="label">Serve</div><div class="value">2<small>1 landed · 1 net miss</small>')
+    expect(html).toContain('1 landed · 1 net miss. Serves are excluded from every placement and in/out total.')
     expect(html).not.toContain('<span class="pill serve">')
   })
 })

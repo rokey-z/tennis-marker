@@ -137,8 +137,8 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
             <div className="placement-outcome serve">
               <div className="label">Serve</div>
               <div className="value">
-                {summary.serveLandings}
-                <small>Counted separately</small>
+                {summary.serveLandings + summary.serveNetMisses}
+                <small>{summary.serveLandings} landed · {summary.serveNetMisses} net {summary.serveNetMisses === 1 ? 'miss' : 'misses'}</small>
               </div>
             </div>
           </div>
@@ -203,7 +203,7 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
               ))}
             </tbody>
           </table>
-          {summary.serveLandings > 0 && <p className="kbd-hint">{summary.serveLandings} {summary.serveLandings === 1 ? 'serve' : 'serves'} counted separately from every placement and in/out total.</p>}
+          {summary.serveLandings + summary.serveNetMisses > 0 && <p className="kbd-hint">{summary.serveLandings} landed · {summary.serveNetMisses} net {summary.serveNetMisses === 1 ? 'miss' : 'misses'}. Serves are excluded from every placement and in/out total.</p>}
         </div>
         {exportRow}
       </div>

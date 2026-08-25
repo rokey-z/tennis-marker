@@ -74,7 +74,8 @@ describe('placement split summary', () => {
         long: {},
         net: 1,
       },
-      serveCount: 3,
+      serveLandings: 2,
+      serveNetMisses: 1,
       value: 'all',
       onChange: () => undefined,
     }))
@@ -83,5 +84,6 @@ describe('placement split summary', () => {
     expect(html).toContain('<span>IN</span><strong>80%</strong>')
     expect(html).toContain('<span>OUT</span><strong>20%</strong>')
     expect(html).toContain('<span>SERVE</span><strong>3</strong>')
+    expect(html).toContain('2 landed · 1 net miss')
   })
 })

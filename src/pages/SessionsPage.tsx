@@ -88,7 +88,7 @@ export function SessionsPage() {
                     {count}
                     <small>
                       {placement ? (count === 1 ? 'mark' : 'marks') : count === 1 ? 'error' : 'errors'}
-                      {placement && summary.serveLandings > 0 ? ` · ${summary.serveLandings} ${summary.serveLandings === 1 ? 'serve' : 'serves'}` : ''}
+                      {placement && summary.serveLandings + summary.serveNetMisses > 0 ? ` · ${summary.serveLandings + summary.serveNetMisses} ${summary.serveLandings + summary.serveNetMisses === 1 ? 'serve' : 'serves'}` : ''}
                     </small>
                   </div>
                 </Link>

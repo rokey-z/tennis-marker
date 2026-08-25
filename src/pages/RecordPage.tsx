@@ -550,7 +550,8 @@ export function RecordPage() {
         {statsMode && placementMode && (
           <PlacementSplit
             placementHeat={{ in: placementSummary.placementInZones, long: placementSummary.placementLongZones, wide: placementSummary.placementWideZones, net: placementSummary.placementNet }}
-            serveCount={placementSummary.serveLandings}
+            serveLandings={placementSummary.serveLandings}
+            serveNetMisses={placementSummary.serveNetMisses}
             value={placementFilter}
             onChange={(next) => setPlacementFilter((current) => current === next ? 'all' : next)}
           />

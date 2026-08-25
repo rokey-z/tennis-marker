@@ -224,7 +224,8 @@ describe('summarize', () => {
       point({ stroke: 'serve', error_type: '', outcome: 'placement', placement_result: 'net', x: 0, y: 0 }),
     ])
     expect(s.placements).toBe(0)
-    expect(s.serveLandings).toBe(2)
+    expect(s.serveLandings).toBe(1)
+    expect(s.serveNetMisses).toBe(1)
     expect(s.placementsOut).toBe(0)
     expect(s.placementsByStroke.serve).toBe(2)
     expect(s.placementZones).toEqual({})
