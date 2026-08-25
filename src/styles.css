@@ -773,6 +773,7 @@ textarea.input {
 .court-fullscreen-exit,
 .court-fullscreen-log-toggle,
 .court-fullscreen-rotate,
+.court-fullscreen-undo,
 .court-fullscreen-log-panel {
   display: none;
 }
@@ -932,7 +933,8 @@ textarea.input {
     height: 22px;
   }
   .court-fullscreen-log-toggle,
-  .court-fullscreen-rotate {
+  .court-fullscreen-rotate,
+  .court-fullscreen-undo {
     position: absolute;
     bottom: max(10px, env(safe-area-inset-bottom));
     z-index: 22;
@@ -953,12 +955,19 @@ textarea.input {
   .court-fullscreen-rotate {
     left: max(64px, calc(env(safe-area-inset-left) + 64px));
   }
+  .court-fullscreen-undo {
+    right: max(10px, env(safe-area-inset-right));
+  }
+  .court-fullscreen-undo:disabled {
+    opacity: 0.38;
+  }
   .court-fullscreen-log-toggle.on {
     background: var(--accent);
     border-color: rgba(255, 255, 255, 0.7);
   }
   .court-fullscreen-log-toggle svg,
-  .court-fullscreen-rotate svg {
+  .court-fullscreen-rotate svg,
+  .court-fullscreen-undo svg {
     width: 22px;
     height: 22px;
   }

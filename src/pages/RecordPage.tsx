@@ -434,6 +434,16 @@ export function RecordPage() {
               <button type="button" className="court-fullscreen-exit" onClick={() => void exitCourtFullscreen()} aria-label="Exit full-screen court" title="Exit full screen">
                 <CloseIcon />
               </button>
+              <button
+                type="button"
+                className="court-fullscreen-undo"
+                onClick={undo}
+                disabled={finished || points.length === 0}
+                aria-label="Undo last point"
+                title="Undo last point"
+              >
+                <UndoIcon />
+              </button>
               {fullscreenLogOpen && (
                 <aside className="court-fullscreen-log-panel" aria-label="Logged points">
                   <LogFilterHeader points={points} mode={placementMode ? 'placement' : 'errors'} value={logFilter} playerName={player.name || 'Player'} onChange={setLogFilter} />
