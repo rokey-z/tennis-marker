@@ -15,6 +15,7 @@ import {
   zoneRect,
 } from '../domain/court'
 import { SHOT_TYPES, SHOT_TYPE_LABEL, isErrorType, isPlacementResult, isPlacementStroke, isShotType, type ErrorType, type PlacementStroke, type Point, type ShotType, type Stroke } from '../domain/types'
+import type { PlacementFilter } from '../domain/stats'
 import { errorWheelSelection, type ErrorDragChoice } from '../domain/errorWheel'
 import { ERROR_LETTER, markLabel } from './marks'
 
@@ -200,23 +201,28 @@ function placementSplitFor(placementHeat: PlacementHeat | null | undefined) {
   }
 }
 
-export function PlacementSplit({ placementHeat }: { placementHeat: PlacementHeat | null | undefined }) {
+export function PlacementSplit({ placementHeat, serveCount, value, onChange }: { placementHeat: PlacementHeat | null | undefined; serveCount: number; value: PlacementFilter; onChange: (value: Exclude<PlacementFilter, 'all'>) => void }) {
   const split = placementSplitFor(placementHeat)
-  if (!split || split.scored === 0) return null
+  if (!split || split.scored + serveCount === 0) return null
+  const scored = split.scored
   return (
-    <div className="placement-split" aria-label="In and out placement breakdown">
-      <div className="placement-split-group in">
-        <div><span>IN</span><strong>{Math.round((split.inTotal / split.scored) * 100)}%</strong></div>
+    <div className="placement-split" role="group" aria-label="Placement result filters">
+      <button type="button" className={`placement-split-group in${value === 'in' ? ' active' : ''}`} aria-pressed={value === 'in'} onClick={() => onChange('in')}>
+        <div><span>IN</span><strong>{scored ? Math.round((split.inTotal / scored) * 100) : 0}%</strong></div>
         <small>
           Short {split.inTotal ? Math.round((split.short / split.inTotal) * 100) : 0}% · Mid {split.inTotal ? Math.round((split.mid / split.inTotal) * 100) : 0}% · Deep {split.inTotal ? Math.round((split.deep / split.inTotal) * 100) : 0}%
         </small>
-      </div>
-      <div className="placement-split-group out">
-        <div><span>OUT</span><strong>{Math.round((split.outTotal / split.scored) * 100)}%</strong></div>
+      </button>
+      <button type="button" className={`placement-split-group out${value === 'out' ? ' active' : ''}`} aria-pressed={value === 'out'} onClick={() => onChange('out')}>
+        <div><span>OUT</span><strong>{scored ? Math.round((split.outTotal / scored) * 100) : 0}%</strong></div>
         <small>
           Wide {split.outTotal ? Math.round((split.wide / split.outTotal) * 100) : 0}% · Long {split.outTotal ? Math.round((split.long / split.outTotal) * 100) : 0}% · Net {split.outTotal ? Math.round((split.net / split.outTotal) * 100) : 0}%
         </small>
-      </div>
+      </button>
+      <button type="button" className={`placement-split-group serve${value === 'serve' ? ' active' : ''}`} aria-pressed={value === 'serve'} onClick={() => onChange('serve')}>
+        <div><span>SERVE</span><strong>{serveCount}</strong></div>
+        <small>Counted separately</small>
+      </button>
     </div>
   )
 }

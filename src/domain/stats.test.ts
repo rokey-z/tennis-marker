@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { compareSessionDesc, filterPoints, pct, perSessionCounts, summarize } from './stats'
+import { compareSessionDesc, filterPlacementPoints, filterPoints, pct, perSessionCounts, summarize } from './stats'
 import type { Point, Session } from './types'
 
 const t0 = '2026-08-15T10:00:00.000Z'
@@ -69,6 +69,22 @@ describe('filterPoints', () => {
     expect(filterPoints(mixed, { forced: 'unforced' })).toHaveLength(2) // the two unforced errors, nothing else
     expect(filterPoints(mixed, { forced: 'forced' })).toHaveLength(2)
     expect(filterPoints(mixed, { outcome: 'winner' })).toHaveLength(1)
+  })
+})
+
+describe('filterPlacementPoints', () => {
+  const pts = [
+    point({ id: 'in', outcome: 'placement', stroke: 'fh', error_type: '', placement_result: 'in' }),
+    point({ id: 'wide', outcome: 'placement', stroke: 'bh', error_type: '', placement_result: 'wide' }),
+    point({ id: 'net', outcome: 'error', stroke: 'fh', error_type: 'net' }),
+    point({ id: 'serve', outcome: 'placement', stroke: 'serve', error_type: '', placement_result: 'unknown' }),
+  ]
+
+  it('separates in, out, and serve points without overlap', () => {
+    expect(filterPlacementPoints(pts, 'all')).toHaveLength(4)
+    expect(filterPlacementPoints(pts, 'in').map((p) => p.id)).toEqual(['in'])
+    expect(filterPlacementPoints(pts, 'out').map((p) => p.id)).toEqual(['wide', 'net'])
+    expect(filterPlacementPoints(pts, 'serve').map((p) => p.id)).toEqual(['serve'])
   })
 })
 

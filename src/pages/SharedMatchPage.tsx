@@ -3,7 +3,7 @@ import { useParams } from 'react-router'
 import { Court, PlacementSplit } from '../components/Court'
 import { MarkLegend } from '../components/marks'
 import { StatsFilters, StatsPanel, type StatsFilterState } from '../components/StatsPanel'
-import { filterPoints, summarize } from '../domain/stats'
+import { filterPlacementPoints, filterPoints, summarize, type PlacementFilter } from '../domain/stats'
 import { decodeLiveSharedMatch, decodeSharedMatch, type SharedMatch } from '../domain/share'
 import { sessionLabel } from '../domain/session'
 import { formatDate } from '../lib/format'
@@ -19,6 +19,7 @@ export function SharedMatchPage() {
   const [liveShared, setLiveShared] = useState<SharedMatch | null>(null)
   const [loading, setLoading] = useState(liveToken)
   const [filters, setFilters] = useState<StatsFilterState>(DEFAULT_STATS_FILTERS)
+  const [placementFilter, setPlacementFilter] = useState<PlacementFilter>('all')
   const requestId = useRef(0)
   const shared = liveToken ? liveShared : decodeSharedMatch(payload)
 
@@ -41,6 +42,7 @@ export function SharedMatchPage() {
     }
     setLiveShared(null)
     setFilters(DEFAULT_STATS_FILTERS)
+    setPlacementFilter('all')
     void refresh(true)
     const interval = window.setInterval(() => void refresh(), 10_000)
     const refreshWhenVisible = () => {
@@ -61,8 +63,12 @@ export function SharedMatchPage() {
     () => (shared?.points ?? []).filter((point) => placement ? point.outcome === 'placement' || point.error_type === 'net' : point.outcome !== 'placement'),
     [shared, placement],
   )
-  const shownPoints = useMemo(() => placement ? visiblePoints : filterPoints(visiblePoints, filters), [visiblePoints, placement, filters])
+  const shownPoints = useMemo(
+    () => placement ? filterPlacementPoints(visiblePoints, placementFilter) : filterPoints(visiblePoints, filters),
+    [visiblePoints, placement, placementFilter, filters],
+  )
   const summary = useMemo(() => summarize(shownPoints), [shownPoints])
+  const placementSummary = useMemo(() => summarize(visiblePoints), [visiblePoints])
   const mapPoints = placement ? shownPoints : shownPoints.filter((point) => point.outcome !== 'winner')
 
   if (loading) {
@@ -116,7 +122,12 @@ export function SharedMatchPage() {
           )}
         </div>
         {placement && (
-          <PlacementSplit placementHeat={{ in: summary.placementInZones, long: summary.placementLongZones, wide: summary.placementWideZones, net: summary.placementNet }} />
+          <PlacementSplit
+            placementHeat={{ in: placementSummary.placementInZones, long: placementSummary.placementLongZones, wide: placementSummary.placementWideZones, net: placementSummary.placementNet }}
+            serveCount={placementSummary.serveLandings}
+            value={placementFilter}
+            onChange={(next) => setPlacementFilter((current) => current === next ? 'all' : next)}
+          />
         )}
         <MarkLegend mode={placement ? 'placement' : 'errors'} />
         <StatsPanel summary={summary} count={shownPoints.length} mode={placement ? 'placement' : 'errors'} showExports={false} />

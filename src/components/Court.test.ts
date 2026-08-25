@@ -49,10 +49,14 @@ describe('placement split summary', () => {
         long: {},
         net: 1,
       },
+      serveCount: 3,
+      value: 'all',
+      onChange: () => undefined,
     }))
 
     expect(html).toContain('class="placement-split"')
     expect(html).toContain('<span>IN</span><strong>80%</strong>')
     expect(html).toContain('<span>OUT</span><strong>20%</strong>')
+    expect(html).toContain('<span>SERVE</span><strong>3</strong>')
   })
 })

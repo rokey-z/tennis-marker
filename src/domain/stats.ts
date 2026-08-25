@@ -3,6 +3,7 @@ import type { ErrorType, Outcome, PlacementResult, PlacementStroke, Point, Point
 import { POINT_SHOT_TYPES, SHOT_TYPES, isErrorType, isPlacementResult, isPlacementStroke, isPointShotType, isShotType, isStroke } from './types'
 
 export type ForcedFilter = 'all' | 'forced' | 'unforced'
+export type PlacementFilter = 'all' | 'in' | 'out' | 'serve'
 
 export interface Filters {
   sessionId?: string | 'all'
@@ -35,6 +36,33 @@ export function filterPoints(points: Iterable<Point>, f: Filters = {}): Point[] 
     }
     if (f.outcome && f.outcome !== 'all' && (p.outcome ?? 'error') !== f.outcome) continue
     out.push(p)
+  }
+  return out
+}
+
+/** Placement-page filter. Serves are independent; net strikes belong to Out. */
+export function filterPlacementPoints(points: Iterable<Point>, filter: PlacementFilter): Point[] {
+  const out: Point[] = []
+  for (const point of points) {
+    if (point.deleted_at) continue
+    const outcome = point.outcome ?? 'error'
+    if (filter === 'all') {
+      out.push(point)
+      continue
+    }
+    if (filter === 'serve') {
+      if (outcome === 'placement' && point.stroke === 'serve') out.push(point)
+      continue
+    }
+    if (point.error_type === 'net') {
+      if (filter === 'out') out.push(point)
+      continue
+    }
+    if (outcome !== 'placement' || point.stroke === 'serve') continue
+    const result = isPlacementResult(point.placement_result) && point.placement_result !== 'unknown'
+      ? point.placement_result
+      : placementResultFor(point.x, point.y)
+    if (filter === 'in' ? result === 'in' : result === 'wide' || result === 'long' || result === 'net') out.push(point)
   }
   return out
 }

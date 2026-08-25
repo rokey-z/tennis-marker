@@ -16,7 +16,7 @@ import { markLabel } from '../components/marks'
 import { PointSheet } from '../components/PointSheet'
 import { OpponentPicker } from '../components/OpponentPicker'
 import { VenuePicker } from '../components/VenuePicker'
-import { filterPoints, summarize } from '../domain/stats'
+import { filterPlacementPoints, filterPoints, summarize, type PlacementFilter } from '../domain/stats'
 import { pointsToCsv, safeFilename, toExportBundle } from '../domain/export'
 import { decodeLiveSharedMatch } from '../domain/share'
 import { downloadText } from '../lib/format'
@@ -67,9 +67,14 @@ export function RecordPage() {
   const [statsMapCompact, setStatsMapCompact] = useState(false)
   const statsPanelScrollTop = useRef(0)
   const [filters, setFilters] = useState<StatsFilterState>(DEFAULT_STATS_FILTERS)
+  const [placementFilter, setPlacementFilter] = useState<PlacementFilter>('all')
   const statsMode = view === 'stats'
-  const shownPoints = useMemo(() => (statsMode ? filterPoints(points, filters) : points), [statsMode, points, filters])
+  const shownPoints = useMemo(
+    () => statsMode ? placementMode ? filterPlacementPoints(points, placementFilter) : filterPoints(points, filters) : points,
+    [statsMode, placementMode, points, placementFilter, filters],
+  )
   const statsSummary = useMemo(() => summarize(shownPoints), [shownPoints])
+  const placementSummary = useMemo(() => summarize(points), [points])
   const loggedPoints = useMemo(() => points.filter((point) => matchesLogFilter(point, logFilter)), [points, logFilter])
   const justCreated = (useLocation().state as { justCreated?: boolean } | null)?.justCreated === true
   const [showDetails, setShowDetails] = useState(justCreated)
@@ -84,6 +89,7 @@ export function RecordPage() {
   useEffect(() => {
     setPending(null)
     setLogFilter('all')
+    setPlacementFilter('all')
   }, [id, placementMode])
   useEffect(() => {
     if (logFilter !== 'all' && !points.some((point) => matchesLogFilter(point, logFilter))) setLogFilter('all')
@@ -519,7 +525,12 @@ export function RecordPage() {
           {courtFullscreen && pointEditor}
         </div>
         {statsMode && placementMode && (
-          <PlacementSplit placementHeat={{ in: statsSummary.placementInZones, long: statsSummary.placementLongZones, wide: statsSummary.placementWideZones, net: statsSummary.placementNet }} />
+          <PlacementSplit
+            placementHeat={{ in: placementSummary.placementInZones, long: placementSummary.placementLongZones, wide: placementSummary.placementWideZones, net: placementSummary.placementNet }}
+            serveCount={placementSummary.serveLandings}
+            value={placementFilter}
+            onChange={(next) => setPlacementFilter((current) => current === next ? 'all' : next)}
+          />
         )}
       </div>
 
