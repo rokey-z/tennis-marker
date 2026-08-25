@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { Chip, Modal, PointList, SyncBadge, Toast, type ToastState } from '../components/Bits'
 import { useIsDesktop, usePlayer } from '../components/hooks'
 import { shortDate } from '../lib/format'
-import { Court, type CourtRotation } from '../components/Court'
+import { Court, PlacementSplit, type CourtRotation } from '../components/Court'
 import { StatsFilters, StatsPanel, type StatsFilterState } from '../components/StatsPanel'
 import { BackIcon, CloseIcon, FullscreenIcon, LinkIcon, ListIcon, LockIcon, Rotate90Icon, UndoIcon } from '../components/Icons'
 import { ShotPopover } from '../components/ShotPopover'
@@ -518,6 +518,9 @@ export function RecordPage() {
           {courtFullscreen && <Toast toast={toast} onDismiss={dismissToast} />}
           {courtFullscreen && pointEditor}
         </div>
+        {statsMode && placementMode && (
+          <PlacementSplit placementHeat={{ in: statsSummary.placementInZones, long: statsSummary.placementLongZones, wide: statsSummary.placementWideZones, net: statsSummary.placementNet }} />
+        )}
       </div>
 
       {isDesktop ? (

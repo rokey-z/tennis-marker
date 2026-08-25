@@ -1,5 +1,7 @@
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { clampTooltipPosition } from './Court'
+import { PlacementSplit, clampTooltipPosition } from './Court'
 import { errorDragChoice, errorWheelSelection } from '../domain/errorWheel'
 
 describe('error drag wheel', () => {
@@ -35,5 +37,22 @@ describe('court stats tooltip placement', () => {
 
   it('keeps an oversized tooltip anchored to the safe viewport edge', () => {
     expect(clampTooltipPosition({ x: 4, y: 4 }, { width: 500, height: 700 }, { width: 375, height: 667 })).toEqual({ left: 8, top: 8 })
+  })
+})
+
+describe('placement split summary', () => {
+  it('renders the in/out breakdown as its own layout block', () => {
+    const html = renderToStaticMarkup(createElement(PlacementSplit, {
+      placementHeat: {
+        in: { 'net-middle': 2, 'mid-middle': 4, 'baseline-middle': 2 },
+        wide: { 'mid-deuce': 1 },
+        long: {},
+        net: 1,
+      },
+    }))
+
+    expect(html).toContain('class="placement-split"')
+    expect(html).toContain('<span>IN</span><strong>80%</strong>')
+    expect(html).toContain('<span>OUT</span><strong>20%</strong>')
   })
 })

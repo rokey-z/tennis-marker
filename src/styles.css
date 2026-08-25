@@ -1050,16 +1050,12 @@ textarea.input {
   to { stroke-dashoffset: 100; }
 }
 .placement-split {
-  position: absolute;
-  top: 8px;
-  left: 50%;
-  z-index: 4;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 5px;
   width: min(420px, calc(100% - 16px));
+  margin: 8px auto 0;
   pointer-events: none;
-  transform: translateX(-50%);
 }
 .placement-split-group {
   min-width: 0;
@@ -1491,6 +1487,9 @@ textarea.input {
     box-shadow: 0 5px 14px rgba(20, 24, 29, 0.16);
   }
   .record.stats.stats-map-compact .stats-filters {
+    display: none;
+  }
+  .record.stats.stats-map-compact .placement-split {
     display: none;
   }
   .record.stats.stats-map-compact .court-box {

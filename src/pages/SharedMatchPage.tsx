@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router'
-import { Court } from '../components/Court'
+import { Court, PlacementSplit } from '../components/Court'
 import { MarkLegend } from '../components/marks'
 import { StatsFilters, StatsPanel, type StatsFilterState } from '../components/StatsPanel'
 import { filterPoints, summarize } from '../domain/stats'
@@ -115,6 +115,9 @@ export function SharedMatchPage() {
             </div>
           )}
         </div>
+        {placement && (
+          <PlacementSplit placementHeat={{ in: summary.placementInZones, long: summary.placementLongZones, wide: summary.placementWideZones, net: summary.placementNet }} />
+        )}
         <MarkLegend mode={placement ? 'placement' : 'errors'} />
         <StatsPanel summary={summary} count={shownPoints.length} mode={placement ? 'placement' : 'errors'} showExports={false} />
         {session.notes && <div className="card shared-notes"><div className="section-title">Notes</div>{session.notes}</div>}
