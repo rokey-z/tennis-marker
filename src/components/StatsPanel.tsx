@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { filterPoints, pct, type Filters, type Summary } from '../domain/stats'
-import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, POINT_SHOT_TYPES, SHOT_TYPES, SHOT_TYPE_LABEL, STROKE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type PlacementResult, type PlacementStroke, type Point } from '../domain/types'
+import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, POINT_SHOT_TYPES, SHOT_TYPES, SHOT_TYPE_LABEL, STROKE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type PlacementStroke, type Point } from '../domain/types'
 import { Chip } from './Bits'
 import { DownloadIcon } from './Icons'
 
@@ -106,86 +106,81 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
       { label: 'Long', count: resultTotal('long') },
       { label: 'Net', count: net },
     ]
-    const resultLabels: Record<PlacementResult, string> = { in: 'In', net: 'Net', wide: 'Wide', long: 'Long', unknown: 'Unrated' }
-    const misses: { stroke: typeof placementStrokes[number]; result: Exclude<PlacementResult, 'in' | 'unknown'>; count: number }[] = []
-    for (const stroke of placementStrokes) {
-      for (const result of ['net', 'wide', 'long'] as const) {
-        const count = result === 'net' ? summary.matrix[stroke].net + summary.placementMatrix[stroke].net : summary.placementMatrix[stroke][result]
-        misses.push({ stroke, result, count })
-      }
-    }
-    const focus = misses.sort((a, b) => b.count - a.count)[0]
     return (
       <div className="stack stats-panel">
-        {focus?.count > 0 && (
-          <div className="card insight-card">
-            <div className="section-title">Next focus</div>
-            <strong>{STROKE_LABEL[focus.stroke]} {resultLabels[focus.result]}</strong>
-            <span>{focus.count} {focus.count === 1 ? 'mark' : 'marks'} in this session</span>
-          </div>
-        )}
-        <div className="tiles">
-          <div className="tile">
-            <div className="label">Balls placed</div>
-            <div className="value">{summary.placements}</div>
-          </div>
-          <div className="tile">
-            <div className="label">In</div>
-            <div className="value">
-              {pct(inCourt, scoredLandings)}%
-              <small>{inCourt} {inCourt === 1 ? 'ball' : 'balls'}</small>
+        <div className="card placement-overview">
+          <div className="placement-overview-head">
+            <div>
+              <div className="section-title">Placement results</div>
+              <p>Serves are tracked separately from court placement.</p>
+            </div>
+            <div className="placement-total">
+              <div className="label">Balls placed</div>
+              <div className="value">{summary.placements}</div>
             </div>
           </div>
-          <div className="tile">
-            <div className="label">Out</div>
-            <div className="value">
-              {pct(errors, scoredLandings)}%
-              <small>{errors} {errors === 1 ? 'ball' : 'balls'}</small>
+          <div className="placement-outcomes">
+            <div className="placement-outcome in">
+              <div className="label">In</div>
+              <div className="value">
+                {pct(inCourt, scoredLandings)}%
+                <small>{inCourt} {inCourt === 1 ? 'ball' : 'balls'}</small>
+              </div>
             </div>
-          </div>
-          <div className="tile">
-            <div className="label">Forehand</div>
-            <div className="value">
-              {summary.placementsByStroke.fh}
-              <small>{pct(summary.placementsByStroke.fh, summary.placements)}%</small>
+            <div className="placement-outcome out">
+              <div className="label">Out</div>
+              <div className="value">
+                {pct(errors, scoredLandings)}%
+                <small>{errors} {errors === 1 ? 'ball' : 'balls'}</small>
+              </div>
             </div>
-          </div>
-          <div className="tile">
-            <div className="label">Serve</div>
-            <div className="value">
-              {summary.serveLandings}
-              <small>Counted separately</small>
+            <div className="placement-outcome serve">
+              <div className="label">Serve</div>
+              <div className="value">
+                {summary.serveLandings}
+                <small>Counted separately</small>
+              </div>
             </div>
           </div>
         </div>
-        <div className="card">
-          <div className="section-title">In types · {pct(inCourt, scoredLandings)}% overall</div>
-          <div className="bars">
-            {inAreas.map((area) => (
-              <div className="bar-row" key={area.label}>
-                <span>{area.label}</span>
-                <div className="track">
-                  <div className="fill" style={{ width: `${pct(area.count, inCourt)}%` }} />
+        {(inCourt > 0 || errors > 0) && <div className="card placement-breakdown">
+          {inCourt > 0 && <section className="placement-breakdown-group in">
+            <div className="placement-breakdown-head">
+              <div className="section-title">In by depth</div>
+              <strong>{inCourt} · {pct(inCourt, scoredLandings)}%</strong>
+            </div>
+            <div className="bars">
+              {inAreas.filter((area) => area.count > 0).map((area) => (
+                <div className="bar-row" key={area.label}>
+                  <span>{area.label}</span>
+                  <div className="track">
+                    <div className="fill" style={{ width: `${pct(area.count, inCourt)}%` }} />
+                  </div>
+                  <span className="val">{area.count} · {pct(area.count, inCourt)}%</span>
                 </div>
-                <span className="val">{area.count} · {pct(area.count, inCourt)}%</span>
-              </div>
-            ))}
-          </div>
-          <div className="section-title">Out types · {pct(errors, scoredLandings)}% overall</div>
-          <div className="bars">
-            {outAreas.map((area) => (
-              <div className="bar-row" key={area.label}>
-                <span>{area.label}</span>
-                <div className="track">
-                  <div className="fill out" style={{ width: `${pct(area.count, errors)}%` }} />
+              ))}
+            </div>
+          </section>}
+          {errors > 0 && <section className="placement-breakdown-group out">
+            <div className="placement-breakdown-head">
+              <div className="section-title">Out by result</div>
+              <strong>{errors} · {pct(errors, scoredLandings)}%</strong>
+            </div>
+            <div className="bars">
+              {outAreas.filter((area) => area.count > 0).map((area) => (
+                <div className="bar-row" key={area.label}>
+                  <span>{area.label}</span>
+                  <div className="track">
+                    <div className="fill out" style={{ width: `${pct(area.count, errors)}%` }} />
+                  </div>
+                  <span className="val">{area.count} · {pct(area.count, errors)}%</span>
                 </div>
-                <span className="val">{area.count} · {pct(area.count, errors)}%</span>
-              </div>
-            ))}
-          </div>
-        </div>
+              ))}
+            </div>
+          </section>}
+        </div>}
         <div className="card">
-          <div className="section-title">In / out by placement type</div>
+          <div className="section-title">In / out by stroke</div>
           <table className="matrix">
             <thead>
               <tr>
