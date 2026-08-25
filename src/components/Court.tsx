@@ -129,9 +129,6 @@ function ErrorDragWheel({ x, y, radius, rotation, selected, winner, mobile }: { 
         )
       })}
       <circle cx={x} cy={y} r={0.46} fill="#73777c" stroke="#ffffff" strokeWidth={0.18} />
-      <text x={x} y={y + radius + 0.82} textAnchor="middle" fill={winner ? 'var(--win)' : 'rgba(255,255,255,0.88)'} fontFamily="var(--font)" fontSize={0.7} fontWeight={850} letterSpacing={0.04}>
-        Winner
-      </text>
     </g>
   )
 }
