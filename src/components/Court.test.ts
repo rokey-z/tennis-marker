@@ -1,7 +1,7 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { PlacementSplit, clampTooltipPosition } from './Court'
+import { PlacementSplit, clampTooltipPosition, placementHoverGroupId } from './Court'
 import { errorDragChoice, errorWheelSelection } from '../domain/errorWheel'
 
 describe('error drag wheel', () => {
@@ -37,6 +37,20 @@ describe('court stats tooltip placement', () => {
 
   it('keeps an oversized tooltip anchored to the safe viewport edge', () => {
     expect(clampTooltipPosition({ x: 4, y: 4 }, { width: 500, height: 700 }, { width: 375, height: 667 })).toEqual({ left: 8, top: 8 })
+  })
+})
+
+describe('placement map hover groups', () => {
+  it('groups all three in-court columns by depth', () => {
+    expect(placementHoverGroupId('in-net-ad')).toBe('in-net')
+    expect(placementHoverGroupId('in-mid-middle')).toBe('in-mid')
+    expect(placementHoverGroupId('in-baseline-deuce')).toBe('in-baseline')
+  })
+
+  it('keeps out and net areas independent', () => {
+    expect(placementHoverGroupId('wide-mid-ad')).toBe('wide-mid-ad')
+    expect(placementHoverGroupId('long-baseline-middle')).toBe('long-baseline-middle')
+    expect(placementHoverGroupId('net')).toBe('net')
   })
 })
 

@@ -516,7 +516,21 @@ export function Court({ rotation = 0, onTap, onLongPress, disabled = false, poin
     return counts
   }, [placementHeat, points])
   const activePinnedPlacement = placementHeatCells?.some((cell) => cell.id === pinnedPlacementCell && cell.n > 0) ? pinnedPlacementCell : null
-  const hoveredPlacement = placementHeatCells?.find((cell) => cell.id === hoveredPlacementCell && cell.n > 0) ?? null
+  const hoveredPlacementGroup = hoveredPlacementCell ? placementHoverGroupId(hoveredPlacementCell) : null
+  const hoveredPlacementCells = hoveredPlacementGroup
+    ? placementHeatCells?.filter((cell) => placementHoverGroupId(cell.id) === hoveredPlacementGroup) ?? []
+    : []
+  const hoveredPlacement = hoveredPlacementCells.length > 0
+    ? {
+        n: hoveredPlacementCells.reduce((total, cell) => total + cell.n, 0),
+        strokes: hoveredPlacementCells.reduce((total, cell) => {
+          const strokes = placementHeatStrokes.get(cell.id)
+          return { fh: total.fh + (strokes?.fh ?? 0), bh: total.bh + (strokes?.bh ?? 0) }
+        }, { fh: 0, bh: 0 }),
+        label: placementHoverGroupLabel(hoveredPlacementGroup!),
+        grouped: hoveredPlacementCells.length > 1,
+      }
+    : null
   const updatePlacementHover = (id: string, e: ReactPointerEvent<SVGRectElement>) => {
     if (activePinnedPlacement) return
     setHoveredPlacementCell(id)
@@ -660,7 +674,7 @@ export function Court({ rotation = 0, onTap, onLongPress, disabled = false, poin
             {placementHeatCells.map((c) => {
               const strokes = placementHeatStrokes.get(c.id) ?? { fh: 0, bh: 0 }
               const hoverable = c.n > 0
-              const hovered = hoverable && c.id === hoveredPlacementCell
+              const hovered = hoveredPlacementGroup !== null && placementHoverGroupId(c.id) === hoveredPlacementGroup
               return (
                 <rect
                   key={c.id}
@@ -895,11 +909,11 @@ export function Court({ rotation = 0, onTap, onLongPress, disabled = false, poin
     {hoveredPlacement && placementHoverClient && (
       <FloatingCourtTooltip anchor={placementHoverClient}>
         <div>
-          <span className="fh">FH {placementHeatStrokes.get(hoveredPlacement.id)?.fh ?? 0}</span>
+          <span className="fh">FH {hoveredPlacement.strokes.fh}</span>
           <span className="sep"> · </span>
-          <span className="bh">BH {placementHeatStrokes.get(hoveredPlacement.id)?.bh ?? 0}</span>
+          <span className="bh">BH {hoveredPlacement.strokes.bh}</span>
         </div>
-        <small>{hoveredPlacement.n} mark{hoveredPlacement.n === 1 ? '' : 's'} in this area</small>
+        <small>{hoveredPlacement.label ? `${hoveredPlacement.label} · ` : ''}{hoveredPlacement.n} mark{hoveredPlacement.n === 1 ? '' : 's'} {hoveredPlacement.grouped ? 'across 3 blocks' : 'in this area'}</small>
       </FloatingCourtTooltip>
     )}
     {hoveredHeat && heatHoverClient && (() => {
@@ -979,6 +993,19 @@ export function clampTooltipPosition(anchor: { x: number; y: number }, size: { w
     left: Math.max(TOOLTIP_EDGE, Math.min(left, viewport.width - TOOLTIP_EDGE - size.width)),
     top: Math.max(TOOLTIP_EDGE, Math.min(top, viewport.height - TOOLTIP_EDGE - size.height)),
   }
+}
+
+/** The three in-court columns form one useful depth band when exploring placement stats. */
+export function placementHoverGroupId(id: string): string {
+  const match = /^in-(net|mid|baseline)-/.exec(id)
+  return match ? `in-${match[1]}` : id
+}
+
+function placementHoverGroupLabel(id: string): string | null {
+  if (id === 'in-net') return 'Short'
+  if (id === 'in-mid') return 'Mid'
+  if (id === 'in-baseline') return 'Deep'
+  return null
 }
 
 /** Keeps both pointer-following and click-pinned court details fully inside the viewport. */
