@@ -33,6 +33,12 @@ describe('normalizePoint', () => {
       error_type: 'net',
       placement_result: null,
     })
+    expect(normalizePoint({ ...row, stroke: 'serve', error_type: '', outcome: 'placement', placement_result: 'net' })).toMatchObject({
+      outcome: 'placement',
+      stroke: 'serve',
+      error_type: '',
+      placement_result: 'net',
+    })
     // the opponent's winner: no stroke of hers, no error type, never forced
     expect(normalizePoint({ ...row, stroke: 'fh', error_type: 'long', outcome: 'winner', forced: true })).toMatchObject({
       outcome: 'winner',
@@ -51,6 +57,13 @@ describe('normalizePoint', () => {
       outcome: 'winning_serve',
       stroke: 'serve',
       shot_type: 'winning_serve',
+    })
+    expect(normalizePoint({ ...row, stroke: 'serve', error_type: '', outcome: 'error', shot_type: 'double_fault', forced: true })).toMatchObject({
+      outcome: 'error',
+      stroke: 'serve',
+      error_type: '',
+      shot_type: 'double_fault',
+      forced: false,
     })
   })
 

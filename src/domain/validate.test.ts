@@ -74,6 +74,16 @@ describe('sanitizePoint', () => {
       placement_result: 'net',
     })
   })
+
+  it('accepts a double fault as a serve error without an FH/BH error type', () => {
+    expect(sanitizePoint({ ...good, outcome: 'error', stroke: 'serve', error_type: '', shot_type: 'double_fault', forced: true })).toMatchObject({
+      outcome: 'error',
+      stroke: 'serve',
+      error_type: '',
+      shot_type: 'double_fault',
+      forced: false,
+    })
+  })
 })
 
 describe('sanitizeSession', () => {

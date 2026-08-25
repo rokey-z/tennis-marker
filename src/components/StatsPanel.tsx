@@ -213,6 +213,7 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
     { key: 'long', label: 'Long', count: summary.byError.long, color: 'var(--err-long)' },
     { key: 'net', label: 'Net', count: summary.byError.net, color: 'var(--err-net)' },
     { key: 'wide', label: 'Wide', count: summary.byError.wide, color: 'var(--err-wide)' },
+    { key: 'double-fault', label: 'Double faults', count: summary.doubleFaults, color: 'var(--err-double-fault)' },
     { key: 'winners', label: 'Winners', count: summary.winners, color: 'var(--win)' },
   ]
   const ballTypeItems: Array<{ key: string; label: string; count: number; fh: number; bh: number; muted?: boolean }> = SHOT_TYPES
@@ -326,7 +327,7 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
       </div>
 
       {exportRow}
-      <p className="kbd-hint">Counts, not rates — points won aren’t tracked (yet).</p>
+      <p className="kbd-hint">Counts, not rates.</p>
     </div>
   )
 }

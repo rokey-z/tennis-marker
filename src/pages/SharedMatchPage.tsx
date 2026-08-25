@@ -110,7 +110,7 @@ export function SharedMatchPage() {
             sideLabel={placement ? 'Opponent’s side' : 'Player’s side'}
             heat={placement ? null : summary.byZone}
             placementHeat={placement ? { in: summary.placementInZones, long: summary.placementLongZones, wide: summary.placementWideZones, net: summary.placementNet } : null}
-            heatTotal={placement ? summary.placements : summary.total}
+            heatTotal={placement ? summary.placements : summary.total - summary.doubleFaults}
             showZones
           />
           {!placement && (
@@ -118,6 +118,7 @@ export function SharedMatchPage() {
               {summary.winners > 0 && <span aria-label={`${summary.winners} opponent winners`}><span className="stats-map-winner-mark" aria-hidden="true">×</span> Opponent winners <strong>{summary.winners}</strong></span>}
               {summary.winningServes > 0 && <span aria-label={`${summary.winningServes} winning serves`}><span className="stats-map-winning-serve-mark" aria-hidden="true">S</span> Winning serves <strong>{summary.winningServes}</strong></span>}
               {summary.playerWinners > 0 && <span aria-label={`${summary.playerWinners} player winners`}><span className="stats-map-player-winner-mark" aria-hidden="true">★</span> Player winners <strong>{summary.playerWinners}</strong></span>}
+              {summary.doubleFaults > 0 && <span aria-label={`${summary.doubleFaults} double faults`}><span className="stats-map-double-fault-mark" aria-hidden="true">DF</span> Double faults <strong>{summary.doubleFaults}</strong></span>}
             </div>
           )}
         </div>

@@ -4,6 +4,24 @@ import { describe, expect, it, vi } from 'vitest'
 import { ShotPopover } from './ShotPopover'
 
 describe('ShotPopover player winner flow', () => {
+  it('offers Double fault beside the opponent-winner action in the point menu', () => {
+    const html = renderToStaticMarkup(createElement(ShotPopover, {
+      anchor: { clientX: 100, clientY: 100 },
+      containerRef: createRef<HTMLElement>(),
+      where: 'Baseline · middle',
+      forced: false,
+      onForcedChange: vi.fn(),
+      onPick: vi.fn(),
+      onWinner: vi.fn(),
+      onDoubleFault: vi.fn(),
+      player: { name: '', subject: 'she', possessive: 'her' },
+      onCancel: vi.fn(),
+    }))
+
+    expect(html).toContain('DF Double fault')
+    expect(html).toContain('★ Winner')
+  })
+
   it('offers BH, FH, and Serve with a separate winner confirmation', () => {
     const html = renderToStaticMarkup(createElement(ShotPopover, {
       anchor: { clientX: 100, clientY: 100 },

@@ -33,7 +33,7 @@ import { formatDate, formatMinutes, parseYMD, shortDate, weekday } from '../lib/
 
 type StackMode = 'total' | 'stroke' | 'error' | 'forced'
 /** Numeric fields shared by SessionStat and Bucket that a stacked series can read. */
-type CountKey = 'total' | 'fh' | 'bh' | 'long' | 'net' | 'wide' | 'unforced' | 'forced'
+type CountKey = 'total' | 'fh' | 'bh' | 'long' | 'net' | 'wide' | 'doubleFaults' | 'unforced' | 'forced'
 type CountRow = Record<CountKey, number>
 type StackSeries = Series & { key: CountKey }
 
@@ -48,6 +48,7 @@ const SERIES: Record<StackMode, StackSeries[]> = {
     { key: 'long', label: 'Long', color: CHART.long },
     { key: 'net', label: 'Net', color: CHART.net },
     { key: 'wide', label: 'Wide', color: CHART.wide },
+    { key: 'doubleFaults', label: 'Double fault', color: CHART.doubleFaults },
   ],
   forced: [
     { key: 'unforced', label: 'Unforced', color: CHART.unforced },
@@ -243,6 +244,7 @@ export function DashboardPage() {
                         <th>Long</th>
                         <th>Net</th>
                         <th>Wide</th>
+                        <th>DF</th>
                         <th>Forced</th>
                         <th>Duration</th>
                       </tr>
@@ -260,6 +262,7 @@ export function DashboardPage() {
                           <td>{s.long}</td>
                           <td>{s.net}</td>
                           <td>{s.wide}</td>
+                          <td>{s.doubleFaults}</td>
                           <td>{s.forced}</td>
                           <td>{s.durationMin ? formatMinutes(s.durationMin) : '—'}</td>
                         </tr>
@@ -298,6 +301,7 @@ export function DashboardPage() {
                 <>
                   <div className="facts">
                     <Fact label="Errors" value={selected.total} />
+                    {selected.doubleFaults > 0 && <Fact label="Double faults" value={selected.doubleFaults} />}
                     <Fact label="Duration" value={selected.durationMin ? formatMinutes(selected.durationMin) : '—'} hint="Span of the main activity; points added long after are not counted in the span" />
                     <Fact label={`Per ${bucketMin} min`} value={selected.durationMin >= 5 ? (selected.activeCount / (selected.durationMin / bucketMin)).toFixed(1) : '—'} />
                     <Fact label="Longest run" value={streak && streak.length > 1 ? `${streak.length} ${STROKE_SHORT[streak.key as 'fh' | 'bh'] ?? streak.key} in a row` : '—'} />
@@ -338,7 +342,7 @@ export function DashboardPage() {
             <div className="dash-grid">
               <div className="card">
                 <div className="section-title">Error mix by stroke</div>
-                <ShareBars series={SERIES.error} rows={strokeRows(() => SERIES.error, (s, key) => summary.matrix[s][key as 'long' | 'net' | 'wide'])} />
+                <ShareBars series={SERIES.error.filter((series) => series.key !== 'doubleFaults')} rows={strokeRows(() => SERIES.error.filter((series) => series.key !== 'doubleFaults'), (s, key) => summary.matrix[s][key as 'long' | 'net' | 'wide'])} />
                 <div className="section-title">Forced vs unforced by stroke</div>
                 <ShareBars
                   series={SERIES.forced}

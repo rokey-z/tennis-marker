@@ -99,6 +99,13 @@ describe('store', () => {
     expect(serve).toMatchObject({ outcome: 'winning_serve', stroke: 'serve', error_type: '', forced: false, shot_type: 'winning_serve' })
   })
 
+  it('records a double fault as a separate serve error', () => {
+    const store = createStore(memoryStorage(), { ...clock(), newId: ids() })
+    const s = store.createSession()
+    const miss = store.addPoint({ session_id: s.id, x: 0, y: 38, stroke: 'serve', error_type: '', forced: true, outcome: 'error', shot_type: 'double_fault' })
+    expect(miss).toMatchObject({ outcome: 'error', stroke: 'serve', error_type: '', shot_type: 'double_fault', forced: false })
+  })
+
   it('undo can be narrowed to the marks in view, so a hidden one is never dropped', () => {
     const store = createStore(memoryStorage(), { ...clock(), newId: ids() })
     const s = store.createSession()

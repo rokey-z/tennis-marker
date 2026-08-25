@@ -71,6 +71,8 @@ export interface Summary {
   total: number
   byStroke: Record<Stroke, number>
   byError: Record<ErrorType, number>
+  /** Serve misses that ended the point; separate from FH/BH Long, Net, and Wide. */
+  doubleFaults: number
   byForced: { forced: number; unforced: number }
   /** Error counts by attempted ball type; winners and placements never enter this breakdown. */
   byShotType: Record<ShotType, number>
@@ -127,6 +129,7 @@ export function summarize(points: Iterable<Point>): Summary {
     total: 0,
     byStroke: { fh: 0, bh: 0 },
     byError: { long: 0, net: 0, wide: 0 },
+    doubleFaults: 0,
     byForced: { forced: 0, unforced: 0 },
     byShotType: Object.fromEntries(SHOT_TYPES.map((type) => [type, 0])) as Record<ShotType, number>,
     byShotTypeStroke: Object.fromEntries(SHOT_TYPES.map((type) => [type, { fh: 0, bh: 0 }])) as Record<ShotType, Record<Stroke, number>>,
@@ -206,6 +209,13 @@ export function summarize(points: Iterable<Point>): Summary {
       const pz = zoneId(zoneFor(p.x, p.y))
       s.placementZones[pz] = (s.placementZones[pz] ?? 0) + 1
       if (s.placementZones[pz] > s.maxPlacementZone) s.maxPlacementZone = s.placementZones[pz]
+      continue
+    }
+    if (p.stroke === 'serve' && p.shot_type === 'double_fault') {
+      s.total++
+      s.lost++
+      s.doubleFaults++
+      s.byForced.unforced++
       continue
     }
     s.total++

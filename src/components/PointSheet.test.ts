@@ -85,4 +85,15 @@ describe('PointSheet ball type editor', () => {
     expect(html).toContain('Serve result')
     expect(html).toContain('class="shot-type-btn sel"')
   })
+
+  it('shows a double fault as its own editable serve miss', () => {
+    const doubleFault = { ...point('error'), stroke: 'serve' as const, error_type: '' as const, shot_type: 'double_fault' as const }
+    const html = renderToStaticMarkup(createElement(PointSheet, {
+      point: doubleFault, index: 1, onChange: vi.fn(), onDelete: vi.fn(), onClose: vi.fn(),
+    }))
+
+    expect(html).toContain('Double fault')
+    expect(html).toContain('DF')
+    expect(html).not.toContain('forced-toggle')
+  })
 })

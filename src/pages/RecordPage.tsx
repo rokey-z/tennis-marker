@@ -184,7 +184,7 @@ export function RecordPage() {
 
   const logPoint = (stroke: PlacementStroke | '', error: ErrorType | '', outcome: Outcome, placementResult: Point['placement_result'] = null, shotType: PointShotType | null = null) => {
     if (!pending) return
-    const p = store.addPoint({ session_id: id, x: pending.x, y: pending.y, stroke, error_type: error, forced: outcome === 'error' && forced, outcome, placement_result: placementResult, shot_type: shotType })
+    const p = store.addPoint({ session_id: id, x: pending.x, y: pending.y, stroke, error_type: error, forced: outcome === 'error' && shotType !== 'double_fault' && forced, outcome, placement_result: placementResult, shot_type: shotType })
     setPending(null)
     ignoreUntil.current = performance.now() + AFTER_SAVE_IGNORE_MS
     try {
@@ -203,6 +203,8 @@ export function RecordPage() {
           ? `Winning serve · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
           : outcome === 'winner'
           ? `Opponent winner · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
+          : shotType === 'double_fault'
+          ? `Double fault · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`
           : `${STROKE_SHORT[stroke as Stroke]} ${ERROR_LABEL[error as ErrorType].toLowerCase()} · ${shotType ? SHOT_TYPE_LABEL[shotType] : 'ball'} · ${forced ? 'forced' : 'unforced'} · ${describeZone(zoneFor(p.x, p.y)).toLowerCase()}`,
       actionLabel: 'Undo',
       onAction: () => store.deletePoint(p.id),
@@ -216,6 +218,7 @@ export function RecordPage() {
   }
   /** The opponent hit a winner past her: one tap, nothing of hers to attribute. */
   const logWinner = () => logPoint('', '', 'winner')
+  const logDoubleFault = () => logPoint('serve', '', 'error', null, 'double_fault')
 
   /** Lily hit a winner from this position; retain both her stroke and the selected ball type. */
   const logPlayerWinner = (stroke: PlacementStroke, shotType: PointShotType) =>
@@ -498,7 +501,7 @@ export function RecordPage() {
               sideLabel={sideLabel}
               heat={placementMode ? null : statsSummary.byZone}
               placementHeat={placementMode ? { in: statsSummary.placementInZones, long: statsSummary.placementLongZones, wide: statsSummary.placementWideZones, net: statsSummary.placementNet } : null}
-              heatTotal={placementMode ? statsSummary.placements : statsSummary.total}
+              heatTotal={placementMode ? statsSummary.placements : statsSummary.total - statsSummary.doubleFaults}
               showZones
             />
           ) : (
@@ -531,6 +534,7 @@ export function RecordPage() {
             initialErrorPick={pending.selection}
             onPick={pick}
             onWinner={logWinner}
+            onDoubleFault={logDoubleFault}
             winnerOnly={pending.intent === 'player_winner'}
             onPlayerWinner={logPlayerWinner}
             player={player}
@@ -542,6 +546,7 @@ export function RecordPage() {
               {statsSummary.winners > 0 && <span aria-label={`${statsSummary.winners} opponent winners`}><span className="stats-map-winner-mark" aria-hidden="true">×</span> Opponent winners <strong>{statsSummary.winners}</strong></span>}
               {statsSummary.winningServes > 0 && <span aria-label={`${statsSummary.winningServes} winning serves`}><span className="stats-map-winning-serve-mark" aria-hidden="true">S</span> Winning serves <strong>{statsSummary.winningServes}</strong></span>}
               {statsSummary.playerWinners > 0 && <span aria-label={`${statsSummary.playerWinners} ${player.subject} winners`}><span className="stats-map-player-winner-mark" aria-hidden="true">★</span> {player.subject} winners <strong>{statsSummary.playerWinners}</strong></span>}
+              {statsSummary.doubleFaults > 0 && <span aria-label={`${statsSummary.doubleFaults} double faults`}><span className="stats-map-double-fault-mark" aria-hidden="true">DF</span> Double faults <strong>{statsSummary.doubleFaults}</strong></span>}
             </div>
           )}
           {courtFullscreen && <Toast toast={toast} onDismiss={dismissToast} />}

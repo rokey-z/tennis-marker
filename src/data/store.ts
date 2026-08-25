@@ -284,18 +284,20 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
         x: roundFeet(input.x),
         y: roundFeet(input.y),
         stroke: input.outcome === 'winner' ? '' : input.stroke,
-        error_type: input.outcome === 'error' || input.outcome === undefined ? input.error_type : '',
+        error_type: (input.outcome === 'error' || input.outcome === undefined) && input.shot_type !== 'double_fault' ? input.error_type : '',
         outcome: input.outcome ?? 'error',
         placement_result: input.outcome === 'placement' ? (input.placement_result ?? 'unknown') : null,
         shot_type:
-          (input.outcome ?? 'error') === 'error' && isShotType(input.shot_type)
-            ? input.shot_type
+          (input.outcome ?? 'error') === 'error' && input.stroke === 'serve' && input.shot_type === 'double_fault'
+            ? 'double_fault'
+            : (input.outcome ?? 'error') === 'error' && isShotType(input.shot_type)
+              ? input.shot_type
             : input.outcome === 'player_winner' && (input.stroke === 'serve' ? input.shot_type === 'ace' : isShotType(input.shot_type))
               ? input.shot_type
               : input.outcome === 'winning_serve' && input.stroke === 'serve' && input.shot_type === 'winning_serve'
                 ? 'winning_serve'
               : null,
-        forced: (input.outcome ?? 'error') === 'error' && !!input.forced,
+        forced: (input.outcome ?? 'error') === 'error' && input.shot_type !== 'double_fault' && !!input.forced,
         created_at: t,
         updated_at: t,
         deleted_at: null,
@@ -322,6 +324,9 @@ export function createStore(storage: StorageLike, deps: StoreDeps = {}): Store {
         next.error_type = ''
         next.forced = false
         next.shot_type = 'winning_serve'
+      } else if (next.outcome === 'error' && next.stroke === 'serve' && next.shot_type === 'double_fault') {
+        next.error_type = ''
+        next.forced = false
       } else if (next.outcome !== 'error' || !isShotType(next.shot_type)) {
         next.shot_type = null
       }

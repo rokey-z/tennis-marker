@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { cleanUtr } from '../domain/session'
-import { isOutcome, isPlacementResult, isPointShotType, isShotType, type Outcome, type Point, type Session } from '../domain/types'
+import { isOutcome, isPlacementResult, isPointShotType, isServeMissType, isShotType, type Outcome, type Point, type Session } from '../domain/types'
 import type { Remote, RemoteError } from './syncEngine'
 
 export const SUPABASE_URL: string | undefined = import.meta.env.VITE_SUPABASE_URL
@@ -74,8 +74,9 @@ function normalizeSession(r: Record<string, unknown>): Session {
  */
 export function normalizePoint(r: Record<string, unknown>): Point {
   const rawOutcome: Outcome = isOutcome(r.outcome) ? r.outcome : 'error'
-  const legacyNet = rawOutcome === 'placement' && r.placement_result === 'net'
+  const legacyNet = rawOutcome === 'placement' && r.placement_result === 'net' && r.stroke !== 'serve'
   const outcome: Outcome = legacyNet ? 'error' : rawOutcome
+  const doubleFault = outcome === 'error' && r.stroke === 'serve' && isServeMissType(r.shot_type)
   return {
     id: String(r.id),
     user_id: r.user_id === null || r.user_id === undefined ? null : String(r.user_id),
@@ -84,18 +85,20 @@ export function normalizePoint(r: Record<string, unknown>): Point {
     y: Number(r.y),
     // an opponent winner has no stroke of hers; a player winner keeps her stroke and ball type
     stroke: outcome === 'winner' ? '' : r.stroke === 'serve' ? 'serve' : r.stroke === 'bh' ? 'bh' : 'fh',
-    error_type: legacyNet ? 'net' : outcome === 'error' ? (r.error_type === 'net' ? 'net' : r.error_type === 'wide' ? 'wide' : 'long') : '',
+    error_type: legacyNet ? 'net' : outcome === 'error' && !doubleFault ? (r.error_type === 'net' ? 'net' : r.error_type === 'wide' ? 'wide' : 'long') : '',
     outcome,
     placement_result: outcome === 'placement' ? (isPlacementResult(r.placement_result) ? r.placement_result : 'unknown') : null,
     shot_type:
-      outcome === 'error' && isShotType(r.shot_type)
+      doubleFault
+        ? 'double_fault'
+        : outcome === 'error' && isShotType(r.shot_type)
         ? r.shot_type
         : outcome === 'player_winner' && (r.stroke === 'serve' ? r.shot_type === 'ace' : isShotType(r.shot_type)) && isPointShotType(r.shot_type)
           ? r.shot_type
           : outcome === 'winning_serve' && r.stroke === 'serve' && r.shot_type === 'winning_serve'
             ? 'winning_serve'
           : null,
-    forced: outcome === 'error' && Boolean(r.forced),
+    forced: outcome === 'error' && !doubleFault && Boolean(r.forced),
     created_at: toIso(r.created_at),
     updated_at: toIso(r.updated_at),
     deleted_at: r.deleted_at ? toIso(r.deleted_at) : null,

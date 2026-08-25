@@ -232,6 +232,18 @@ describe('summarize', () => {
     expect(s.placementMatrix.serve).toEqual({ in: 0, net: 0, wide: 0, long: 0, unknown: 0 })
   })
 
+  it('counts a double fault as an error and lost point without assigning FH/BH or placement type', () => {
+    const s = summarize([
+      point({ stroke: 'serve', error_type: '', outcome: 'error', shot_type: 'double_fault', forced: false }),
+    ])
+    expect(s.total).toBe(1)
+    expect(s.lost).toBe(1)
+    expect(s.doubleFaults).toBe(1)
+    expect(s.byStroke).toEqual({ fh: 0, bh: 0 })
+    expect(s.byError).toEqual({ long: 0, net: 0, wide: 0 })
+    expect(s.untypedErrors).toBe(0)
+  })
+
   it('counts placements apart from errors and winners', () => {
     const s = summarize([
       point({ error_type: 'long' }),

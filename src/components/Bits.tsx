@@ -110,7 +110,7 @@ export function Tally({ s, mode = 'errors' }: { s: Summary; mode?: 'errors' | 'p
   return (
     <div className="tally" aria-live="polite">
       {/* every mark is a point she lost: her errors plus the opponent's winners */}
-      <span className="total" title={`${s.total} errors · ${s.winners} opponent winners`}>
+      <span className="total" title={`${s.total} errors, including ${s.doubleFaults} double faults · ${s.winners} opponent winners`}>
         {s.lost} {s.lost === 1 ? 'point lost' : 'points lost'}
       </span>
       <span className="sep" />
@@ -127,6 +127,12 @@ export function Tally({ s, mode = 'errors' }: { s: Summary; mode?: 'errors' | 'p
           {s.byError[e]}
         </span>
       ))}
+      {s.doubleFaults > 0 && (
+        <span className="t-item" title={`Double faults: ${s.doubleFaults}`}>
+          <span className="letter double-fault">DF</span>
+          {s.doubleFaults}
+        </span>
+      )}
       {s.byForced.forced > 0 && (
         <>
           <span className="sep" />
@@ -185,14 +191,14 @@ export function PointList({ points, indexSource = points, onOpen, onDelete }: { 
               <span className="desc">
                   <MarkChip stroke={p.stroke} error={p.error_type} forced={p.forced} outcome={p.outcome} out={(p.outcome ?? 'error') === 'placement' && p.stroke !== 'serve' && isOut(p.x, p.y)} placementResult={p.placement_result} />
                 <small>
-                  {isPointShotType(p.shot_type) && p.outcome !== 'winning_serve' ? `${SHOT_TYPE_LABEL[p.shot_type]} · ` : ''}{describeMark(p.x, p.y, p.outcome ?? 'error')} · {formatTime(p.created_at)}
+                  {isPointShotType(p.shot_type) && p.outcome !== 'winning_serve' && p.shot_type !== 'double_fault' ? `${SHOT_TYPE_LABEL[p.shot_type]} · ` : ''}{describeMark(p.x, p.y, p.outcome ?? 'error')} · {formatTime(p.created_at)}
                 </small>
               </span>
             </button> : <div className="row-open">
               <span className="n">{index}</span>
               <span className="desc">
                 <MarkChip stroke={p.stroke} error={p.error_type} forced={p.forced} outcome={p.outcome} out={(p.outcome ?? 'error') === 'placement' && p.stroke !== 'serve' && isOut(p.x, p.y)} placementResult={p.placement_result} />
-                <small>{isPointShotType(p.shot_type) && p.outcome !== 'winning_serve' ? `${SHOT_TYPE_LABEL[p.shot_type]} · ` : ''}{describeMark(p.x, p.y, p.outcome ?? 'error')} · {formatTime(p.created_at)}</small>
+                <small>{isPointShotType(p.shot_type) && p.outcome !== 'winning_serve' && p.shot_type !== 'double_fault' ? `${SHOT_TYPE_LABEL[p.shot_type]} · ` : ''}{describeMark(p.x, p.y, p.outcome ?? 'error')} · {formatTime(p.created_at)}</small>
               </span>
             </div>}
             {onDelete && <button type="button" className="icon-btn row-del" aria-label={`Delete point ${index}`} onClick={() => onDelete(p)}>

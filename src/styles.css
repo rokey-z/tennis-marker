@@ -34,6 +34,7 @@
   --err-long: #2a78d6;
   --err-net: #1baf7a;
   --err-wide: #4a3aa7;
+  --err-double-fault: #8b5cf6;
   --chart-unforced: #8fa0b3;
   --err-forced: #14181d;
   /* type scale for marks and meta text */
@@ -1303,6 +1304,10 @@ textarea.input {
   color: var(--serve);
   font-weight: 900;
 }
+.stats-map-double-fault-mark {
+  color: var(--serve);
+  font-weight: 900;
+}
 .record-bottom {
   padding: 4px 8px calc(6px + env(safe-area-inset-bottom));
   display: flex;
@@ -1733,7 +1738,7 @@ textarea.input {
   background: var(--fh);
 }
 .winner-stroke-toggle button.serve.on {
-  color: var(--serve-ink);
+  color: var(--serve);
   background: var(--serve);
 }
 .winner-type-step .shot-type-btn.sel {
@@ -3396,6 +3401,34 @@ span
   min-height: 44px;
   margin-top: 8px;
   font-size: var(--fs-btn, 14px);
+}
+.point-result-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+.point-result-actions .winner-toggle.block {
+  min-height: 48px;
+  margin-top: 0;
+}
+.double-fault-toggle {
+  min-height: 48px;
+  padding: 0 8px;
+  border: 2px solid var(--serve);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--serve-ink);
+  font-size: var(--fs-btn, 14px);
+  font-weight: 850;
+}
+.double-fault-toggle.block {
+  width: 100%;
+  margin-top: 8px;
+}
+.double-fault-toggle.on {
+  background: var(--serve);
+  color: #fff;
 }
 .dot.winner {
   border-radius: 6px;

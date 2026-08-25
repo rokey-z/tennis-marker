@@ -1,7 +1,7 @@
 import { clampToView, roundFeet } from './court'
 import { isValidIso, YMD_RE } from '../lib/format'
 import { cleanOpponent, cleanUtr } from './session'
-import { isErrorType, isOutcome, isPlacementResult, isPlacementStroke, isPointShotType, isSessionKind, isSessionMode, isShotType, isStroke, type Point, type Session } from './types'
+import { isErrorType, isOutcome, isPlacementResult, isPlacementStroke, isPointShotType, isServeMissType, isSessionKind, isSessionMode, isShotType, isStroke, type Point, type Session } from './types'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -63,9 +63,10 @@ export function sanitizePoint(raw: unknown): Point | null {
   const legacyNet = rawOutcome === 'placement' && r.placement_result === 'net' && r.stroke !== 'serve'
   const outcome = legacyNet ? 'error' : rawOutcome
   // an opponent winner has no stroke; placements and player winners may also be serves
-  const acceptsServe = outcome === 'placement' || outcome === 'player_winner' || outcome === 'winning_serve'
+  const doubleFault = outcome === 'error' && r.stroke === 'serve' && isServeMissType(r.shot_type)
+  const acceptsServe = outcome === 'placement' || outcome === 'player_winner' || outcome === 'winning_serve' || doubleFault
   if (outcome !== 'winner' && !(acceptsServe ? isPlacementStroke(r.stroke) : isStroke(r.stroke))) return null
-  if (outcome === 'error' && !legacyNet && !isErrorType(r.error_type)) return null
+  if (outcome === 'error' && !doubleFault && !legacyNet && !isErrorType(r.error_type)) return null
   const c = clampToView(x, y)
   return {
     id,
@@ -74,18 +75,20 @@ export function sanitizePoint(raw: unknown): Point | null {
     x: roundFeet(c.x),
     y: roundFeet(c.y),
     stroke: outcome === 'winner' ? '' : (r.stroke as Point['stroke']),
-    error_type: legacyNet ? 'net' : outcome === 'error' ? (r.error_type as Point['error_type']) : '',
+    error_type: legacyNet ? 'net' : outcome === 'error' && !doubleFault ? (r.error_type as Point['error_type']) : '',
     outcome,
     placement_result: outcome === 'placement' ? (isPlacementResult(r.placement_result) ? r.placement_result : 'unknown') : null,
     shot_type:
-      outcome === 'error' && isShotType(r.shot_type)
+      doubleFault
+        ? 'double_fault'
+        : outcome === 'error' && isShotType(r.shot_type)
         ? r.shot_type
         : outcome === 'player_winner' && (r.stroke === 'serve' ? r.shot_type === 'ace' : isShotType(r.shot_type)) && isPointShotType(r.shot_type)
           ? r.shot_type
           : outcome === 'winning_serve' && r.stroke === 'serve' && r.shot_type === 'winning_serve'
             ? 'winning_serve'
           : null,
-    forced: outcome === 'error' && (r.forced === true || r.forced === 'true' || r.forced === 1),
+    forced: outcome === 'error' && !doubleFault && (r.forced === true || r.forced === 'true' || r.forced === 1),
     created_at: created,
     updated_at: isoOrNull(r.updated_at) ?? created,
     deleted_at: isoOrNull(r.deleted_at),

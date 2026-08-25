@@ -1088,6 +1088,7 @@ function Marker({ p: pt, rotation, compact, selected = false }: { p: Point; rota
   const p = { ...pt, x: drawX(pt.x), y: drawY(pt.y) }
   const stroke = isPlacementStroke(p.stroke) ? p.stroke : 'fh'
   const error = isErrorType(p.error_type) ? p.error_type : 'long'
+  const doubleFault = p.outcome === 'error' && p.stroke === 'serve' && p.shot_type === 'double_fault'
   const color = `var(--${stroke})`
   const ink = `var(--${stroke}-ink)`
   // placements only: a ball past the singles lines was called out
@@ -1196,7 +1197,7 @@ function Marker({ p: pt, rotation, compact, selected = false }: { p: Point; rota
         fill={p.outcome === 'winner' ? 'var(--win-ink)' : ink}
         fontFamily="var(--font)"
       >
-        {p.outcome === 'winner' || p.outcome === 'player_winner' ? '★' : p.outcome === 'winning_serve' ? 'S' : ERROR_LETTER[error]}
+        {p.outcome === 'winner' || p.outcome === 'player_winner' ? '★' : p.outcome === 'winning_serve' ? 'S' : doubleFault ? 'DF' : ERROR_LETTER[error]}
       </text>
       )}
     </g>

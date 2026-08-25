@@ -24,6 +24,7 @@ export function markLabel(stroke: PlacementStroke | '', error: ErrorType | '', f
   if (outcome === 'winner') return 'Opponent winner'
   if (outcome === 'player_winner') return `${isPlacementStroke(stroke) ? STROKE_LABEL[stroke] : 'Player'} winner`
   if (outcome === 'winning_serve') return 'Winning serve'
+  if (outcome === 'error' && stroke === 'serve' && error === '') return 'Double fault'
   if (!isPlacementStroke(stroke)) return 'Point'
   if (outcome === 'placement') {
     const result = placementResult === 'unknown' ? 'landing recorded' : placementResult ? placementResult : out ? 'landed out' : 'landed in'
@@ -81,6 +82,15 @@ export function MarkChip({ stroke, error, forced, outcome = 'error', out = false
       </span>
     )
   }
+  if (outcome === 'error' && stroke === 'serve' && error === '') {
+    return (
+      <span className="mark serve double-fault" title="Double fault">
+        <MarkDot stroke="serve" error="" forced={false} outcome="error" size={18} />
+        <StrokeTag stroke="serve" />
+        <span className="mark-sign">Double fault</span>
+      </span>
+    )
+  }
   const safeStroke = isPlacementStroke(stroke) ? stroke : 'fh'
   const safeError = isErrorType(error) ? error : 'long'
   return (
@@ -99,14 +109,15 @@ export function MarkDot({ stroke, error, forced, outcome = 'error', out = false,
   const opponentWinner = outcome === 'winner'
   const playerWinner = outcome === 'player_winner'
   const winningServe = outcome === 'winning_serve'
+  const doubleFault = outcome === 'error' && stroke === 'serve' && error === ''
   const winner = opponentWinner || playerWinner
   return (
     <span
-      className={`dot ${isPlacementStroke(stroke) ? stroke : 'none'}${forced && !winner && !winningServe ? ' forced' : ''}${opponentWinner ? ' winner' : ''}${playerWinner ? ' player-winner' : ''}${winningServe ? ' winning-serve' : ''}${out || placementResult === 'net' ? ' out' : ''}`}
+      className={`dot ${isPlacementStroke(stroke) ? stroke : 'none'}${forced && !winner && !winningServe && !doubleFault ? ' forced' : ''}${opponentWinner ? ' winner' : ''}${playerWinner ? ' player-winner' : ''}${winningServe ? ' winning-serve' : ''}${doubleFault ? ' double-fault' : ''}${out || placementResult === 'net' ? ' out' : ''}`}
       style={{ width: size, height: size, fontSize: Math.round(size * (winner ? 0.46 : 0.52)) }}
       title={title ?? markLabel(stroke, error, forced, outcome, out, placementResult)}
     >
-      {winner ? '★' : winningServe ? 'S' : outcome === 'placement' ? (out || placementResult === 'net' ? '✕' : '') : isErrorType(error) ? ERROR_LETTER[error] : '·'}
+      {winner ? '★' : winningServe ? 'S' : doubleFault ? 'DF' : outcome === 'placement' ? (out || placementResult === 'net' ? '✕' : '') : isErrorType(error) ? ERROR_LETTER[error] : '·'}
     </span>
   )
 }

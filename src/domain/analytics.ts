@@ -39,6 +39,7 @@ export interface SessionStat {
   long: number
   net: number
   wide: number
+  doubleFaults: number
   forced: number
   unforced: number
   /** her errors + the opponent's winners: every point she lost */
@@ -117,6 +118,7 @@ export function sessionStats(sessions: Session[], points: Iterable<Point>): Sess
       long: 0,
       net: 0,
       wide: 0,
+      doubleFaults: 0,
       forced: 0,
       unforced: 0,
       lost: 0,
@@ -153,6 +155,11 @@ export function sessionStats(sessions: Session[], points: Iterable<Point>): Sess
           else row.serveLandings++
         }
         else row.placements++
+        continue
+      }
+      if (p.stroke === 'serve' && p.shot_type === 'double_fault') {
+        row.doubleFaults++
+        row.unforced++
         continue
       }
       if (isStroke(p.stroke)) row[p.stroke]++
@@ -212,6 +219,7 @@ export interface Bucket {
   long: number
   net: number
   wide: number
+  doubleFaults: number
   forced: number
   unforced: number
 }
@@ -242,6 +250,7 @@ export function elapsedBuckets(points: Point[], bucketMin?: number): Bucket[] {
     long: 0,
     net: 0,
     wide: 0,
+    doubleFaults: 0,
     forced: 0,
     unforced: 0,
   }))
@@ -251,6 +260,7 @@ export function elapsedBuckets(points: Point[], bucketMin?: number): Bucket[] {
     if ((p.outcome ?? 'error') !== 'error') continue
     const b = buckets[Math.min(n - 1, Math.max(0, Math.floor(elapsedMin / bm)))]
     b.total++
+    if (p.stroke === 'serve' && p.shot_type === 'double_fault') b.doubleFaults++
     if (isStroke(p.stroke)) b[p.stroke]++
     if (isErrorType(p.error_type)) b[p.error_type]++
     if (p.forced) b.forced++

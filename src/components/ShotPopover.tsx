@@ -19,6 +19,8 @@ export interface ShotPopoverProps {
   initialErrorPick?: { stroke: Stroke; error: ErrorType } | null
   /** The opponent hit a winner: nothing of hers to pick, so this logs the point straight away. */
   onWinner: () => void
+  /** A serve miss that ends the point immediately. */
+  onDoubleFault?: () => void
   /** A long press opens directly on the player's won-point details instead of the error chooser. */
   winnerOnly?: boolean
   onPlayerWinner?: (stroke: PlacementStroke, shotType: PointShotType) => void
@@ -39,7 +41,7 @@ const EDGE = 6
  * winner has no stroke of hers, so it needs nothing above it).
  * Placed below the tap when there is room, otherwise above; clamped inside the container.
  */
-export function ShotPopover({ anchor, containerRef, where, forced, onForcedChange, onPick, initialErrorPick = null, onWinner, winnerOnly = false, onPlayerWinner, strokeOnly = false, player, onCancel }: ShotPopoverProps) {
+export function ShotPopover({ anchor, containerRef, where, forced, onForcedChange, onPick, initialErrorPick = null, onWinner, onDoubleFault, winnerOnly = false, onPlayerWinner, strokeOnly = false, player, onCancel }: ShotPopoverProps) {
   const ref = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState<{ left: number; top: number; placement: 'below' | 'above' } | null>(null)
   const [errorPick, setErrorPick] = useState<{ stroke: Stroke; error: ErrorType } | null>(initialErrorPick)
@@ -181,9 +183,14 @@ export function ShotPopover({ anchor, containerRef, where, forced, onForcedChang
           <ShotGrid forced={forced} strokeOnly={strokeOnly} onPick={(stroke, error) => strokeOnly ? onPick(stroke, error) : setErrorPick({ stroke, error })} />
         )}
         {!strokeOnly && !winnerOnly && !errorPick && (
-          <button type="button" className="winner-toggle block" onClick={onWinner} title={`The opponent hit a winner past ${player.subject === 'she' ? 'her' : player.subject} — logs it right away`}>
-            ★ Winner
-          </button>
+          <div className="point-result-actions">
+            <button type="button" className="double-fault-toggle block" onClick={onDoubleFault}>
+              DF Double fault
+            </button>
+            <button type="button" className="winner-toggle block" onClick={onWinner} title={`The opponent hit a winner past ${player.subject === 'she' ? 'her' : player.subject} — logs it right away`}>
+              ★ Winner
+            </button>
+          </div>
         )}
       </div>
     </>

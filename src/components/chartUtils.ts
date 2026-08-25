@@ -12,6 +12,7 @@ export const CHART = {
   long: 'var(--err-long)',
   net: 'var(--err-net)',
   wide: 'var(--err-wide)',
+  doubleFaults: 'var(--err-double-fault)',
   unforced: 'var(--chart-unforced)',
   forced: 'var(--err-forced)',
   avg: 'var(--muted)',

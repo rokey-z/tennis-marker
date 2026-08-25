@@ -125,6 +125,28 @@ describe('sessionStats outcomes', () => {
     expect(sessionStats([sess()], points)[0]).toMatchObject({ placements: 1, serveLandings: 1, serveNetMisses: 1 })
   })
 
+  it('counts double faults as lost errors without assigning FH, BH, or placement', () => {
+    const doubleFault = pt({
+      stroke: 'serve',
+      error_type: '',
+      shot_type: 'double_fault',
+      forced: false,
+    })
+
+    expect(sessionStats([sess()], [doubleFault])[0]).toMatchObject({
+      total: 1,
+      lost: 1,
+      doubleFaults: 1,
+      fh: 0,
+      bh: 0,
+      long: 0,
+      net: 0,
+      wide: 0,
+      unforced: 1,
+    })
+    expect(elapsedBuckets([doubleFault])[0]).toMatchObject({ total: 1, doubleFaults: 1, fh: 0, bh: 0 })
+  })
+
   it('excludes winners and placements from error buckets and thirds', () => {
     const points = [
       pt({ created_at: T(0), outcome: 'player_winner', error_type: '', shot_type: 'volley' }),

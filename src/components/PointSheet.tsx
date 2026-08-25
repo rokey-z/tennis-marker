@@ -21,6 +21,7 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
   const winningServe = point.outcome === 'winning_serve'
   const playerResult = playerWinner || winningServe
   const placement = point.outcome === 'placement'
+  const doubleFault = point.outcome === 'error' && point.stroke === 'serve' && point.shot_type === 'double_fault'
   const serveWinner = playerResult && point.stroke === 'serve'
   const serveNet = placement && point.stroke === 'serve' && point.placement_result === 'net'
   const shotTypeGroups = serveWinner ? [WINNER_SERVE_TYPES] : SHOT_TYPE_GROUPS
@@ -39,6 +40,7 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
     onChange({ stroke: '', error_type: '', outcome: 'winner', forced: false })
     onClose()
   }
+  const makeDoubleFault = () => onChange({ stroke: 'serve', error_type: '', outcome: 'error', forced: false, shot_type: 'double_fault' })
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -58,12 +60,12 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
         <div className="ps-head">
           <MarkDot stroke={point.stroke} error={point.error_type} forced={point.forced} outcome={point.outcome} out={out} placementResult={point.placement_result} size={34} />
           <div className="grow">
-            <div className="ps-now">{markLabel(point.stroke, point.error_type, point.forced, point.outcome, out, point.placement_result)}{isPointShotType(point.shot_type) && !winningServe ? ` · ${SHOT_TYPE_LABEL[point.shot_type]}` : ''}</div>
+            <div className="ps-now">{markLabel(point.stroke, point.error_type, point.forced, point.outcome, out, point.placement_result)}{isPointShotType(point.shot_type) && !winningServe && !doubleFault ? ` · ${SHOT_TYPE_LABEL[point.shot_type]}` : ''}</div>
             <div className="ps-meta">
               {describeMark(point.x, point.y, point.outcome)} · {formatTime(point.created_at)}
             </div>
           </div>
-          {!winner && !playerResult && !placement && (
+          {!winner && !playerResult && !placement && !doubleFault && (
             <button
               type="button"
               className={`forced-toggle${point.forced ? ' on' : ''}`}
@@ -93,7 +95,7 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
             onPick={pick}
           />
         )}
-        {!winner && !placement && (
+        {!winner && !placement && !doubleFault && (
           <div className="point-shot-types">
             <div className="section-title">{serveWinner ? 'Serve result' : 'Ball type'}</div>
             {shotTypeGroups.map((group, index) => (
@@ -119,6 +121,9 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
         {!winner && !playerResult && !placement && (
           <>
             <div className="section-title">or</div>
+            <button type="button" className={`double-fault-toggle block${doubleFault ? ' on' : ''}`} onClick={makeDoubleFault} aria-pressed={doubleFault}>
+              DF Double fault
+            </button>
             <button type="button" className="winner-toggle block" onClick={makeWinner} title="The opponent hit a winner here">
               ★ Opponent winner
             </button>
