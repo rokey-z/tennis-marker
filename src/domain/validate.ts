@@ -58,7 +58,9 @@ export function sanitizePoint(raw: unknown): Point | null {
   const created = isoOrNull(r.created_at)
   if (!id || !session_id || x === null || y === null || !created) return null
   const rawOutcome = isOutcome(r.outcome) ? r.outcome : 'error'
-  const legacyNet = rawOutcome === 'placement' && r.placement_result === 'net'
+  // Older FH/BH placement-net rows predate explicit net errors. A Serve net miss is now a
+  // deliberate placement result and must remain inside the separate Serve category.
+  const legacyNet = rawOutcome === 'placement' && r.placement_result === 'net' && r.stroke !== 'serve'
   const outcome = legacyNet ? 'error' : rawOutcome
   // an opponent winner has no stroke; placements and player winners may also be serves
   const acceptsServe = outcome === 'placement' || outcome === 'player_winner' || outcome === 'winning_serve'

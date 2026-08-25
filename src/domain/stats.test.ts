@@ -78,13 +78,14 @@ describe('filterPlacementPoints', () => {
     point({ id: 'wide', outcome: 'placement', stroke: 'bh', error_type: '', placement_result: 'wide' }),
     point({ id: 'net', outcome: 'error', stroke: 'fh', error_type: 'net' }),
     point({ id: 'serve', outcome: 'placement', stroke: 'serve', error_type: '', placement_result: 'unknown' }),
+    point({ id: 'serve-net', outcome: 'placement', stroke: 'serve', error_type: '', placement_result: 'net' }),
   ]
 
   it('separates in, out, and serve points without overlap', () => {
-    expect(filterPlacementPoints(pts, 'all')).toHaveLength(4)
+    expect(filterPlacementPoints(pts, 'all')).toHaveLength(5)
     expect(filterPlacementPoints(pts, 'in').map((p) => p.id)).toEqual(['in'])
     expect(filterPlacementPoints(pts, 'out').map((p) => p.id)).toEqual(['wide', 'net'])
-    expect(filterPlacementPoints(pts, 'serve').map((p) => p.id)).toEqual(['serve'])
+    expect(filterPlacementPoints(pts, 'serve').map((p) => p.id)).toEqual(['serve', 'serve-net'])
   })
 })
 
@@ -218,11 +219,14 @@ describe('summarize', () => {
   })
 
   it('counts serves separately from every placement, zone, and in/out total', () => {
-    const s = summarize([point({ stroke: 'serve', error_type: '', outcome: 'placement', x: 16, y: 44 })])
+    const s = summarize([
+      point({ stroke: 'serve', error_type: '', outcome: 'placement', placement_result: 'unknown', x: 16, y: 44 }),
+      point({ stroke: 'serve', error_type: '', outcome: 'placement', placement_result: 'net', x: 0, y: 0 }),
+    ])
     expect(s.placements).toBe(0)
-    expect(s.serveLandings).toBe(1)
+    expect(s.serveLandings).toBe(2)
     expect(s.placementsOut).toBe(0)
-    expect(s.placementsByStroke.serve).toBe(1)
+    expect(s.placementsByStroke.serve).toBe(2)
     expect(s.placementZones).toEqual({})
     expect(s.placementMatrix.serve).toEqual({ in: 0, net: 0, wide: 0, long: 0, unknown: 0 })
   })

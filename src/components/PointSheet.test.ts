@@ -40,6 +40,16 @@ describe('PointSheet ball type editor', () => {
     expect(html).not.toContain('point-shot-types')
   })
 
+  it('shows a Serve net placement as a miss', () => {
+    const serveNet = { ...point('placement'), stroke: 'serve' as const, placement_result: 'net' as const }
+    const html = renderToStaticMarkup(createElement(PointSheet, {
+      point: serveNet, index: 1, onChange: vi.fn(), onDelete: vi.fn(), onClose: vi.fn(),
+    }))
+
+    expect(html).toContain('Serve — net')
+    expect(html).toContain('✕')
+  })
+
   it('shows the stroke and every ball type for a player winner', () => {
     const html = renderToStaticMarkup(createElement(PointSheet, {
       point: point('player_winner'), index: 1, onChange: vi.fn(), onDelete: vi.fn(), onClose: vi.fn(),

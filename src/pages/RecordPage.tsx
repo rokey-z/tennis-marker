@@ -221,13 +221,23 @@ export function RecordPage() {
   const logPlayerWinner = (stroke: PlacementStroke, shotType: PointShotType) =>
     logPoint(stroke, '', stroke === 'serve' && shotType === 'winning_serve' ? 'winning_serve' : 'player_winner', null, shotType)
 
-  /** Placement mode: one motion — press where the ball landed, drag left for BH or right for FH. */
+  /** Placement mode: one motion — drag left for BH, right for FH, or up for Serve. */
   const onStrokeDrag = useCallback(
     (x: number, y: number, stroke: PlacementStroke, surface: 'court' | 'net' = 'court') => {
       if (performance.now() < ignoreUntil.current) return
       const net = surface === 'net'
-      const placement_result = stroke === 'serve' ? 'unknown' : placementResultFor(x, y)
-      const p = store.addPoint({ session_id: id, x, y, stroke, error_type: net ? 'net' : '', forced: false, outcome: net ? 'error' : 'placement', placement_result: net ? null : placement_result })
+      const serveNet = net && stroke === 'serve'
+      const placement_result = serveNet ? 'net' : stroke === 'serve' ? 'unknown' : placementResultFor(x, y)
+      const p = store.addPoint({
+        session_id: id,
+        x,
+        y,
+        stroke,
+        error_type: net && !serveNet ? 'net' : '',
+        forced: false,
+        outcome: net && !serveNet ? 'error' : 'placement',
+        placement_result: net && !serveNet ? null : placement_result,
+      })
       ignoreUntil.current = performance.now() + AFTER_SAVE_IGNORE_MS
       try {
         navigator.vibrate?.(12)
@@ -236,7 +246,7 @@ export function RecordPage() {
       }
       setToast({
         id: Date.now(),
-        text: net ? `${STROKE_SHORT[stroke]} net error` : `${STROKE_SHORT[stroke]} · ${placement_result === 'unknown' ? 'serve landing' : placement_result === 'in' ? describeMark(p.x, p.y, 'placement').toLowerCase() : placement_result}`,
+        text: serveNet ? 'Serve · missed into net' : net ? `${STROKE_SHORT[stroke]} net error` : `${STROKE_SHORT[stroke]} · ${placement_result === 'unknown' ? 'serve landing' : placement_result === 'in' ? describeMark(p.x, p.y, 'placement').toLowerCase() : placement_result}`,
         actionLabel: 'Undo',
         onAction: () => store.deletePoint(p.id),
       })
@@ -554,7 +564,7 @@ export function RecordPage() {
               {finished
                 ? 'Session finished and locked. Unlock it to record or edit points.'
                 : placementMode
-                ? `Click where the ball landed, then pick the stroke ${player.name ? `${player.name} hit it with` : 'she hit it with'}. Swipe up to record a serve; mark the net for a Net error.`
+                ? `Click where the ball landed, then pick the stroke ${player.name ? `${player.name} hit it with` : 'she hit it with'}. Swipe up to record a serve, including a serve that hit the net; swipe left or right on the net for a BH/FH Net error.`
                 : `Press where ${player.subject} lost the point, drag toward FH/BH × Wide/Long/Net, then choose the ball type. Drag beyond the wheel for an opponent winner. Long-press where ${player.subject} stood to record ${player.possessive} winner.`}
             </div>
           )}

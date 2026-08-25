@@ -65,6 +65,15 @@ describe('sanitizePoint', () => {
       placement_result: null,
     })
   })
+
+  it('keeps a Serve net miss as a separate placement result', () => {
+    expect(sanitizePoint({ ...good, outcome: 'placement', stroke: 'serve', error_type: '', placement_result: 'net' })).toMatchObject({
+      outcome: 'placement',
+      stroke: 'serve',
+      error_type: '',
+      placement_result: 'net',
+    })
+  })
 })
 
 describe('sanitizeSession', () => {

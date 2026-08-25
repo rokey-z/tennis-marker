@@ -10,7 +10,7 @@ export interface PointSheetProps {
   point: Point
   /** 1-based position in the session, as shown in the log */
   index: number
-  onChange: (patch: Partial<Pick<Point, 'stroke' | 'error_type' | 'forced' | 'outcome' | 'shot_type'>>) => void
+  onChange: (patch: Partial<Pick<Point, 'stroke' | 'error_type' | 'forced' | 'outcome' | 'placement_result' | 'shot_type'>>) => void
   onDelete: () => void
   onClose: () => void
 }
@@ -22,11 +22,16 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
   const playerResult = playerWinner || winningServe
   const placement = point.outcome === 'placement'
   const serveWinner = playerResult && point.stroke === 'serve'
+  const serveNet = placement && point.stroke === 'serve' && point.placement_result === 'net'
   const shotTypeGroups = serveWinner ? [WINNER_SERVE_TYPES] : SHOT_TYPE_GROUPS
   const out = placement && point.stroke !== 'serve' && isOut(point.x, point.y)
   // a placement lives on the far half: the only thing to correct is which stroke played it
   const pick = (stroke: Stroke, error: ErrorType) => {
-    onChange(placement ? { stroke } : { stroke, error_type: error, outcome: 'error' })
+    onChange(placement
+      ? serveNet
+        ? { stroke, error_type: 'net', outcome: 'error', placement_result: null }
+        : { stroke }
+      : { stroke, error_type: error, outcome: 'error' })
     if (placement) onClose()
   }
   // a winner is the opponent's shot: it keeps only the position
@@ -51,7 +56,7 @@ export function PointSheet({ point, index, onChange, onDelete, onClose }: PointS
       <div className="point-edit-title">Point {index}</div>
       <div className="point-sheet">
         <div className="ps-head">
-          <MarkDot stroke={point.stroke} error={point.error_type} forced={point.forced} outcome={point.outcome} out={out} size={34} />
+          <MarkDot stroke={point.stroke} error={point.error_type} forced={point.forced} outcome={point.outcome} out={out} placementResult={point.placement_result} size={34} />
           <div className="grow">
             <div className="ps-now">{markLabel(point.stroke, point.error_type, point.forced, point.outcome, out, point.placement_result)}{isPointShotType(point.shot_type) && !winningServe ? ` · ${SHOT_TYPE_LABEL[point.shot_type]}` : ''}</div>
             <div className="ps-meta">

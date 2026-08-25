@@ -1,7 +1,7 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { PlacementSplit, clampTooltipPosition, placementHoverGroupId } from './Court'
+import { PlacementSplit, clampTooltipPosition, placementHoverGroupId, placementStrokeForDrag } from './Court'
 import { errorDragChoice, errorWheelSelection } from '../domain/errorWheel'
 
 describe('error drag wheel', () => {
@@ -23,6 +23,17 @@ describe('error drag wheel', () => {
   it('turns a drag beyond the visible circle into a winner', () => {
     expect(errorWheelSelection(101, 0, 100)).toEqual({ winner: true })
     expect(errorWheelSelection(50, 0, 100)).toEqual({ stroke: 'fh', error: 'long' })
+  })
+})
+
+describe('placement stroke drag', () => {
+  it('uses an upward drag for Serve, including when the gesture starts on the net', () => {
+    expect(placementStrokeForDrag(2, -40)).toBe('serve')
+  })
+
+  it('keeps horizontal drags mapped to BH and FH', () => {
+    expect(placementStrokeForDrag(-40, -2)).toBe('bh')
+    expect(placementStrokeForDrag(40, -2)).toBe('fh')
   })
 })
 

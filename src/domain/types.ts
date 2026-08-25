@@ -1,5 +1,5 @@
 export type Stroke = 'fh' | 'bh'
-/** Serve is recorded for serve landings and for player winners, never as an error stroke. */
+/** Serve is recorded for serve landings, serve net misses, and player winners. */
 export type PlacementStroke = Stroke | 'serve'
 export type PlacementResult = 'in' | 'net' | 'wide' | 'long' | 'unknown'
 export type ErrorType = 'long' | 'net' | 'wide'
@@ -65,7 +65,7 @@ export const SESSION_MODES: SessionMode[] = ['errors', 'placement']
 export const MODE_LABEL: Record<SessionMode, string> = { errors: 'Errors', placement: 'Placement' }
 export const MODE_HINT: Record<SessionMode, string> = {
   errors: 'Press where she lost the point, drag into the FH/BH × Wide/Long/Net wheel, or beyond it for an opponent winner. Long-press where she stood to record her winner.',
-  placement: 'Shows the far half: drag left for backhand, right for forehand, or up for a serve landing. Mark the net to log a Net error.',
+  placement: 'Shows the far half: drag left for backhand, right for forehand, or up for a serve. Drag up from the net to record a serve net miss.',
 }
 
 export const isStroke = (v: unknown): v is Stroke => v === 'fh' || v === 'bh'

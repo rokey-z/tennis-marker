@@ -119,9 +119,10 @@ describe('sessionStats outcomes', () => {
     const points = [
       pt({ session_id: 's1', error_type: '', outcome: 'placement', stroke: 'fh' }),
       pt({ session_id: 's1', error_type: '', outcome: 'placement', stroke: 'serve' }),
+      pt({ session_id: 's1', error_type: '', outcome: 'placement', stroke: 'serve', placement_result: 'net' }),
     ]
 
-    expect(sessionStats([sess()], points)[0]).toMatchObject({ placements: 1, serveLandings: 1 })
+    expect(sessionStats([sess()], points)[0]).toMatchObject({ placements: 1, serveLandings: 2 })
   })
 
   it('excludes winners and placements from error buckets and thirds', () => {

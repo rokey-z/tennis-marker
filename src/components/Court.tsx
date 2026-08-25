@@ -349,7 +349,7 @@ export function Court({ rotation = 0, onTap, onLongPress, disabled = false, poin
       else if (selection) onErrorSelect(d.start.x, d.start.y, selection.stroke, selection.error, { clientX: d.at.x, clientY: d.at.y })
       return
     }
-    const stroke: PlacementStroke = !d.net && dy < -STROKE_DRAG_PX && Math.abs(dy) > Math.abs(dx) ? 'serve' : dx < 0 ? 'bh' : 'fh'
+    const stroke = placementStrokeForDrag(dx, dy)
     onStrokeDrag?.(d.start.x, d.start.y, stroke, d.net ? 'net' : 'court')
   }
 
@@ -387,11 +387,7 @@ export function Court({ rotation = 0, onTap, onLongPress, disabled = false, poin
   const viewTransform = [mirror, rotationTransform].filter(Boolean).join(' ') || undefined
   const quarterTurned = rotation === 90 || rotation === 270
   const pendingZone = pending ? zoneId(zoneFor(pending.x, pending.y)) : null
-  const previewStroke: PlacementStroke | null = drag
-    ? drag.net
-      ? drag.dx < 0 ? 'bh' : 'fh'
-      : drag.dy < -STROKE_DRAG_PX && Math.abs(drag.dy) > Math.abs(drag.dx) ? 'serve' : drag.dx < 0 ? 'bh' : 'fh'
-    : null
+  const previewStroke: PlacementStroke | null = drag ? placementStrokeForDrag(drag.dx, drag.dy) : null
 
   const heatCells = useMemo(() => {
     if (!heat) return null
@@ -995,6 +991,12 @@ export function clampTooltipPosition(anchor: { x: number; y: number }, size: { w
   }
 }
 
+/** Placement gesture: up is Serve on both the court and net; horizontal chooses BH/FH. */
+export function placementStrokeForDrag(dx: number, dy: number): PlacementStroke {
+  if (dy < -STROKE_DRAG_PX && Math.abs(dy) > Math.abs(dx)) return 'serve'
+  return dx < 0 ? 'bh' : 'fh'
+}
+
 /** The three in-court columns form one useful depth band when exploring placement stats. */
 export function placementHoverGroupId(id: string): string {
   const match = /^in-(net|mid|baseline)-/.exec(id)
@@ -1077,8 +1079,8 @@ function Marker({ p: pt, rotation, compact, selected = false }: { p: Point; rota
   const ink = `var(--${stroke}-ink)`
   // placements only: a ball past the singles lines was called out
   const out = p.outcome === 'placement' && p.stroke !== 'serve' && isOut(pt.x, pt.y)
-  const net = error === 'net'
-  const miss = p.outcome === 'error' || out
+  const net = error === 'net' || (p.outcome === 'placement' && p.stroke === 'serve' && p.placement_result === 'net')
+  const miss = p.outcome === 'error' || out || net
   const label = markLabel(p.outcome === 'winner' ? '' : stroke, error, p.forced, p.outcome, out, p.placement_result)
 
   // Previous points are positional context only. Keep them visible without letting their symbols,
