@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router'
 import { formatDate } from '../lib/format'
 import { ErrorsModeIcon, PlacementModeIcon, PlusIcon } from '../components/Icons'
 import { Shell } from '../components/Shell'
-import { usePlayer } from '../components/hooks'
 import { store, useAppState } from '../data/app'
 import { livePointsForSession, liveSessions } from '../data/store'
 import { sessionLabel } from '../domain/session'
@@ -14,7 +13,6 @@ type KindFilter = SessionKind | 'all'
 
 export function SessionsPage() {
   const state = useAppState()
-  const player = usePlayer()
   const nav = useNavigate()
   const [kind, setKind] = useState<KindFilter>('all')
   // Sessions are newest first, so the one just created or played is always immediately visible.
@@ -43,7 +41,7 @@ export function SessionsPage() {
       {all.length === 0 ? (
         <div className="empty">
           <strong>No sessions yet</strong>
-          Start a practice or match, then tap the court where {player.subject} loses each point.
+          Start a practice or match, then track errors and winning points on the court.
         </div>
       ) : (
         <>
@@ -66,14 +64,16 @@ export function SessionsPage() {
             {rows.map(({ session }) => {
               const summary = summaries.get(session.id)!
               const placement = session.mode === 'placement'
-              const count = placement ? summary.placements : summary.total
+              const count = placement
+                ? summary.placements
+                : summary.total + summary.winners + summary.playerWinners + summary.winningServes
               const focus = sessionFocus(summary, placement)
               return (
               <li key={session.id}>
                 <Link to={`/session/${session.id}`} className="session-card">
                   <span className={`s-mode ${session.mode}`}>
                     <span className="s-mode-chip" aria-hidden="true">{session.mode === 'placement' ? <PlacementModeIcon /> : <ErrorsModeIcon />}</span>
-                    <small>{placement ? 'Ball placement' : `${player.name || 'Player'}’s errors`}</small>
+                    <small>{placement ? 'Ball placement' : 'Points tracking'}</small>
                   </span>
                   <div className="grow">
                     <div className="title">{sessionLabel(session)}</div>
@@ -87,7 +87,7 @@ export function SessionsPage() {
                   <div className="count">
                     {count}
                     <small>
-                      {placement ? (count === 1 ? 'mark' : 'marks') : count === 1 ? 'error' : 'errors'}
+                      {placement ? (count === 1 ? 'mark' : 'marks') : count === 1 ? 'point' : 'points'}
                       {placement && summary.serveLandings + summary.serveNetMisses > 0 ? ` · ${summary.serveLandings + summary.serveNetMisses} ${summary.serveLandings + summary.serveNetMisses === 1 ? 'serve' : 'serves'}` : ''}
                     </small>
                   </div>

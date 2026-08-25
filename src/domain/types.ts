@@ -62,9 +62,11 @@ export const SESSION_KINDS: SessionKind[] = ['match', 'practice']
 export const KIND_LABEL: Record<SessionKind, string> = { match: 'Match', practice: 'Practice' }
 export const KIND_PLURAL: Record<SessionKind, string> = { match: 'Matches', practice: 'Practices' }
 export const SESSION_MODES: SessionMode[] = ['errors', 'placement']
-export const MODE_LABEL: Record<SessionMode, string> = { errors: 'Errors', placement: 'Placement' }
+// Keep the persisted key `errors` for backwards/database compatibility; the mode now records both
+// lost and won points, so its user-facing name describes the broader workflow.
+export const MODE_LABEL: Record<SessionMode, string> = { errors: 'Points tracking', placement: 'Placement' }
 export const MODE_HINT: Record<SessionMode, string> = {
-  errors: 'Press where she lost the point, drag into the FH/BH × Wide/Long/Net wheel, or beyond it for an opponent winner. Long-press where she stood to record her winner.',
+  errors: 'Track each point: drag into the FH/BH × Wide/Long/Net wheel for an error, beyond it for an opponent winner, or long-press where the player stood for a winning ball.',
   placement: 'Shows the far half: drag left for backhand, right for forehand, or up for a serve. Drag up from the net to record a serve net miss.',
 }
 

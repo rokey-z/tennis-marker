@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { cleanOpponent, cleanUtr, formatUtr, isAutoTitle, opponentFromLegacyTitle, opponentKey, opponentRows, sessionLabel, venueRows } from './session'
-import type { Session } from './types'
+import { MODE_HINT, MODE_LABEL, type Session } from './types'
 
 const base: Session = {
   id: 's1',
@@ -17,6 +17,13 @@ const base: Session = {
   deleted_at: null,
 }
 const sess = (o: Partial<Session> = {}): Session => ({ ...base, ...o })
+
+describe('session modes', () => {
+  it('presents the legacy errors key as points tracking', () => {
+    expect(MODE_LABEL.errors).toBe('Points tracking')
+    expect(MODE_HINT.errors).toContain('winning ball')
+  })
+})
 
 describe('sessionLabel', () => {
   it('derives the name from kind + opponent', () => {
