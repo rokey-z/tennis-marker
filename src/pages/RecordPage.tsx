@@ -78,7 +78,7 @@ export function RecordPage() {
   const loggedPoints = useMemo(() => points.filter((point) => matchesLogFilter(point, logFilter)), [points, logFilter])
   const justCreated = (useLocation().state as { justCreated?: boolean } | null)?.justCreated === true
   const [showDetails, setShowDetails] = useState(justCreated)
-  const [showFinish, setShowFinish] = useState(false)
+  const [showRating, setShowRating] = useState(false)
   const [statsShareStatus, setStatsShareStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle')
   const [openPoint, setOpenPoint] = useState<{ id: string; index: number } | null>(null)
   const ignoreUntil = useRef(0)
@@ -270,11 +270,25 @@ export function RecordPage() {
     })
   }, [finished])
 
-  const openFinish = () => {
+  const openRating = () => {
     setPending(null)
     setOpenPoint(null)
     setToast(null)
-    setShowFinish(true)
+    setShowRating(true)
+  }
+
+  const toggleFinished = () => {
+    setPending(null)
+    setOpenPoint(null)
+    setShowRating(false)
+    if (finished) {
+      store.updateSession(session.id, { finished_at: null })
+      setToast({ id: Date.now(), text: 'Session unlocked' })
+      return
+    }
+    store.updateSession(session.id, { finished_at: new Date().toISOString() })
+    setView('stats')
+    setToast({ id: Date.now(), text: 'Session finished and locked' })
   }
 
   const exportCsv = () => {
@@ -401,14 +415,13 @@ export function RecordPage() {
           >
             <Rotate90Icon />
           </button>
-          <button type="button" className={`btn header-finish${finished ? ' primary' : ''}`} onClick={openFinish} aria-pressed={finished} title={finished ? 'Edit rating or unlock this session' : 'Finish, rate, and lock this session'}>
-            <LockIcon />
-            {finished && session.self_rating ? (
-              <span className="header-rating">
-                <small>Self-rating</small>
-                <span>{session.self_rating}/100</span>
-              </span>
-            ) : 'Finish'}
+          <button type="button" className="btn header-rating-button" onClick={openRating} title="Set self-rating" aria-label={`Self-rating ${session.self_rating ?? 'not set'} out of 100`}>
+            <small>Rating</small>
+            <strong>{session.self_rating ?? '—'}<span>/100</span></strong>
+          </button>
+          <button type="button" className={`btn header-finish${finished ? ' primary' : ''}`} onClick={toggleFinished} aria-pressed={finished} title={finished ? 'Unlock this session' : 'Finish and lock this session'}>
+            <LockIcon open={!finished} />
+            {finished ? 'Locked' : 'Finish'}
           </button>
         </div>
       </header>
@@ -593,16 +606,10 @@ export function RecordPage() {
 
       {!courtFullscreen && <Toast toast={toast} onDismiss={dismissToast} />}
 
-      {showFinish && (
-        <FinishSessionModal
+      {showRating && (
+        <RatingModal
           session={session}
-          onClose={() => setShowFinish(false)}
-          onFinished={() => {
-            setShowFinish(false)
-            setPending(null)
-            setOpenPoint(null)
-            setView('stats')
-          }}
+          onClose={() => setShowRating(false)}
         />
       )}
 
@@ -679,34 +686,22 @@ function LogFilterHeader({ points, mode, value, playerName, onChange }: { points
   )
 }
 
-function FinishSessionModal({
+function RatingModal({
   session,
   onClose,
-  onFinished,
 }: {
   session: Session
   onClose: () => void
-  onFinished: () => void
 }) {
   const [rating, setRating] = useState(session.self_rating ?? 50)
-  const finished = !!session.finished_at
 
   const save = () => {
-    store.updateSession(session.id, {
-      self_rating: rating,
-      finished_at: session.finished_at ?? new Date().toISOString(),
-    })
-    if (finished) onClose()
-    else onFinished()
-  }
-
-  const unlock = () => {
-    store.updateSession(session.id, { finished_at: null })
+    store.updateSession(session.id, { self_rating: rating })
     onClose()
   }
 
   return (
-    <Modal title={finished ? 'Session rating' : 'Finish session'} onClose={onClose}>
+    <Modal title="Self-rating" onClose={onClose}>
       <div className="field">
         <span>How did you play?</span>
         <div className="rating-score">
@@ -727,13 +722,8 @@ function FinishSessionModal({
       </div>
       <div className="row finish-rating-actions">
         <button type="button" className="btn primary grow" onClick={save}>
-          {finished ? 'Save rating' : 'Finish & lock'}
+          Save rating
         </button>
-        {finished && (
-          <button type="button" className="btn" onClick={unlock}>
-            <LockIcon open /> Unlock
-          </button>
-        )}
       </div>
     </Modal>
   )
