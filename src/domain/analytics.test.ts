@@ -115,6 +115,15 @@ describe('sessionStats outcomes', () => {
     expect(Object.values(row.byZone).reduce((a, b) => a + b, 0)).toBe(2)
   })
 
+  it('counts serve landings separately from other placements', () => {
+    const points = [
+      pt({ session_id: 's1', error_type: '', outcome: 'placement', stroke: 'fh' }),
+      pt({ session_id: 's1', error_type: '', outcome: 'placement', stroke: 'serve' }),
+    ]
+
+    expect(sessionStats([sess()], points)[0]).toMatchObject({ placements: 1, serveLandings: 1 })
+  })
+
   it('excludes winners and placements from error buckets and thirds', () => {
     const points = [
       pt({ created_at: T(0), outcome: 'player_winner', error_type: '', shot_type: 'volley' }),

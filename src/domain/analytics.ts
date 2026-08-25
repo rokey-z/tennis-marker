@@ -47,7 +47,10 @@ export interface SessionStat {
   winners: number
   playerWinners: number
   winningServes: number
+  /** Non-serve placement landings. */
   placements: number
+  /** Serve landings, kept out of placement totals. */
+  serveLandings: number
   firstAt: string | null
   lastAt: string | null
   /** minutes spanned by the main activity window (see activeWindow); 0 with < 2 points */
@@ -119,6 +122,7 @@ export function sessionStats(sessions: Session[], points: Iterable<Point>): Sess
       playerWinners: 0,
       winningServes: 0,
       placements: 0,
+      serveLandings: 0,
       firstAt: pts[0]?.created_at ?? null,
       lastAt: pts.at(-1)?.created_at ?? null,
       durationMin: win.length >= 2 ? minutesBetween(win[0].created_at, win[win.length - 1].created_at) : 0,
@@ -141,7 +145,8 @@ export function sessionStats(sessions: Session[], points: Iterable<Point>): Sess
         continue
       }
       if (outcome === 'placement') {
-        row.placements++
+        if (p.stroke === 'serve') row.serveLandings++
+        else row.placements++
         continue
       }
       if (isStroke(p.stroke)) row[p.stroke]++

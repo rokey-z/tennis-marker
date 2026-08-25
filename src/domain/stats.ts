@@ -71,8 +71,9 @@ export interface Summary {
   winningServes: number
   playerWinnersByStroke: Record<PlacementStroke, number>
   playerWinnersByShotType: Record<PointShotType, number>
+  /** Non-serve placement landings. Serves are counted only in `serveLandings`. */
   placements: number
-  /** Serves are recorded as landings but deliberately have no in/out result. */
+  /** Serves are tracked separately and never enter placement, zone, or in/out totals. */
   serveLandings: number
   /** placements that landed outside the singles lines */
   placementsOut: number
@@ -149,17 +150,19 @@ export function summarize(points: Iterable<Point>): Summary {
       continue
     }
     if (outcome === 'placement') {
+      if (p.stroke === 'serve') {
+        s.serveLandings++
+        s.placementsByStroke.serve++
+        continue
+      }
       s.placements++
-      if (p.stroke === 'serve') s.serveLandings++
       if (isPlacementStroke(p.stroke)) s.placementsByStroke[p.stroke]++
       if (isPlacementStroke(p.stroke)) {
         // Old marks only have their landing coordinates. Reconstruct Wide/Long from those so
-        // their map areas still receive a count; serves intentionally stay unrated.
+        // their map areas still receive a count.
         const result: PlacementResult = isPlacementResult(p.placement_result)
           ? p.placement_result
-          : p.stroke === 'serve'
-            ? 'unknown'
-            : placementResultFor(p.x, p.y)
+          : placementResultFor(p.x, p.y)
         s.placementMatrix[p.stroke][result]++
         if (result === 'wide' || result === 'long') s.placementsOut++
         if (result === 'net') s.placementNet++
@@ -229,6 +232,7 @@ export function perSessionCounts(sessions: Iterable<Session>, points: Iterable<P
     if (row.session.mode === 'placement') {
       // Placement sessions include their landing marks plus net strikes, which are errors.
       if (outcome !== 'placement' && p.error_type !== 'net') continue
+      if (outcome === 'placement' && p.stroke === 'serve') continue
     } else if (outcome === 'placement') continue
     row.count++
     if (p.stroke === 'fh') row.fh++

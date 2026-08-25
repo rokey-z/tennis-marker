@@ -85,6 +85,29 @@ describe('StatsPanel error type summary', () => {
   })
 })
 
+describe('StatsPanel placement summary', () => {
+  it('shows serves separately and excludes them from placement and in/out counts', () => {
+    const placement = (id: string, stroke: 'fh' | 'bh' | 'serve', placement_result: Point['placement_result']): Point => ({
+      ...point(id, '', 'placement', null),
+      stroke,
+      placement_result,
+    })
+    const summary = summarize([
+      placement('fh-in', 'fh', 'in'),
+      placement('bh-wide', 'bh', 'wide'),
+      placement('serve', 'serve', 'unknown'),
+    ])
+    const html = renderToStaticMarkup(createElement(StatsPanel, { summary, count: 3, mode: 'placement', showExports: false }))
+
+    expect(summary.placements).toBe(2)
+    expect(summary.serveLandings).toBe(1)
+    expect(html).toContain('<div class="label">Balls placed</div><div class="value">2</div>')
+    expect(html).toContain('<div class="label">Serve</div><div class="value">1<small>Counted separately</small>')
+    expect(html).toContain('1 serve counted separately from every placement and in/out total.')
+    expect(html).not.toContain('<span class="pill serve">')
+  })
+})
+
 describe('StatsFilters', () => {
   it('hides filter options whose available count is zero', () => {
     const html = renderToStaticMarkup(createElement(StatsFilters, {

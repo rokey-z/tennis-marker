@@ -85,7 +85,8 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
   ) : null
   // a placement scope counts balls and where they landed: none of the error breakdowns apply
   if (mode === 'placement') {
-    const resultTotal = (result: 'in' | 'net' | 'wide' | 'long') => PLACEMENT_STROKES.reduce((n, stroke) => n + summary.placementMatrix[stroke][result], 0)
+    const placementStrokes = ['fh', 'bh'] as const
+    const resultTotal = (result: 'in' | 'net' | 'wide' | 'long') => placementStrokes.reduce((n, stroke) => n + summary.placementMatrix[stroke][result], 0)
     const inCourt = resultTotal('in')
     const net = summary.placementNet
     const wideLong = resultTotal('wide') + resultTotal('long')
@@ -106,10 +107,10 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
       { label: 'Net', count: net },
     ]
     const resultLabels: Record<PlacementResult, string> = { in: 'In', net: 'Net', wide: 'Wide', long: 'Long', unknown: 'Unrated' }
-    const misses: { stroke: typeof PLACEMENT_STROKES[number]; result: Exclude<PlacementResult, 'in' | 'unknown'>; count: number }[] = []
-    for (const stroke of PLACEMENT_STROKES) {
+    const misses: { stroke: typeof placementStrokes[number]; result: Exclude<PlacementResult, 'in' | 'unknown'>; count: number }[] = []
+    for (const stroke of placementStrokes) {
       for (const result of ['net', 'wide', 'long'] as const) {
-        const count = result === 'net' ? (stroke === 'serve' ? 0 : summary.matrix[stroke].net + summary.placementMatrix[stroke].net) : summary.placementMatrix[stroke][result]
+        const count = result === 'net' ? summary.matrix[stroke].net + summary.placementMatrix[stroke].net : summary.placementMatrix[stroke][result]
         misses.push({ stroke, result, count })
       }
     }
@@ -152,8 +153,8 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
           <div className="tile">
             <div className="label">Serve</div>
             <div className="value">
-              {summary.placementsByStroke.serve}
-              <small>{pct(summary.placementsByStroke.serve, summary.placements)}%</small>
+              {summary.serveLandings}
+              <small>Counted separately</small>
             </div>
           </div>
         </div>
@@ -196,18 +197,18 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
               <tr><th>In</th><th>Net</th><th>Wide</th><th>Long</th></tr>
             </thead>
             <tbody>
-              {PLACEMENT_STROKES.map((stroke) => (
+              {placementStrokes.map((stroke) => (
                 <tr key={stroke}>
                   <td><span className={`pill ${stroke}`}>{STROKE_SHORT[stroke]}</span> {STROKE_LABEL[stroke]}</td>
                   {(['in', 'net', 'wide', 'long'] as const).map((result) => (
-                    <td className="big" key={result}>{result === 'net' ? (stroke === 'serve' ? 0 : summary.matrix[stroke].net + summary.placementMatrix[stroke].net) : summary.placementMatrix[stroke][result]}</td>
+                    <td className="big" key={result}>{result === 'net' ? summary.matrix[stroke].net + summary.placementMatrix[stroke].net : summary.placementMatrix[stroke][result]}</td>
                   ))}
-                  <td className="big">{summary.placementsByStroke[stroke] + (stroke === 'serve' ? 0 : summary.matrix[stroke].net)}</td>
+                  <td className="big">{summary.placementsByStroke[stroke] + summary.matrix[stroke].net}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {summary.serveLandings > 0 && <p className="kbd-hint">Serve landings are shown as recorded; they are not rated in or out.</p>}
+          {summary.serveLandings > 0 && <p className="kbd-hint">{summary.serveLandings} {summary.serveLandings === 1 ? 'serve' : 'serves'} counted separately from every placement and in/out total.</p>}
         </div>
         {exportRow}
       </div>

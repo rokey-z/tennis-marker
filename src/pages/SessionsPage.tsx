@@ -86,7 +86,10 @@ export function SessionsPage() {
                   </div>
                   <div className="count">
                     {count}
-                    <small>{placement ? (count === 1 ? 'mark' : 'marks') : count === 1 ? 'error' : 'errors'}</small>
+                    <small>
+                      {placement ? (count === 1 ? 'mark' : 'marks') : count === 1 ? 'error' : 'errors'}
+                      {placement && summary.serveLandings > 0 ? ` · ${summary.serveLandings} ${summary.serveLandings === 1 ? 'serve' : 'serves'}` : ''}
+                    </small>
                   </div>
                 </Link>
               </li>
@@ -101,11 +104,11 @@ export function SessionsPage() {
 
 function sessionFocus(summary: Summary, placement: boolean): string | null {
   if (placement) {
-    const candidates = (['fh', 'bh', 'serve'] as const).flatMap((stroke) =>
+    const candidates = (['fh', 'bh'] as const).flatMap((stroke) =>
       (['net', 'wide', 'long'] as const).map((result) => ({
         stroke,
         result,
-        count: result === 'net' ? (stroke === 'serve' ? 0 : summary.matrix[stroke].net) : summary.placementMatrix[stroke][result],
+        count: result === 'net' ? summary.matrix[stroke].net : summary.placementMatrix[stroke][result],
       })),
     )
     const best = candidates.sort((a, b) => b.count - a.count)[0]

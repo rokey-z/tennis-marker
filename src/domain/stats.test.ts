@@ -201,12 +201,14 @@ describe('summarize', () => {
     expect(s.placementLongZones).toEqual({ 'baseline-middle': 1 })
   })
 
-  it('records serve landings without assigning them an in or out result', () => {
+  it('counts serves separately from every placement, zone, and in/out total', () => {
     const s = summarize([point({ stroke: 'serve', error_type: '', outcome: 'placement', x: 16, y: 44 })])
-    expect(s.placements).toBe(1)
+    expect(s.placements).toBe(0)
     expect(s.serveLandings).toBe(1)
     expect(s.placementsOut).toBe(0)
     expect(s.placementsByStroke.serve).toBe(1)
+    expect(s.placementZones).toEqual({})
+    expect(s.placementMatrix.serve).toEqual({ in: 0, net: 0, wide: 0, long: 0, unknown: 0 })
   })
 
   it('counts placements apart from errors and winners', () => {
@@ -295,6 +297,16 @@ describe('perSessionCounts', () => {
     const rows = perSessionCounts(sessions, points)
     expect(rows.find((r) => r.session.id === 'p')).toMatchObject({ count: 2, fh: 1, bh: 1 })
     expect(rows.find((r) => r.session.id === 'e')).toMatchObject({ count: 1, fh: 1, bh: 0 })
+  })
+
+  it('keeps serve landings out of placement session counts', () => {
+    const sessions = [session({ id: 'p', mode: 'placement' })]
+    const points = [
+      point({ session_id: 'p', stroke: 'fh', error_type: '', outcome: 'placement' }),
+      point({ session_id: 'p', stroke: 'serve', error_type: '', outcome: 'placement' }),
+    ]
+
+    expect(perSessionCounts(sessions, points)[0]).toMatchObject({ count: 1, fh: 1, bh: 0 })
   })
 
   it('orders same-date sessions by created_at desc', () => {
