@@ -849,7 +849,7 @@ export function Court({ rotation = 0, onTap, onLongPress, disabled = false, poin
                   <circle cx={circleX} cy={cy} r={circleRadius} fill="rgba(255,255,255,0.28)" stroke={textColor} strokeWidth={0.16} />
                   <text x={circleX} y={cy + mainSize * 0.3} fontSize={mainSize} fill={textColor}>{c.n}</text>
                   {strokeTotal > 0 && (
-                    <text x={cx} y={cy + (c.id === 'net' ? 1.45 : 1.85)} fontSize={c.id === 'net' ? 0.48 : 0.57}>
+                    <text x={cx} y={cy + (c.id === 'net' ? 1.5 : 1.92)} fontSize={c.id === 'net' ? 0.58 : 0.7} letterSpacing={-0.015}>
                       <tspan fill="var(--fh-text)">FH {Math.round((strokes.fh / strokeTotal) * 100)}% ({strokes.fh})</tspan>
                       <tspan fill="#5b6672"> · </tspan>
                       <tspan fill="var(--bh-text)">BH {Math.round((strokes.bh / strokeTotal) * 100)}% ({strokes.bh})</tspan>
