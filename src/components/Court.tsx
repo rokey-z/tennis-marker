@@ -97,16 +97,17 @@ function polarPoint(cx: number, cy: number, radius: number, degrees: number) {
   return { x: cx + radius * Math.cos(radians), y: cy + radius * Math.sin(radians) }
 }
 
-function ErrorDragWheel({ x, y, radius, rotation, selected, winner }: { x: number; y: number; radius: number; rotation: CourtRotation; selected: ErrorDragChoice | null; winner: boolean }) {
-  const ballRadius = radius * 0.23
+function ErrorDragWheel({ x, y, radius, rotation, selected, winner, mobile }: { x: number; y: number; radius: number; rotation: CourtRotation; selected: ErrorDragChoice | null; winner: boolean; mobile: boolean }) {
+  const ballRadius = radius * (mobile ? 0.27 : 0.23)
+  const ballOrbit = radius * (mobile ? 0.72 : 0.62)
   return (
     <g transform={uprightAt(x, y, false, rotation)} pointerEvents="none">
-      <circle cx={x} cy={y} r={radius} fill="rgba(23,27,33,0.2)" stroke={winner ? 'var(--win)' : 'rgba(255,255,255,0.88)'} strokeWidth={winner ? 0.56 : 0.28} />
+      <circle cx={x} cy={y} r={radius} fill="rgba(23,27,33,0.2)" />
       {ERROR_WHEEL_SECTORS.map((sector) => {
         const active = selected?.stroke === sector.stroke && selected.error === sector.error
         const dimmed = winner || !!selected && !active
         const mid = (sector.start + sector.end) / 2
-        const ball = polarPoint(x, y, radius * 0.62, mid)
+        const ball = polarPoint(x, y, ballOrbit, mid)
         return (
           <g key={`${sector.stroke}-${sector.error}`} opacity={dimmed ? 0.2 : 1}>
             <line x1={x} y1={y} x2={ball.x} y2={ball.y} stroke="rgba(255,255,255,0.48)" strokeWidth={0.18} />
@@ -133,6 +134,19 @@ function ErrorDragWheel({ x, y, radius, rotation, selected, winner }: { x: numbe
       </text>
     </g>
   )
+}
+
+function useMobileErrorWheel(): boolean {
+  const query = '(max-width: 600px), (pointer: coarse)'
+  const [mobile, setMobile] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches)
+  useEffect(() => {
+    const media = window.matchMedia(query)
+    const update = () => setMobile(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+  return mobile
 }
 
 export interface CourtProps {
@@ -245,7 +259,8 @@ export function Court({ rotation = 0, onTap, onLongPress, disabled = false, poin
   const [pinnedHeatCell, setPinnedHeatCell] = useState<string | null>(null)
   const interactive = !!onTap || !!onLongPress
   const hasDrag = !!onStrokeDrag || !!onErrorSelect
-  const errorWheelRadius = typeof window !== 'undefined' && window.innerWidth <= 600 ? ERROR_WHEEL_RADIUS * 1.15 : ERROR_WHEEL_RADIUS
+  const mobileErrorWheel = useMobileErrorWheel()
+  const errorWheelRadius = mobileErrorWheel ? ERROR_WHEEL_RADIUS * 1.15 : ERROR_WHEEL_RADIUS
 
   const toCourt = useCallback((clientX: number, clientY: number): { x: number; y: number; net: boolean } | null => {
     const g = gRef.current
@@ -877,7 +892,7 @@ export function Court({ rotation = 0, onTap, onLongPress, disabled = false, poin
             const selection = errorWheelSelection(drag.dx, drag.dy, drag.wheelRadiusPx)
             const winner = !!selection && 'winner' in selection
             const selected = selection && !('winner' in selection) ? selection : null
-            return <ErrorDragWheel x={drag.start.x} y={drag.start.y} radius={errorWheelRadius} rotation={rotation} selected={selected} winner={winner} />
+            return <ErrorDragWheel x={drag.start.x} y={drag.start.y} radius={errorWheelRadius} rotation={rotation} selected={selected} winner={winner} mobile={mobileErrorWheel} />
           })()
         )}
 
