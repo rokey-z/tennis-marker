@@ -25,6 +25,9 @@ export const VIEW = {
 export const VIEW_MAX_X = VIEW.minX + VIEW.width // 24
 export const VIEW_MAX_Y = VIEW.minY + VIEW.height // 51
 
+/** Maximum regulation tennis-ball radius (2.70 in diameter), expressed in feet. */
+export const BALL_RADIUS = 1.35 / 12
+
 /** Center of the drawn area — the pivot for the 180° "flip ends" rotation. */
 export const FLIP_CENTER = { x: VIEW.minX + VIEW.width / 2, y: VIEW.minY + VIEW.height / 2 } as const
 
@@ -71,17 +74,18 @@ export function describeZone(z: Zone): string {
 export const DEPTH_LABEL: Record<ZoneRow, string> = { net: 'Short', mid: 'Mid', baseline: 'Deep' }
 
 /**
- * Whether a ball landed outside the singles court — the umpire's "out" call. Singles lines are the
- * ones that count for her matches, so a ball in the doubles alley is out.
+ * Whether a ball landed outside the singles court — the umpire's "out" call. The stored coordinate
+ * is the ball's center, so a center up to one ball radius beyond a boundary is still in when the
+ * ball touches the line. Singles lines are the ones that count for her matches.
  */
 export function isOut(x: number, y: number): boolean {
-  return Math.abs(x) > COURT.singlesHalfWidth || y > COURT.halfLength
+  return Math.abs(x) > COURT.singlesHalfWidth + BALL_RADIUS || y > COURT.halfLength + BALL_RADIUS
 }
 
 /** Placement result inferred from the landing location, excluding a net strike (the UI detects that surface). */
 export function placementResultFor(x: number, y: number): 'in' | 'wide' | 'long' {
-  if (Math.abs(x) > COURT.singlesHalfWidth) return 'wide'
-  return y > COURT.halfLength ? 'long' : 'in'
+  if (Math.abs(x) > COURT.singlesHalfWidth + BALL_RADIUS) return 'wide'
+  return y > COURT.halfLength + BALL_RADIUS ? 'long' : 'in'
 }
 
 export function describeLanding(x: number, y: number): string {
