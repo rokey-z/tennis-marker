@@ -24,6 +24,7 @@
   --bh-text: #1b3a9c;
   --serve: #8b5cf6;
   --serve-ink: #ffffff;
+  --serve-text: #6d28d9;
   /* forced errors carry a dark outline; unforced carry none */
   --mark-outline: #14181d;
   /* winners are the opponent's shot: one neutral green, never a stroke colour */
@@ -3418,7 +3419,7 @@ span
   border: 2px solid var(--serve);
   border-radius: 999px;
   background: var(--surface);
-  color: var(--serve-ink);
+  color: var(--serve-text);
   font-size: var(--fs-btn, 14px);
   font-weight: 850;
 }
