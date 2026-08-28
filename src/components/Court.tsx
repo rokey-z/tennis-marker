@@ -16,7 +16,7 @@ import {
 } from '../domain/court'
 import { SHOT_TYPES, SHOT_TYPE_LABEL, isErrorType, isPlacementResult, isPlacementStroke, isShotType, type ErrorType, type PlacementStroke, type Point, type ShotType, type Stroke } from '../domain/types'
 import type { PlacementFilter } from '../domain/stats'
-import { errorWheelSelection, type ErrorDragChoice } from '../domain/errorWheel'
+import { ERROR_WHEEL_TARGETS, errorWheelSelection, type ErrorDragChoice } from '../domain/errorWheel'
 import { ERROR_LETTER, markLabel } from './marks'
 
 /** Extra headroom above the net line so the net band is visible (presentational only). */
@@ -83,48 +83,38 @@ interface DragState {
   wheelRadiusPx: number
 }
 
-const ERROR_WHEEL_SECTORS: Array<ErrorDragChoice & { start: number; end: number }> = [
-  { stroke: 'bh', error: 'wide', start: -135, end: -90 },
-  { stroke: 'fh', error: 'wide', start: -90, end: -45 },
-  { stroke: 'fh', error: 'long', start: -45, end: 45 },
-  { stroke: 'fh', error: 'net', start: 45, end: 90 },
-  { stroke: 'bh', error: 'net', start: 90, end: 135 },
-  { stroke: 'bh', error: 'long', start: 135, end: 225 },
-]
-
 function polarPoint(cx: number, cy: number, radius: number, degrees: number) {
   const radians = degrees * Math.PI / 180
   return { x: cx + radius * Math.cos(radians), y: cy + radius * Math.sin(radians) }
 }
 
 function ErrorDragWheel({ x, y, radius, rotation, selected, winner, mobile }: { x: number; y: number; radius: number; rotation: CourtRotation; selected: ErrorDragChoice | null; winner: boolean; mobile: boolean }) {
-  const ballRadius = radius * (mobile ? 0.27 : 0.23)
+  const ballRadius = radius * (mobile ? 0.28 : 0.23)
   const ballOrbit = radius * (mobile ? 0.72 : 0.62)
   const winnerBall = polarPoint(x, y, radius * 1.08, -90)
   const winnerBallRadius = ballRadius * 0.9
   return (
     <g transform={uprightAt(x, y, false, rotation)} pointerEvents="none">
-      {ERROR_WHEEL_SECTORS.map((sector) => {
-        const active = selected?.stroke === sector.stroke && selected.error === sector.error
+      {ERROR_WHEEL_TARGETS.map((target) => {
+        const active = selected?.stroke === target.stroke && selected.error === target.error
         const dimmed = winner || !!selected && !active
-        const mid = (sector.start + sector.end) / 2
-        const ball = polarPoint(x, y, ballOrbit, mid)
+        const ball = polarPoint(x, y, ballOrbit, target.angle)
         return (
-          <g key={`${sector.stroke}-${sector.error}`} opacity={dimmed ? 0.2 : 1}>
+          <g key={`${target.stroke}-${target.error}`} opacity={dimmed ? 0.2 : 1}>
             <line x1={x} y1={y} x2={ball.x} y2={ball.y} stroke="rgba(255,255,255,0.48)" strokeWidth={0.18} />
             <circle
               cx={ball.x}
               cy={ball.y}
               r={active ? ballRadius + 0.24 : ballRadius}
-              fill={`var(--${sector.stroke})`}
+              fill={`var(--${target.stroke})`}
               stroke="#ffffff"
               strokeWidth={active ? 0.42 : 0.24}
             />
             <text x={ball.x} y={ball.y - ballRadius * 0.32} textAnchor="middle" dominantBaseline="middle" fill="rgba(255,255,255,0.66)" fontFamily="var(--font)" fontSize={ballRadius * 0.42} fontWeight={750}>
-              {sector.stroke.toUpperCase()}
+              {target.stroke.toUpperCase()}
             </text>
             <text x={ball.x} y={ball.y + ballRadius * 0.32} textAnchor="middle" dominantBaseline="middle" fill="#ffffff" fontFamily="var(--font)" fontSize={ballRadius * 0.48} fontWeight={900}>
-              {sector.error.toUpperCase()}
+              {target.error.toUpperCase()}
             </text>
           </g>
         )
@@ -275,7 +265,7 @@ export function Court({ rotation = 0, onTap, onLongPress, disabled = false, poin
   const interactive = !!onTap || !!onLongPress
   const hasDrag = !!onStrokeDrag || !!onErrorSelect
   const mobileErrorWheel = useMobileErrorWheel()
-  const errorWheelRadius = mobileErrorWheel ? ERROR_WHEEL_RADIUS * 1.15 : ERROR_WHEEL_RADIUS
+  const errorWheelRadius = mobileErrorWheel ? ERROR_WHEEL_RADIUS * 1.32 : ERROR_WHEEL_RADIUS
 
   const toCourt = useCallback((clientX: number, clientY: number): { x: number; y: number; net: boolean } | null => {
     const g = gRef.current
