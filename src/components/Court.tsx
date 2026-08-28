@@ -100,9 +100,10 @@ function polarPoint(cx: number, cy: number, radius: number, degrees: number) {
 function ErrorDragWheel({ x, y, radius, rotation, selected, winner, mobile }: { x: number; y: number; radius: number; rotation: CourtRotation; selected: ErrorDragChoice | null; winner: boolean; mobile: boolean }) {
   const ballRadius = radius * (mobile ? 0.27 : 0.23)
   const ballOrbit = radius * (mobile ? 0.72 : 0.62)
+  const winnerBall = polarPoint(x, y, radius * 1.08, -90)
+  const winnerBallRadius = ballRadius * 0.9
   return (
     <g transform={uprightAt(x, y, false, rotation)} pointerEvents="none">
-      <circle cx={x} cy={y} r={radius} fill="rgba(23,27,33,0.2)" />
       {ERROR_WHEEL_SECTORS.map((sector) => {
         const active = selected?.stroke === sector.stroke && selected.error === sector.error
         const dimmed = winner || !!selected && !active
@@ -128,6 +129,23 @@ function ErrorDragWheel({ x, y, radius, rotation, selected, winner, mobile }: { 
           </g>
         )
       })}
+      <g opacity={selected ? 0.2 : 1}>
+        <line x1={x} y1={y} x2={winnerBall.x} y2={winnerBall.y} stroke="rgba(255,255,255,0.62)" strokeWidth={0.18} />
+        <circle
+          cx={winnerBall.x}
+          cy={winnerBall.y}
+          r={winner ? winnerBallRadius + 0.24 : winnerBallRadius}
+          fill="var(--text)"
+          stroke={winner ? 'var(--win)' : '#ffffff'}
+          strokeWidth={winner ? 0.48 : 0.24}
+        />
+        <text x={winnerBall.x} y={winnerBall.y - winnerBallRadius * 0.3} textAnchor="middle" dominantBaseline="middle" fill="rgba(255,255,255,0.7)" fontFamily="var(--font)" fontSize={winnerBallRadius * 0.4} fontWeight={750}>
+          OPP
+        </text>
+        <text x={winnerBall.x} y={winnerBall.y + winnerBallRadius * 0.28} textAnchor="middle" dominantBaseline="middle" fill="#ffffff" fontFamily="var(--font)" fontSize={winnerBallRadius * 0.8} fontWeight={900}>
+          ×
+        </text>
+      </g>
       <circle cx={x} cy={y} r={0.46} fill="#73777c" stroke="#ffffff" strokeWidth={0.18} />
     </g>
   )
@@ -170,7 +188,7 @@ export interface CourtProps {
   onStrokeDrag?: (x: number, y: number, stroke: PlacementStroke, surface?: 'court' | 'net') => void
   /** Errors mode: drag from the mark into one of six FH/BH × Wide/Long/Net wheel sectors. */
   onErrorSelect?: (x: number, y: number, stroke: Stroke, error: ErrorType, at: { clientX: number; clientY: number }) => void
-  /** Errors mode: releasing beyond the wheel records an opponent winner. */
+  /** Errors mode: dragging upward through the dedicated OPP × target records an opponent winner. */
   onErrorWinner?: (x: number, y: number) => void
   /** Only start the stroke gesture on the net; ordinary court taps remain taps. */
   dragNetOnly?: boolean

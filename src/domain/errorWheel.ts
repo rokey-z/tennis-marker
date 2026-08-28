@@ -21,8 +21,12 @@ export function errorDragChoice(dx: number, dy: number): ErrorDragChoice | null 
   return { stroke: 'bh', error: 'long' }
 }
 
-/** Moving past the visible thin boundary is the fast gesture for an opponent winner. */
+/**
+ * The opponent-winner target sits beyond the two Wide balls at twelve o'clock.
+ * Crossing the wheel elsewhere keeps the chosen error instead of silently changing the result.
+ */
 export function errorWheelSelection(dx: number, dy: number, wheelRadiusPx: number): ErrorWheelSelection | null {
-  if (Math.hypot(dx, dy) > wheelRadiusPx) return { winner: true }
+  const angle = Math.atan2(dy, dx) * 180 / Math.PI
+  if (Math.hypot(dx, dy) > wheelRadiusPx && Math.abs(angle + 90) <= 20) return { winner: true }
   return errorDragChoice(dx, dy)
 }

@@ -20,9 +20,11 @@ describe('error drag wheel', () => {
     expect(errorDragChoice(10, 10)).toBeNull()
   })
 
-  it('turns a drag beyond the visible circle into a winner', () => {
-    expect(errorWheelSelection(101, 0, 100)).toEqual({ winner: true })
-    expect(errorWheelSelection(50, 0, 100)).toEqual({ stroke: 'fh', error: 'long' })
+  it('uses only the dedicated upward gesture for an opponent winner', () => {
+    expect(errorWheelSelection(0, -101, 100)).toEqual({ winner: true })
+    expect(errorWheelSelection(101, 0, 100)).toEqual({ stroke: 'fh', error: 'long' })
+    expect(errorWheelSelection(-101, 0, 100)).toEqual({ stroke: 'bh', error: 'long' })
+    expect(errorWheelSelection(0, -50, 100)).toEqual({ stroke: 'fh', error: 'wide' })
   })
 })
 

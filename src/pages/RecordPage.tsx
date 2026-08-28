@@ -571,7 +571,7 @@ export function RecordPage() {
                 ? 'Session finished and locked. Unlock it to record or edit points.'
                 : placementMode
                 ? `Click where the ball landed, then pick the stroke ${player.name ? `${player.name} hit it with` : 'she hit it with'}. Swipe up to record a serve, including a serve that hit the net; swipe left or right on the net for a BH/FH Net error.`
-                : `Press where ${player.subject} lost the point, drag toward FH/BH × Wide/Long/Net, then choose the ball type. Drag beyond the wheel for an opponent winner. Long-press where ${player.subject} stood to record ${player.possessive} winner.`}
+                : `Press where ${player.subject} lost the point, drag toward FH/BH × Wide/Long/Net, then choose the ball type. Drag upward through OPP × for an opponent winner. Long-press where ${player.subject} stood to record ${player.possessive} winner.`}
             </div>
           )}
           {actions}
