@@ -434,7 +434,7 @@ export function RecordPage() {
           </button>
           <button type="button" className={`btn header-finish${finished ? ' primary' : ''}`} onClick={toggleFinished} aria-pressed={finished} title={finished ? 'Unlock this session' : 'Finish and lock this session'}>
             <LockIcon open={!finished} />
-            {finished ? 'Locked' : 'Finish'}
+            <span className="header-finish-label">{finished ? 'Locked' : 'Finish'}</span>
           </button>
         </div>
       </header>

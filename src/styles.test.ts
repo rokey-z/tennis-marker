@@ -14,3 +14,19 @@ describe('action button contrast', () => {
     expect(rule).toContain('color: var(--serve-text)')
   })
 })
+
+describe('mobile session header', () => {
+  it('uses compact icon and number-only controls without changing desktop labels', () => {
+    const start = styles.indexOf('@media (max-width: 560px) {', styles.indexOf('.flip-fab.on'))
+    const end = styles.indexOf('.court-fullscreen-exit', start)
+    const mobile = styles.slice(start, end)
+
+    expect(mobile).toContain('.record-head-actions .header-rating-button')
+    expect(mobile).toContain('.record-head-actions .header-finish')
+    expect(mobile).toContain('width: 38px')
+    expect(mobile).toContain('.header-rating-button small')
+    expect(mobile).toContain('.header-rating-button strong span')
+    expect(mobile).toContain('.header-finish-label')
+    expect(mobile).toContain('display: none')
+  })
+})

@@ -786,6 +786,70 @@ textarea.input {
   border-color: var(--text);
   color: #fff;
 }
+@media (max-width: 560px) {
+  .record-head {
+    gap: 4px;
+    padding: 4px;
+  }
+  .record-head > .icon-btn {
+    width: 36px;
+    height: 40px;
+  }
+  .record-head > .icon-btn svg {
+    width: 21px;
+    height: 21px;
+  }
+  .record-head .title-btn {
+    padding: 5px 7px;
+    border-radius: 10px;
+  }
+  .record-head .tb-name {
+    gap: 4px;
+  }
+  .record-head .tb-name strong {
+    font-size: 14px;
+    line-height: 1.12;
+  }
+  .record-head .tb-utr {
+    font-size: 9px;
+  }
+  .record-head .tb-meta {
+    flex-wrap: wrap;
+    gap: 2px 4px;
+    font-size: 10px;
+  }
+  .record-head .tb-kind {
+    padding: 2px 5px;
+    font-size: 9px;
+  }
+  .record-head .badge {
+    padding: 2px 4px;
+    font-size: 9px;
+  }
+  .record-head-actions {
+    gap: 4px;
+  }
+  .record-head-actions .flip-fab,
+  .record-head-actions .header-rating-button,
+  .record-head-actions .header-finish {
+    width: 38px;
+    min-width: 38px;
+    min-height: 40px;
+    padding: 0;
+    border-radius: 10px;
+  }
+  .header-rating-button small,
+  .header-rating-button strong span,
+  .header-finish-label {
+    display: none;
+  }
+  .header-rating-button strong {
+    font-size: 15px;
+  }
+  .header-finish {
+    gap: 0;
+  }
+}
 .court-fullscreen-exit,
 .court-fullscreen-log-toggle,
 .court-fullscreen-rotate,
