@@ -162,9 +162,10 @@ describe('summarize', () => {
     expect(s.lost).toBe(0)
   })
 
-  it('counts every selected ball type, including swing volleys, for errors only', () => {
+  it('counts every selected ball type, including serve returns and swing volleys, for errors only', () => {
     const s = summarize([
       point({ shot_type: 'ground' }),
+      point({ stroke: 'bh', shot_type: 'serve_return' }),
       point({ shot_type: 'swing_volley' }),
       point({ shot_type: 'swing_volley' }),
       point({ shot_type: null }),
@@ -172,8 +173,10 @@ describe('summarize', () => {
       point({ stroke: 'fh', error_type: '', outcome: 'placement', shot_type: 'drop' }),
     ])
     expect(s.byShotType.ground).toBe(1)
+    expect(s.byShotType.serve_return).toBe(1)
     expect(s.byShotType.swing_volley).toBe(2)
     expect(s.byShotTypeStroke.ground).toEqual({ fh: 1, bh: 0 })
+    expect(s.byShotTypeStroke.serve_return).toEqual({ fh: 0, bh: 1 })
     expect(s.byShotTypeStroke.swing_volley).toEqual({ fh: 2, bh: 0 })
     expect(s.byShotType.lob).toBe(0)
     expect(s.byShotType.drop).toBe(0)

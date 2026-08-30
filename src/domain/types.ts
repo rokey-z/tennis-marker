@@ -4,7 +4,7 @@ export type PlacementStroke = Stroke | 'serve'
 export type PlacementResult = 'in' | 'net' | 'wide' | 'long' | 'unknown'
 export type ErrorType = 'long' | 'net' | 'wide'
 /** The kind of ball attempted when an error was made. */
-export type ShotType = 'ground' | 'slice' | 'approach' | 'volley' | 'swing_volley' | 'overhead' | 'lob' | 'drop'
+export type ShotType = 'ground' | 'slice' | 'approach' | 'serve_return' | 'volley' | 'swing_volley' | 'overhead' | 'lob' | 'drop'
 /** The two serve outcomes available when the player hits a winner. */
 export type WinnerServeType = 'winning_serve' | 'ace'
 /** A serve-specific miss recorded directly from the point-entry menu. */
@@ -25,9 +25,9 @@ export const STROKES: Stroke[] = ['fh', 'bh']
 export const PLACEMENT_STROKES: PlacementStroke[] = ['fh', 'bh', 'serve']
 export const ERROR_TYPES: ErrorType[] = ['long', 'net', 'wide']
 export const SHOT_TYPE_GROUPS: ShotType[][] = [
-  ['ground', 'approach', 'slice'],
+  ['ground', 'approach', 'serve_return'],
   ['volley', 'swing_volley', 'overhead'],
-  ['lob', 'drop'],
+  ['slice', 'lob', 'drop'],
 ]
 export const SHOT_TYPES: ShotType[] = SHOT_TYPE_GROUPS.flat()
 export const WINNER_SERVE_TYPES: WinnerServeType[] = ['winning_serve', 'ace']
@@ -42,6 +42,7 @@ export const SHOT_TYPE_LABEL: Record<PointShotType, string> = {
   ground: 'Neutral',
   slice: 'Slice',
   approach: 'Attack',
+  serve_return: 'Serve return',
   volley: 'Volley',
   swing_volley: 'Swing volley',
   overhead: 'Overhead',
@@ -56,6 +57,7 @@ export const SHOT_TYPE_SHORT: Record<ShotType, string> = {
   ground: 'N',
   slice: 'S',
   approach: 'A',
+  serve_return: 'R',
   volley: 'V',
   swing_volley: 'SV',
   overhead: 'O',
@@ -78,7 +80,7 @@ export const isStroke = (v: unknown): v is Stroke => v === 'fh' || v === 'bh'
 export const isPlacementStroke = (v: unknown): v is PlacementStroke => isStroke(v) || v === 'serve'
 export const isPlacementResult = (v: unknown): v is PlacementResult => v === 'in' || v === 'net' || v === 'wide' || v === 'long' || v === 'unknown'
 export const isErrorType = (v: unknown): v is ErrorType => v === 'long' || v === 'net' || v === 'wide'
-export const isShotType = (v: unknown): v is ShotType => v === 'ground' || v === 'slice' || v === 'approach' || v === 'volley' || v === 'swing_volley' || v === 'overhead' || v === 'lob' || v === 'drop'
+export const isShotType = (v: unknown): v is ShotType => v === 'ground' || v === 'slice' || v === 'approach' || v === 'serve_return' || v === 'volley' || v === 'swing_volley' || v === 'overhead' || v === 'lob' || v === 'drop'
 export const isWinnerServeType = (v: unknown): v is WinnerServeType => v === 'winning_serve' || v === 'ace'
 export const isServeMissType = (v: unknown): v is ServeMissType => v === 'double_fault'
 export const isPointShotType = (v: unknown): v is PointShotType => isShotType(v) || isWinnerServeType(v) || isServeMissType(v)

@@ -9,6 +9,14 @@ describe('sanitizePoint', () => {
     expect(sanitizePoint({ ...good, x: '12.34', forced: 'true', shot_type: 'volley', updated_at: '2026-08-15T10:00:00+00:00' })).toMatchObject({ x: 12.3, forced: true, shot_type: 'volley', updated_at: t, user_id: null })
     expect(sanitizePoint({ ...good, shot_type: 'serve' })?.shot_type).toBeNull()
   })
+  it('keeps serve-return errors', () => {
+    expect(sanitizePoint({ ...good, stroke: 'bh', error_type: 'net', shot_type: 'serve_return' })).toMatchObject({
+      stroke: 'bh',
+      error_type: 'net',
+      shot_type: 'serve_return',
+      outcome: 'error',
+    })
+  })
   it('rejects unknown enums, bad coords and bad timestamps', () => {
     expect(sanitizePoint({ ...good, stroke: 'volley' })).toBeNull()
     expect(sanitizePoint({ ...good, error_type: 'out' })).toBeNull()

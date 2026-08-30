@@ -1,7 +1,7 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
-import { SHOT_TYPES, SHOT_TYPE_LABEL, type Point } from '../domain/types'
+import { SHOT_TYPES, SHOT_TYPE_GROUPS, SHOT_TYPE_LABEL, type Point } from '../domain/types'
 import { PointSheet } from './PointSheet'
 
 const at = '2026-08-24T12:00:00.000Z'
@@ -23,6 +23,14 @@ const point = (outcome: Point['outcome']): Point => ({
 })
 
 describe('PointSheet ball type editor', () => {
+  it('puts Serve return on the first row and Slice on the third row', () => {
+    expect(SHOT_TYPE_GROUPS).toEqual([
+      ['ground', 'approach', 'serve_return'],
+      ['volley', 'swing_volley', 'overhead'],
+      ['slice', 'lob', 'drop'],
+    ])
+  })
+
   it('shows every ball type together for an error and marks the current type', () => {
     const html = renderToStaticMarkup(createElement(PointSheet, {
       point: point('error'), index: 1, onChange: vi.fn(), onDelete: vi.fn(), onClose: vi.fn(),
