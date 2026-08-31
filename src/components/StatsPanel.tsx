@@ -1,5 +1,6 @@
-import type { CSSProperties } from 'react'
-import { filterPoints, pct, type Filters, type Summary } from '../domain/stats'
+import { useState, type CSSProperties } from 'react'
+import { describeZone, ZONE_COL_LABEL, ZONE_COLS, ZONE_ROW_LABEL, ZONE_ROWS, zoneFromId, type ZoneCol, type ZoneRow } from '../domain/court'
+import { analyzeErrorPositions, filterPoints, pct, type Filters, type PositionCounts, type Summary } from '../domain/stats'
 import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, POINT_SHOT_TYPES, SHOT_TYPES, SHOT_TYPE_LABEL, STROKE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type PlacementStroke, type Point } from '../domain/types'
 import { Chip } from './Bits'
 import { DownloadIcon } from './Icons'
@@ -61,6 +62,8 @@ export function StatsFilters({ value, points, onChange }: { value: StatsFilterSt
 
 export interface StatsPanelProps {
   summary: Summary
+  /** Filtered marks in the same scope as `summary`, used for player-position coaching analysis. */
+  points?: Point[]
   /** number of points in scope (for the CSV button) */
   count: number
   /** what the scope records; placement scopes have no errors to break down */
@@ -72,7 +75,10 @@ export interface StatsPanelProps {
 }
 
 /** KPI tiles, "where the ball went", stroke × error matrix, export — for one scope of points. */
-export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExportJson, showExports = true }: StatsPanelProps) {
+type PositionSelection = { kind: 'depth'; value: ZoneRow } | { kind: 'side'; value: ZoneCol } | null
+
+export function StatsPanel({ summary, points = [], count, mode = 'errors', onExportCsv, onExportJson, showExports = true }: StatsPanelProps) {
+  const [positionSelection, setPositionSelection] = useState<PositionSelection>(null)
   const exportRow = showExports && onExportCsv && onExportJson ? (
     <div className="row wrap">
       <button type="button" className="btn" onClick={onExportCsv} disabled={count === 0}>
@@ -209,13 +215,24 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
       </div>
     )
   }
-  const errorTypeParts = [
-    { key: 'long', label: 'Long', count: summary.byError.long, color: 'var(--err-long)' },
-    { key: 'net', label: 'Net', count: summary.byError.net, color: 'var(--err-net)' },
-    { key: 'wide', label: 'Wide', count: summary.byError.wide, color: 'var(--err-wide)' },
+  const position = analyzeErrorPositions(points)
+  const shotLabel = (type: typeof position.patterns[number]['shotType']) => type === 'untyped' ? 'Not selected' : SHOT_TYPE_LABEL[type]
+  const counted = (value: number, singular: string, plural = `${singular}s`) => `${value} ${value === 1 ? singular : plural}`
+  const regularErrors = summary.byStroke.fh + summary.byStroke.bh
+  const forcedErrors = summary.byStrokeForced.fh + summary.byStrokeForced.bh
+  const unforcedErrors = regularErrors - forcedErrors
+  const aces = summary.playerWinnersByShotType.ace
+  const nonServePlayerWinners = Math.max(0, summary.playerWinners - aces)
+  const trackedParts = [
+    { key: 'unforced', label: 'Unforced errors', count: unforcedErrors, color: 'var(--err-long)' },
+    { key: 'forced', label: 'Forced errors', count: forcedErrors, color: 'var(--err-wide)' },
+    { key: 'opponent-winner', label: 'Opponent winners', count: summary.winners, color: 'var(--danger)' },
     { key: 'double-fault', label: 'Double faults', count: summary.doubleFaults, color: 'var(--err-double-fault)' },
-    { key: 'winners', label: 'Winners', count: summary.winners, color: 'var(--win)' },
-  ]
+    { key: 'player-winner', label: 'Player winners', count: nonServePlayerWinners, color: 'var(--win)' },
+    { key: 'ace', label: 'Aces', count: aces, color: 'var(--fh)' },
+    { key: 'winning-serve', label: 'Winning serves', count: summary.winningServes, color: 'var(--accent)' },
+  ].filter((part) => part.count > 0)
+  const trackedTotal = trackedParts.reduce((total, part) => total + part.count, 0)
   const ballTypeItems: Array<{ key: string; label: string; count: number; fh: number; bh: number; muted?: boolean }> = SHOT_TYPES
     .map((type) => ({ key: type, label: SHOT_TYPE_LABEL[type], count: summary.byShotType[type], ...summary.byShotTypeStroke[type] }))
     .filter((item) => item.count > 0)
@@ -227,17 +244,76 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
     .map((type) => ({ key: type, label: SHOT_TYPE_LABEL[type], count: summary.playerWinnersByShotType[type] }))
     .filter((item) => item.count > 0)
     .sort((a, b) => b.count - a.count)
+  const positionMatches = (zone: string) => !positionSelection
+    || (positionSelection.kind === 'depth' ? zone.startsWith(`${positionSelection.value}-`) : zone.endsWith(`-${positionSelection.value}`))
+  const selectedPatterns = position.patterns.filter((pattern) => !pattern.forced && positionMatches(pattern.zone)).slice(0, 5)
+  const nonEmptyZones = Object.entries(position.zones)
+    .filter(([, values]) => values.errors + values.opponentWinners + values.playerWinners > 0)
+    .sort(([, a], [, b]) => b.errors + b.opponentWinners - a.errors - a.opponentWinners)
+  const topPressure = nonEmptyZones
+    .map(([zone, values]) => ({ zone, count: values.forced + values.opponentWinners }))
+    .sort((a, b) => b.count - a.count)[0]
+  const topPattern = position.patterns.find((pattern) => !pattern.forced)
+  const mid = position.depth.mid
+  const activeShotTypes = SHOT_TYPES.filter((type) => ZONE_ROWS.some((row) => position.depth[row].byShotType[type] > 0))
+  const selectedLabel = positionSelection
+    ? positionSelection.kind === 'depth' ? ZONE_ROW_LABEL[positionSelection.value] : ZONE_COL_LABEL[positionSelection.value]
+    : 'All positions'
+  const togglePosition = (next: NonNullable<PositionSelection>) => setPositionSelection((current) =>
+    current?.kind === next.kind && current.value === next.value ? null : next,
+  )
+  const topStrokeZone = (stroke: 'fh' | 'bh') => nonEmptyZones
+    .map(([zone, values]) => ({ zone, values, count: values[stroke] }))
+    .sort((a, b) => b.count - a.count)[0]
+  const fhZone = topStrokeZone('fh')
+  const bhZone = topStrokeZone('bh')
+  const positionGroups: Array<{ key: string; label: string; values: PositionCounts; selected: boolean; onClick: () => void }> = [
+    ...ZONE_ROWS.map((row) => ({ key: `depth-${row}`, label: ZONE_ROW_LABEL[row], values: position.depth[row], selected: positionSelection?.kind === 'depth' && positionSelection.value === row, onClick: () => togglePosition({ kind: 'depth', value: row }) })),
+    ...ZONE_COLS.map((col) => ({ key: `side-${col}`, label: ZONE_COL_LABEL[col], values: position.side[col], selected: positionSelection?.kind === 'side' && positionSelection.value === col, onClick: () => togglePosition({ kind: 'side', value: col }) })),
+  ]
   return (
     <div className="stack stats-panel">
-      <div className="card">
-        <div className="section-title">Error types</div>
+      <div className="card coaching-snapshot">
+        <div className="stats-section-heading">
+          <div>
+            <div className="section-title">Coaching snapshot</div>
+            <p>Start with repeatable patterns, then use the detail below to verify them.</p>
+          </div>
+          <span className="stats-scope-pill">{selectedLabel}</span>
+        </div>
+        <div className="coaching-insights">
+          <article>
+            <span>Top controllable pattern</span>
+            <strong>{topPattern ? `${STROKE_SHORT[topPattern.stroke]} ${shotLabel(topPattern.shotType)} ${ERROR_LABEL[topPattern.error]}` : 'Not enough observations'}</strong>
+            <small>{topPattern ? `${describeZone(zoneFromId(topPattern.zone))} · ${topPattern.count} unforced` : 'Tag more errors to reveal a repeat pattern.'}</small>
+          </article>
+          <article>
+            <span>Primary pressure position</span>
+            <strong>{topPressure?.count ? describeZone(zoneFromId(topPressure.zone)) : 'Not enough observations'}</strong>
+            <small>{topPressure?.count ? `${topPressure.count} forced errors or opponent winners` : 'No pressure endings recorded by position.'}</small>
+          </article>
+          <article>
+            <span>Mid-court balance</span>
+            <strong>{mid.playerWinners} won · {mid.unforced} donated</strong>
+            <small>{mid.errors + mid.playerWinners > 0 ? `${mid.forced} forced errors from mid-court` : 'No mid-court endings recorded.'}</small>
+          </article>
+          <article>
+            <span>Serve &amp; return</span>
+            <strong>{summary.doubleFaults} DF · {counted(summary.byShotType.serve_return, 'return error')}</strong>
+            <small>{counted(aces, 'ace')} · {counted(summary.winningServes, 'winning serve')}</small>
+          </article>
+        </div>
+      </div>
+
+      {trackedTotal > 0 && <div className="card">
+        <div className="section-title">Tracked point endings</div>
         <div className="error-types-summary">
           <div
             className="error-types-track"
             role="img"
-            aria-label={errorTypeParts.map((part) => `${part.label} ${part.count}, ${pct(part.count, summary.lost)}%`).join('; ')}
+            aria-label={trackedParts.map((part) => `${part.label} ${part.count}, ${pct(part.count, trackedTotal)}%`).join('; ')}
           >
-            {errorTypeParts.map((part) => part.count > 0 && (
+            {trackedParts.map((part) => (
               <span
                 key={part.key}
                 className={`error-types-segment ${part.key}`}
@@ -246,18 +322,99 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
             ))}
           </div>
           <div className="error-types-values">
-            {errorTypeParts.map((part) => part.count > 0 && (
+            {trackedParts.map((part) => (
               <div key={part.key} className="error-types-value" style={{ '--part-color': part.color, flexGrow: part.count } as CSSProperties}>
                 <span>{part.label}</span>
-                <strong>{part.count} · {pct(part.count, summary.lost)}%</strong>
+                <strong>{part.count} · {pct(part.count, trackedTotal)}%</strong>
               </div>
             ))}
           </div>
         </div>
+      </div>}
+
+      {position.errors + position.pressurePoints > 0 && <div className="card position-analysis">
+        <div className="stats-section-heading">
+          <div>
+            <div className="section-title">Errors by player position</div>
+            <p>Where the player stood when the point ended. Tap a position to focus the patterns below.</p>
+          </div>
+          {positionSelection && <button type="button" className="stats-clear-filter" onClick={() => setPositionSelection(null)}>Show all</button>}
+        </div>
+        <div className="position-group-heading">Depth</div>
+        <div className="position-cards">
+          {positionGroups.slice(0, 3).map(({ key, ...group }) => <PositionCard key={key} {...group} total={position.errors} />)}
+        </div>
+        <div className="position-group-heading">Court side</div>
+        <div className="position-cards">
+          {positionGroups.slice(3).map(({ key, ...group }) => <PositionCard key={key} {...group} total={position.errors} />)}
+        </div>
+      </div>}
+
+      {nonEmptyZones.length > 0 && <div className="card">
+        <div className="section-title">Position profile</div>
+        <div className="stats-table-scroll">
+          <table className="matrix position-table">
+            <thead><tr><th>Position</th><th>Errors</th><th>UE</th><th>FE</th><th>Opp.</th><th>Won</th></tr></thead>
+            <tbody>
+              {nonEmptyZones.map(([zone, values]) => (
+                <tr key={zone} className={positionMatches(zone) ? '' : 'dimmed'}>
+                  <td>{describeZone(zoneFromId(zone))}</td><td className="big">{values.errors}</td><td>{values.unforced}</td><td>{values.forced}</td><td>{values.opponentWinners}</td><td>{values.playerWinners}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>}
+
+      {selectedPatterns.length > 0 && <div className="card">
+        <div className="stats-section-heading">
+          <div><div className="section-title">Ranked controllable patterns</div><p>Unforced errors only · {selectedLabel}</p></div>
+        </div>
+        <ol className="error-patterns">
+          {selectedPatterns.map((pattern) => (
+            <li key={[pattern.zone, pattern.stroke, pattern.shotType, pattern.error].join('-')}>
+              <span className={`pill ${pattern.stroke}`}>{STROKE_SHORT[pattern.stroke]}</span>
+              <div><strong>{shotLabel(pattern.shotType)} · {ERROR_LABEL[pattern.error]}</strong><small>{describeZone(zoneFromId(pattern.zone))}</small></div>
+              <b>{pattern.count}</b>
+            </li>
+          ))}
+        </ol>
+      </div>}
+
+      {activeShotTypes.length > 0 && <div className="card">
+        <div className="section-title">Position × ball type</div>
+        <div className="stats-table-scroll">
+          <table className="matrix tactics-matrix">
+            <thead><tr><th>Position</th>{activeShotTypes.map((type) => <th key={type}>{SHOT_TYPE_LABEL[type]}</th>)}</tr></thead>
+            <tbody>{ZONE_ROWS.map((row) => (
+              <tr key={row}><td>{ZONE_ROW_LABEL[row]}</td>{activeShotTypes.map((type) => <td className="big" key={type}>{position.depth[row].byShotType[type] || '—'}</td>)}</tr>
+            ))}</tbody>
+          </table>
+        </div>
+      </div>}
+
+      {regularErrors > 0 && <div className="card">
+        <div className="section-title">Stroke profiles</div>
+        <div className="stroke-profiles">
+          {([['fh', fhZone], ['bh', bhZone]] as const).map(([stroke, result]) => {
+            const strokeErrors = summary.byStroke[stroke]
+            const strokeForced = summary.byStrokeForced[stroke]
+            return <article key={stroke}>
+              <div><span className={`pill ${stroke}`}>{STROKE_SHORT[stroke]}</span><strong>{STROKE_LABEL[stroke]}</strong></div>
+              <b>{strokeErrors} errors</b>
+              <small>{strokeErrors - strokeForced} unforced · {strokeForced} forced</small>
+              {result?.count > 0 && <small>Most frequent at {describeZone(zoneFromId(result.zone))} · {result.count}</small>}
+            </article>
+          })}
+        </div>
+      </div>}
+
+      <div className="card">
         <div className="section-title">Error ball types</div>
         <div className="ball-type-bubbles">
           {ballTypeItems.map((item) => {
-            const percentage = pct(item.count, summary.total)
+            // Double faults are serve outcomes and do not belong in the attempted-ball-type mix.
+            const percentage = pct(item.count, regularErrors)
             // The visible area above a 40px legibility floor tracks the value, up to 112px at 100%.
             const size = Math.round(Math.sqrt(40 ** 2 + (112 ** 2 - 40 ** 2) * percentage / 100))
             return (
@@ -327,7 +484,20 @@ export function StatsPanel({ summary, count, mode = 'errors', onExportCsv, onExp
       </div>
 
       {exportRow}
-      <p className="kbd-hint">Counts, not rates.</p>
+      <p className="kbd-hint">These are point-ending counts, not success rates. Player position shows where the player stood; serve outcomes and ball-placement marks are excluded.</p>
     </div>
+  )
+}
+
+function PositionCard({ label, values, total, selected, onClick }: { label: string; values: PositionCounts; total: number; selected: boolean; onClick: () => void }) {
+  const meaningful = values.errors + values.opponentWinners + values.playerWinners > 0
+  return (
+    <button type="button" className={`position-card${selected ? ' selected' : ''}`} onClick={onClick} disabled={!meaningful} aria-pressed={selected}>
+      <span>{label}</span>
+      <strong>{values.errors}<small>{pct(values.errors, total)}%</small></strong>
+      <small>UE {values.unforced} · FE {values.forced}</small>
+      <small>FH {values.fh} · BH {values.bh}</small>
+      {(values.opponentWinners > 0 || values.playerWinners > 0) && <small>Opp. {values.opponentWinners} · Won {values.playerWinners}</small>}
+    </button>
   )
 }

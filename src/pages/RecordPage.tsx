@@ -576,7 +576,7 @@ export function RecordPage() {
           )}
           {actions}
           {statsMode ? (
-            <StatsPanel summary={statsSummary} count={shownPoints.length} mode={placementMode ? 'placement' : 'errors'} onExportCsv={exportCsv} onExportJson={exportJson} />
+            <StatsPanel summary={statsSummary} points={shownPoints} count={shownPoints.length} mode={placementMode ? 'placement' : 'errors'} onExportCsv={exportCsv} onExportJson={exportJson} />
           ) : (
             <div className="card side-list">
               <LogFilterHeader points={points} mode={placementMode ? 'placement' : 'errors'} value={logFilter} playerName={player.name || 'Player'} onChange={setLogFilter} />
@@ -596,7 +596,7 @@ export function RecordPage() {
               setStatsMapCompact((compact) => compact ? distance > 8 : distance > 56)
             }}
           >
-            <StatsPanel summary={statsSummary} count={shownPoints.length} mode={placementMode ? 'placement' : 'errors'} onExportCsv={exportCsv} onExportJson={exportJson} />
+            <StatsPanel summary={statsSummary} points={shownPoints} count={shownPoints.length} mode={placementMode ? 'placement' : 'errors'} onExportCsv={exportCsv} onExportJson={exportJson} />
           </section>
         </>
       ) : (

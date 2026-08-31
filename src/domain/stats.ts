@@ -1,6 +1,6 @@
-import { placementResultFor, zoneFor, zoneId } from './court'
+import { ZONE_COLS, ZONE_ROWS, placementResultFor, zoneFor, zoneId, type ZoneCol, type ZoneRow } from './court'
 import type { ErrorType, Outcome, PlacementResult, PlacementStroke, Point, PointShotType, Session, ShotType, Stroke } from './types'
-import { POINT_SHOT_TYPES, SHOT_TYPES, isErrorType, isPlacementResult, isPlacementStroke, isPointShotType, isShotType, isStroke } from './types'
+import { ERROR_TYPES, POINT_SHOT_TYPES, SHOT_TYPES, isErrorType, isPlacementResult, isPlacementStroke, isPointShotType, isShotType, isStroke } from './types'
 
 export type ForcedFilter = 'all' | 'forced' | 'unforced'
 export type PlacementFilter = 'all' | 'in' | 'out' | 'serve'
@@ -122,6 +122,138 @@ export interface Summary {
   placementNet: number
   placementsByStroke: Record<PlacementStroke, number>
   placementMatrix: Record<PlacementStroke, Record<PlacementResult, number>>
+}
+
+export interface PositionCounts {
+  errors: number
+  forced: number
+  unforced: number
+  opponentWinners: number
+  playerWinners: number
+  fh: number
+  bh: number
+  fhForced: number
+  bhForced: number
+  byError: Record<ErrorType, number>
+  byShotType: Record<ShotType, number>
+}
+
+export interface ErrorPositionPattern {
+  zone: string
+  stroke: Stroke
+  error: ErrorType
+  shotType: ShotType | 'untyped'
+  forced: boolean
+  count: number
+}
+
+export interface ErrorPositionAnalysis {
+  zones: Record<string, PositionCounts>
+  depth: Record<ZoneRow, PositionCounts>
+  side: Record<ZoneCol, PositionCounts>
+  patterns: ErrorPositionPattern[]
+  /** FH/BH Long, Net, and Wide errors with a recorded standing position. */
+  errors: number
+  /** Regular errors plus opponent winners. Serve outcomes are deliberately excluded. */
+  pressurePoints: number
+}
+
+function emptyPositionCounts(): PositionCounts {
+  return {
+    errors: 0,
+    forced: 0,
+    unforced: 0,
+    opponentWinners: 0,
+    playerWinners: 0,
+    fh: 0,
+    bh: 0,
+    fhForced: 0,
+    bhForced: 0,
+    byError: { long: 0, net: 0, wide: 0 },
+    byShotType: Object.fromEntries(SHOT_TYPES.map((type) => [type, 0])) as Record<ShotType, number>,
+  }
+}
+
+function addPositionCounts(target: PositionCounts, source: PositionCounts): void {
+  target.errors += source.errors
+  target.forced += source.forced
+  target.unforced += source.unforced
+  target.opponentWinners += source.opponentWinners
+  target.playerWinners += source.playerWinners
+  target.fh += source.fh
+  target.bh += source.bh
+  target.fhForced += source.fhForced
+  target.bhForced += source.bhForced
+  for (const error of ERROR_TYPES) target.byError[error] += source.byError[error]
+  for (const type of SHOT_TYPES) target.byShotType[type] += source.byShotType[type]
+}
+
+/**
+ * Coaching analysis of where the player stood when a point ended.
+ * Coordinates on error/winner marks describe player position; serve outcomes and ball-placement
+ * marks use different semantics and never enter this analysis.
+ */
+export function analyzeErrorPositions(points: Iterable<Point>): ErrorPositionAnalysis {
+  const zones = Object.fromEntries(
+    ZONE_ROWS.flatMap((row) => ZONE_COLS.map((col) => [`${row}-${col}`, emptyPositionCounts()])),
+  ) as Record<string, PositionCounts>
+  const patternMap = new Map<string, ErrorPositionPattern>()
+
+  for (const point of points) {
+    if (point.deleted_at) continue
+    const outcome = point.outcome ?? 'error'
+    if (outcome === 'placement' || outcome === 'winning_serve') continue
+    if (point.stroke === 'serve' || point.shot_type === 'double_fault') continue
+
+    const position = zoneFor(point.x, point.y)
+    const zone = zoneId(position)
+    const counts = zones[zone]
+
+    if (outcome === 'winner') {
+      counts.opponentWinners++
+      continue
+    }
+    if (outcome === 'player_winner') {
+      counts.playerWinners++
+      continue
+    }
+    if (!isStroke(point.stroke) || !isErrorType(point.error_type)) continue
+
+    counts.errors++
+    counts[point.stroke]++
+    counts.byError[point.error_type]++
+    if (point.forced) {
+      counts.forced++
+      counts[point.stroke === 'fh' ? 'fhForced' : 'bhForced']++
+    } else counts.unforced++
+    if (isShotType(point.shot_type)) counts.byShotType[point.shot_type]++
+
+    const shotType = isShotType(point.shot_type) ? point.shot_type : 'untyped'
+    const key = [zone, point.stroke, shotType, point.error_type, point.forced ? 'forced' : 'unforced'].join('|')
+    const pattern = patternMap.get(key)
+    if (pattern) pattern.count++
+    else patternMap.set(key, { zone, stroke: point.stroke, shotType, error: point.error_type, forced: point.forced, count: 1 })
+  }
+
+  const depth = Object.fromEntries(ZONE_ROWS.map((row) => [row, emptyPositionCounts()])) as Record<ZoneRow, PositionCounts>
+  const side = Object.fromEntries(ZONE_COLS.map((col) => [col, emptyPositionCounts()])) as Record<ZoneCol, PositionCounts>
+  for (const row of ZONE_ROWS) {
+    for (const col of ZONE_COLS) {
+      const counts = zones[`${row}-${col}`]
+      addPositionCounts(depth[row], counts)
+      addPositionCounts(side[col], counts)
+    }
+  }
+  const errors = Object.values(zones).reduce((sum, counts) => sum + counts.errors, 0)
+  const pressurePoints = Object.values(zones).reduce((sum, counts) => sum + counts.errors + counts.opponentWinners, 0)
+  return {
+    zones,
+    depth,
+    side,
+    patterns: [...patternMap.values()].sort((a, b) => b.count - a.count),
+    errors,
+    pressurePoints,
+  }
 }
 
 export function summarize(points: Iterable<Point>): Summary {

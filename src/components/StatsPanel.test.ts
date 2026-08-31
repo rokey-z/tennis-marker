@@ -28,7 +28,7 @@ const point = (id: string, error_type: Point['error_type'], outcome: Point['outc
 })
 
 describe('StatsPanel error type summary', () => {
-  it('renders Long, Net, Wide, and Winners in one bar with values underneath', () => {
+  it('separates tracked point endings in one bar', () => {
     const summary = summarize([
       point('long', 'long'),
       point('net', 'net'),
@@ -37,10 +37,11 @@ describe('StatsPanel error type summary', () => {
     ])
     const html = renderToStaticMarkup(createElement(StatsPanel, { summary, count: 4, showExports: false }))
 
-    expect(html).toContain('Error types')
+    expect(html).toContain('Tracked point endings')
     expect(html).not.toContain('Where the ball went')
     expect(html.match(/class="error-types-track"/g)).toHaveLength(1)
-    for (const label of ['Long', 'Net', 'Wide', 'Winners']) expect(html).toContain(`<span>${label}</span><strong>1 · 25%</strong>`)
+    expect(html).toContain('<span>Unforced errors</span><strong>3 · 75%</strong>')
+    expect(html).toContain('<span>Opponent winners</span><strong>1 · 25%</strong>')
     expect(html.match(/class="ball-type-bubble(?: |")/g)).toHaveLength(1)
     expect(html).toContain('--bubble-size:112px')
     expect(html).toContain('Error ball types')
@@ -82,6 +83,25 @@ describe('StatsPanel error type summary', () => {
     expect(html).toContain('<strong>25%</strong><span>Lob</span><small>1</small>')
     expect(html).toContain('<strong>25%</strong><span>ACE</span><small>1</small>')
     expect(summary.total).toBe(1)
+  })
+
+  it('keeps serve outcomes separate and excludes double faults from error ball-type percentages', () => {
+    const summary = summarize([
+      point('error', 'long', 'error', 'ground'),
+      { ...point('forced', 'wide', 'error', 'slice'), forced: true },
+      point('opponent', '', 'winner', null),
+      { ...point('df', '', 'error', 'double_fault'), stroke: 'serve' },
+      point('player', '', 'player_winner', 'volley'),
+      { ...point('ace', '', 'player_winner', 'ace'), stroke: 'serve' },
+      { ...point('serve', '', 'winning_serve', null), stroke: 'serve', shot_type: 'winning_serve' },
+    ])
+    const html = renderToStaticMarkup(createElement(StatsPanel, { summary, count: 7, showExports: false }))
+
+    for (const label of ['Unforced errors', 'Forced errors', 'Opponent winners', 'Double faults', 'Player winners', 'Aces', 'Winning serves']) {
+      expect(html).toContain(`<span>${label}</span><strong>1 · 14%</strong>`)
+    }
+    expect(html).toContain('aria-label="Neutral: 1 error, 50%"')
+    expect(html).toContain('aria-label="Slice: 1 error, 50%"')
   })
 })
 

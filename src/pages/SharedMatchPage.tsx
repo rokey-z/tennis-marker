@@ -132,7 +132,7 @@ export function SharedMatchPage() {
           />
         )}
         <MarkLegend mode={placement ? 'placement' : 'errors'} />
-        <StatsPanel summary={summary} count={shownPoints.length} mode={placement ? 'placement' : 'errors'} showExports={false} />
+        <StatsPanel summary={summary} points={shownPoints} count={shownPoints.length} mode={placement ? 'placement' : 'errors'} showExports={false} />
         {session.notes && <div className="card shared-notes"><div className="section-title">Notes</div>{session.notes}</div>}
       </section>
     </main>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { compareSessionDesc, filterPlacementPoints, filterPoints, pct, perSessionCounts, summarize } from './stats'
+import { analyzeErrorPositions, compareSessionDesc, filterPlacementPoints, filterPoints, pct, perSessionCounts, summarize } from './stats'
 import type { Point, Session } from './types'
 
 const t0 = '2026-08-15T10:00:00.000Z'
@@ -294,6 +294,30 @@ describe('summarize', () => {
     expect(s.maxZone).toBe(0)
     expect(pct(0, 0)).toBe(0)
     expect(pct(1, 3)).toBe(33)
+  })
+})
+
+describe('analyzeErrorPositions', () => {
+  it('uses standing location for regular errors and winners while excluding every serve and placement outcome', () => {
+    const analysis = analyzeErrorPositions([
+      point({ x: -10, y: 38, stroke: 'fh', error_type: 'long', shot_type: 'ground' }),
+      point({ x: -10, y: 38, stroke: 'bh', error_type: 'net', shot_type: 'volley', forced: true }),
+      point({ x: 0, y: 28, stroke: '', error_type: '', outcome: 'winner' }),
+      point({ x: 0, y: 28, stroke: 'fh', error_type: '', outcome: 'player_winner', shot_type: 'volley' }),
+      point({ x: 10, y: 40, stroke: 'serve', error_type: '', outcome: 'error', shot_type: 'double_fault' }),
+      point({ x: 10, y: 40, stroke: 'serve', error_type: '', outcome: 'player_winner', shot_type: 'ace' }),
+      point({ x: 10, y: 40, stroke: 'serve', error_type: '', outcome: 'winning_serve', shot_type: 'winning_serve' }),
+      point({ x: 10, y: 40, stroke: 'fh', error_type: '', outcome: 'placement', placement_result: 'in' }),
+    ])
+
+    expect(analysis.errors).toBe(2)
+    expect(analysis.pressurePoints).toBe(3)
+    expect(analysis.zones['baseline-ad']).toMatchObject({ errors: 2, unforced: 1, forced: 1, fh: 1, bh: 1 })
+    expect(analysis.zones['mid-middle']).toMatchObject({ errors: 0, opponentWinners: 1, playerWinners: 1 })
+    expect(analysis.depth.baseline.errors).toBe(2)
+    expect(analysis.side.ad.errors).toBe(2)
+    expect(analysis.patterns).toHaveLength(2)
+    expect(Object.values(analysis.zones).reduce((sum, counts) => sum + counts.errors + counts.opponentWinners + counts.playerWinners, 0)).toBe(4)
   })
 })
 
