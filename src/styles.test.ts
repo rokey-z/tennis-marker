@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 const styles = readFileSync(new URL('./styles.css', import.meta.url), 'utf8')
+const recordPage = readFileSync(new URL('./pages/RecordPage.tsx', import.meta.url), 'utf8')
 
 describe('action button contrast', () => {
   it('uses the high-contrast purple serve text color for an unselected Double fault label', () => {
@@ -28,5 +29,15 @@ describe('mobile session header', () => {
     expect(mobile).toContain('.header-rating-button strong span')
     expect(mobile).toContain('.header-finish-label')
     expect(mobile).toContain('display: none')
+  })
+})
+
+describe('mobile stats court', () => {
+  it('keeps one stable court height while the stats content scrolls', () => {
+    expect(styles).toContain('.record.stats .record-court')
+    expect(styles).toContain('height: 50dvh')
+    expect(styles).not.toContain('stats-map-compact')
+    expect(recordPage).not.toContain('statsMapCompact')
+    expect(recordPage).not.toContain('setStatsMapCompact')
   })
 })

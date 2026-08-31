@@ -1573,34 +1573,6 @@ textarea.input {
   .record.stats .record-court {
     flex: 0 0 auto;
     height: 50dvh;
-    transition: height 180ms ease;
-  }
-  .record.stats.stats-map-compact .record-court {
-    position: sticky;
-    top: 0;
-    z-index: 8;
-    height: 25dvh;
-    min-height: 25dvh;
-    background: var(--bg);
-    box-shadow: 0 5px 14px rgba(20, 24, 29, 0.16);
-  }
-  .record.stats.stats-map-compact .stats-filters {
-    display: none;
-  }
-  .record.stats.stats-map-compact .placement-split {
-    display: none;
-  }
-  .record.stats.stats-map-compact .court-box {
-    flex: 1 1 0;
-    height: auto;
-    min-height: 0;
-    container-type: size;
-  }
-  .record.stats.stats-map-compact .court-svg {
-    width: auto;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
   }
 }
 .record-stats {

@@ -64,8 +64,6 @@ export function RecordPage() {
   const [toast, setToast] = useState<ToastState | null>(null)
   const [logFilter, setLogFilter] = useState<LogFilter>('all')
   const [view, setView] = useState<'court' | 'stats'>('court')
-  const [statsMapCompact, setStatsMapCompact] = useState(false)
-  const statsPanelScrollTop = useRef(0)
   const [filters, setFilters] = useState<StatsFilterState>(DEFAULT_STATS_FILTERS)
   const [placementFilter, setPlacementFilter] = useState<PlacementFilter>('all')
   const statsMode = view === 'stats'
@@ -128,21 +126,6 @@ export function RecordPage() {
     }
     finishCourtFullscreen()
   }
-  useEffect(() => {
-    if (!statsMode || isDesktop) {
-      statsPanelScrollTop.current = 0
-      setStatsMapCompact(false)
-      return
-    }
-    const update = () => {
-      const distance = Math.max(window.scrollY, statsPanelScrollTop.current)
-      setStatsMapCompact((compact) => compact ? distance > 8 : distance > 56)
-    }
-    window.addEventListener('scroll', update, { passive: true })
-    update()
-    return () => window.removeEventListener('scroll', update)
-  }, [isDesktop, statsMode])
-
   const onTap = useCallback((x: number, y: number, at: { clientX: number; clientY: number }, surface: 'court' | 'net' = 'court') => {
     if (performance.now() < ignoreUntil.current) return
     setForced(false)
@@ -401,7 +384,7 @@ export function RecordPage() {
   )
 
   return (
-    <div key={id} className={`record page-in${statsMode ? ' stats' : ''}${statsMapCompact ? ' stats-map-compact' : ''}${courtFullscreen ? ' court-fullscreen' : ''}`}>
+    <div key={id} className={`record page-in${statsMode ? ' stats' : ''}${courtFullscreen ? ' court-fullscreen' : ''}`}>
       <header className="record-head">
         <Link to="/" className="icon-btn" aria-label="Back to sessions">
           <BackIcon />
@@ -587,15 +570,7 @@ export function RecordPage() {
       ) : statsMode ? (
         <>
           <div className="record-bottom">{actions}</div>
-          <section
-            className="record-stats"
-            aria-label="Session stats"
-            onScroll={(event) => {
-              statsPanelScrollTop.current = event.currentTarget.scrollTop
-              const distance = Math.max(window.scrollY, statsPanelScrollTop.current)
-              setStatsMapCompact((compact) => compact ? distance > 8 : distance > 56)
-            }}
-          >
+          <section className="record-stats" aria-label="Session stats">
             <StatsPanel summary={statsSummary} points={shownPoints} count={shownPoints.length} mode={placementMode ? 'placement' : 'errors'} onExportCsv={exportCsv} onExportJson={exportJson} />
           </section>
         </>
