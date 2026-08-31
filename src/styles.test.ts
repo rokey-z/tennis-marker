@@ -33,9 +33,11 @@ describe('mobile session header', () => {
 })
 
 describe('mobile stats court', () => {
-  it('keeps one stable court height while the stats content scrolls', () => {
+  it('keeps one stable court height while the whole stats page scrolls', () => {
     expect(styles).toContain('.record.stats .record-court')
     expect(styles).toContain('height: 50dvh')
+    expect(styles).toMatch(/\.record\.stats \.record-stats\s*\{[^}]*flex:\s*0 0 auto;[^}]*overflow:\s*visible;/s)
+    expect(styles.lastIndexOf('.record.stats .record-stats')).toBeGreaterThan(styles.indexOf('\n.record-stats {'))
     expect(styles).not.toContain('stats-map-compact')
     expect(recordPage).not.toContain('statsMapCompact')
     expect(recordPage).not.toContain('setStatsMapCompact')

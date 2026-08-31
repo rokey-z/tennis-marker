@@ -1588,6 +1588,12 @@ textarea.input {
 .record-stats .tile .value {
   font-size: 22px;
 }
+@media (max-width: 899px) {
+  .record.stats .record-stats {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+}
 
 /* bottom log (mobile) */
 .record-log {
