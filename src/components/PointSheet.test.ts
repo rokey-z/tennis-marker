@@ -23,12 +23,13 @@ const point = (outcome: Point['outcome']): Point => ({
 })
 
 describe('PointSheet ball type editor', () => {
-  it('puts Serve return on the first row and Slice on the third row', () => {
+  it('puts Return on the first row and Slice on the third row', () => {
     expect(SHOT_TYPE_GROUPS).toEqual([
       ['ground', 'approach', 'serve_return'],
       ['volley', 'swing_volley', 'overhead'],
       ['slice', 'lob', 'drop'],
     ])
+    expect(SHOT_TYPE_LABEL.serve_return).toBe('Return')
   })
 
   it('shows every ball type together for an error and marks the current type', () => {

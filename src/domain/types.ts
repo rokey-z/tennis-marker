@@ -42,7 +42,7 @@ export const SHOT_TYPE_LABEL: Record<PointShotType, string> = {
   ground: 'Neutral',
   slice: 'Slice',
   approach: 'Attack',
-  serve_return: 'Serve return',
+  serve_return: 'Return',
   volley: 'Volley',
   swing_volley: 'Swing volley',
   overhead: 'Overhead',
