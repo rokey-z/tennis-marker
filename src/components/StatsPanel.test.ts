@@ -140,12 +140,12 @@ describe('StatsFilters', () => {
       onChange: vi.fn(),
     }))
 
-    const filterLabel = (text: string) => `<span class="stats-filter-bar-name">${text}</span>`
+    const filterLabel = (text: string) => `<span class="stats-filter-pie-name">${text}</span>`
     for (const visible of ['Unforced', 'FH', 'Serve', 'Long', 'Neutral']) expect(html).toContain(filterLabel(visible))
     for (const type of POINT_SHOT_TYPES) expect(html).toContain(filterLabel(SHOT_TYPE_LABEL[type]))
     expect(html).toContain('class="chip-group stats-filter-ball-types"')
-    expect(html).toContain('class="chip stats-filter-bar-chip"')
-    expect(html).toContain('class="stats-filter-bar-visual"')
+    expect(html).toContain('class="chip stats-filter-pie-chip"')
+    expect(html).toContain('class="stats-filter-pie-visual"')
     expect(html).toContain('class="stats-filter-count">1 · 50%</span>')
     expect(html).toContain('style="--filter-share:50"')
     expect(html.match(/class="stats-filters-row"/g)).toHaveLength(4)

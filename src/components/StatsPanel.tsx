@@ -19,14 +19,14 @@ export function StatsFilters({ value, points, onChange }: { value: StatsFilterSt
   const count = (patch: Partial<StatsFilterState>) => filterPoints(points, { ...value, ...patch }).length
   const label = (text: string, n: number, total: number) => (
     <>
-      <span className="stats-filter-bar-visual" aria-hidden="true" />
-      <span className="stats-filter-bar-meta">
-        <span className="stats-filter-bar-name">{text}</span>
+      <span className="stats-filter-pie-visual" aria-hidden="true" />
+      <span className="stats-filter-pie-meta">
+        <span className="stats-filter-pie-name">{text}</span>
         <span className="stats-filter-count">{n} · {pct(n, total)}%</span>
       </span>
     </>
   )
-  const barStyle = (n: number, total: number) => ({ '--filter-share': pct(n, total) } as CSSProperties)
+  const pieStyle = (n: number, total: number) => ({ '--filter-share': pct(n, total) } as CSSProperties)
   const forcedCounts = {
     unforced: count({ forced: 'unforced' }),
     forced: count({ forced: 'forced' }),
@@ -44,15 +44,15 @@ export function StatsFilters({ value, points, onChange }: { value: StatsFilterSt
         <div className="stats-filters-row">
           <span className="stats-filter-row-label">Force</span>
           <div className="chip-group" role="group" aria-label="Force">
-            {forcedCounts.unforced > 0 && <Chip on={value.forced === 'unforced'} cls="stats-filter-bar-chip" style={barStyle(forcedCounts.unforced, forcedTotal)} onClick={() => toggle('forced', 'unforced')}>{label('Unforced', forcedCounts.unforced, forcedTotal)}</Chip>}
-            {forcedCounts.forced > 0 && <Chip on={value.forced === 'forced'} cls="stats-filter-bar-chip" style={barStyle(forcedCounts.forced, forcedTotal)} onClick={() => toggle('forced', 'forced')}>{label('Forced', forcedCounts.forced, forcedTotal)}</Chip>}
+            {forcedCounts.unforced > 0 && <Chip on={value.forced === 'unforced'} cls="stats-filter-pie-chip" style={pieStyle(forcedCounts.unforced, forcedTotal)} onClick={() => toggle('forced', 'unforced')}>{label('Unforced', forcedCounts.unforced, forcedTotal)}</Chip>}
+            {forcedCounts.forced > 0 && <Chip on={value.forced === 'forced'} cls="stats-filter-pie-chip" style={pieStyle(forcedCounts.forced, forcedTotal)} onClick={() => toggle('forced', 'forced')}>{label('Forced', forcedCounts.forced, forcedTotal)}</Chip>}
           </div>
         </div>
         <div className="stats-filters-row">
           <span className="stats-filter-row-label">Stroke</span>
           <div className="chip-group" role="group" aria-label="Stroke">
             {PLACEMENT_STROKES.map((s) => (
-              strokeCounts[s] > 0 && <Chip key={s} on={value.stroke === s} cls={`${s} stats-filter-bar-chip`} style={barStyle(strokeCounts[s], strokeTotal)} onClick={() => toggle('stroke', s)}>{label(STROKE_SHORT[s], strokeCounts[s], strokeTotal)}</Chip>
+              strokeCounts[s] > 0 && <Chip key={s} on={value.stroke === s} cls={`${s} stats-filter-pie-chip`} style={pieStyle(strokeCounts[s], strokeTotal)} onClick={() => toggle('stroke', s)}>{label(STROKE_SHORT[s], strokeCounts[s], strokeTotal)}</Chip>
             ))}
           </div>
         </div>
@@ -60,7 +60,7 @@ export function StatsFilters({ value, points, onChange }: { value: StatsFilterSt
           <span className="stats-filter-row-label">Error</span>
           <div className="chip-group" role="group" aria-label="Error type">
             {ERROR_TYPES.map((e) => (
-              errorCounts[e] > 0 && <Chip key={e} on={value.error === e} cls="stats-filter-bar-chip" style={barStyle(errorCounts[e], errorTotal)} onClick={() => toggle('error', e)}>{label(ERROR_LABEL[e], errorCounts[e], errorTotal)}</Chip>
+              errorCounts[e] > 0 && <Chip key={e} on={value.error === e} cls="stats-filter-pie-chip" style={pieStyle(errorCounts[e], errorTotal)} onClick={() => toggle('error', e)}>{label(ERROR_LABEL[e], errorCounts[e], errorTotal)}</Chip>
             ))}
           </div>
         </div>
@@ -68,7 +68,7 @@ export function StatsFilters({ value, points, onChange }: { value: StatsFilterSt
           <span className="stats-filter-row-label">Ball type</span>
           <div className="chip-group stats-filter-ball-types" role="group" aria-label="Ball type">
             {POINT_SHOT_TYPES.map((type) => (
-              <Chip key={type} on={value.shotType === type} cls="stats-filter-bar-chip" style={barStyle(shotTypeCounts[type], shotTypeTotal)} onClick={() => toggle('shotType', type)}>{label(SHOT_TYPE_LABEL[type], shotTypeCounts[type], shotTypeTotal)}</Chip>
+              <Chip key={type} on={value.shotType === type} cls="stats-filter-pie-chip" style={pieStyle(shotTypeCounts[type], shotTypeTotal)} onClick={() => toggle('shotType', type)}>{label(SHOT_TYPE_LABEL[type], shotTypeCounts[type], shotTypeTotal)}</Chip>
             ))}
           </div>
         </div>

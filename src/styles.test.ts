@@ -47,8 +47,8 @@ describe('mobile stats court', () => {
     expect(styles).toMatch(/\.stats-filter-ball-types\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(3, max-content\);/s)
   })
 
-  it('sizes each filter bar vertically from its percentage with compact text below', () => {
-    expect(styles).toMatch(/\.stats-filter-bar-visual\s*\{[^}]*height:\s*calc\(3px \+ var\(--filter-share\) \* 0\.23px\);/s)
-    expect(styles).toMatch(/\.stats-filter-bar-name\s*\{[^}]*font-size:\s*8px;/s)
+  it('renders each filter percentage as a pie chart with compact text below', () => {
+    expect(styles).toMatch(/\.stats-filter-pie-visual\s*\{[^}]*border-radius:\s*50%;[^}]*conic-gradient\([^}]*var\(--filter-share\)/s)
+    expect(styles).toMatch(/\.stats-filter-pie-name\s*\{[^}]*font-size:\s*8px;/s)
   })
 })
