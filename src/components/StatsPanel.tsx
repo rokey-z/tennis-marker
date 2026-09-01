@@ -53,7 +53,7 @@ export function StatsFilters({ value, points, onChange }: { value: StatsFilterSt
         </div>
         <div className="stats-filters-row">
           <span className="stats-filter-row-label">Ball type</span>
-          <div className="chip-group" role="group" aria-label="Ball type">
+          <div className="chip-group stats-filter-ball-types" role="group" aria-label="Ball type">
             {POINT_SHOT_TYPES.map((type) => (
               <Chip key={type} on={value.shotType === type} onClick={() => toggle('shotType', type)}>{label(SHOT_TYPE_LABEL[type], shotTypeCounts[type])}</Chip>
             ))}

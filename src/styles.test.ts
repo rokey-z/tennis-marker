@@ -42,4 +42,8 @@ describe('mobile stats court', () => {
     expect(recordPage).not.toContain('statsMapCompact')
     expect(recordPage).not.toContain('setStatsMapCompact')
   })
+
+  it('lays out every ball type across multiple compact rows', () => {
+    expect(styles).toMatch(/\.stats-filter-ball-types\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(3, max-content\);/s)
+  })
 })

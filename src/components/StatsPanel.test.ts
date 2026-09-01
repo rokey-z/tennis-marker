@@ -143,6 +143,7 @@ describe('StatsFilters', () => {
     const filterLabel = (text: string) => `>${text}<span class="stats-filter-count"`
     for (const visible of ['Unforced', 'FH', 'Serve', 'Long', 'Neutral']) expect(html).toContain(filterLabel(visible))
     for (const type of POINT_SHOT_TYPES) expect(html).toContain(filterLabel(SHOT_TYPE_LABEL[type]))
+    expect(html).toContain('class="chip-group stats-filter-ball-types"')
     expect(html.match(/class="stats-filters-row"/g)).toHaveLength(4)
     expect(html).not.toContain('>All<')
     expect(html).not.toContain('>All strokes<')

@@ -1561,6 +1561,14 @@ textarea.input {
   flex-wrap: nowrap;
   gap: 4px;
 }
+.stats-filter-ball-types {
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+  align-items: center;
+}
+.stats-filter-ball-types .chip {
+  justify-content: space-between;
+}
 .stats-filters .chip {
   min-height: 26px;
   padding: 0 7px;
