@@ -526,7 +526,7 @@ export function RecordPage() {
           )}
           {statsMode && !placementMode && (
             <div className="stats-map-winners">
-              {statsSummary.winners > 0 && <span aria-label={`${statsSummary.winners} opponent winners`}><span className="stats-map-winner-mark" aria-hidden="true">×</span> Opponent winners <strong>{statsSummary.winners}</strong></span>}
+              {statsSummary.winners > 0 && <span aria-label={`${statsSummary.winners} opponent winners`}><span className="stats-map-winner-mark" aria-hidden="true">★</span> Opponent winners <strong>{statsSummary.winners}</strong></span>}
               {statsSummary.winningServes > 0 && <span aria-label={`${statsSummary.winningServes} winning serves`}><span className="stats-map-winning-serve-mark" aria-hidden="true">S</span> Winning serves <strong>{statsSummary.winningServes}</strong></span>}
               {statsSummary.playerWinners > 0 && <span aria-label={`${statsSummary.playerWinners} ${player.subject} winners`}><span className="stats-map-player-winner-mark" aria-hidden="true">★</span> {player.subject} winners <strong>{statsSummary.playerWinners}</strong></span>}
               {statsSummary.doubleFaults > 0 && <span aria-label={`${statsSummary.doubleFaults} double faults`}><span className="stats-map-double-fault-mark" aria-hidden="true">DF</span> Double faults <strong>{statsSummary.doubleFaults}</strong></span>}

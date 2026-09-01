@@ -22,6 +22,16 @@ const forcedError: Point = {
   deleted_at: null,
 }
 
+const opponentWinner: Point = {
+  ...forcedError,
+  id: 'opponent-winner',
+  stroke: '',
+  error_type: '',
+  forced: false,
+  outcome: 'winner',
+  shot_type: null,
+}
+
 describe('error drag wheel', () => {
   it.each([
     [-30, -52, { stroke: 'bh', error: 'wide' }],
@@ -116,10 +126,24 @@ describe('court forced-error marker', () => {
   it.each([
     ['marker mode', undefined],
     ['stats mode', 'analysis' as const],
-  ])('uses a star in %s', (_name, compactMarks) => {
+  ])('uses a cross in %s', (_name, compactMarks) => {
     const html = renderToStaticMarkup(createElement(Court, { points: [forcedError], compactMarks }))
 
     expect(html).toContain('data-marker-kind="forced-error"')
+    expect(html).toContain('data-marker-symbol="cross"')
+    expect(html).not.toContain('>★</text>')
+  })
+})
+
+describe('court opponent-winner marker', () => {
+  it.each([
+    ['marker mode', undefined],
+    ['stats mode', 'analysis' as const],
+  ])('uses a star in %s', (_name, compactMarks) => {
+    const html = renderToStaticMarkup(createElement(Court, { points: [opponentWinner], compactMarks }))
+
+    expect(html).toContain('data-marker-kind="opponent-winner"')
+    expect(html).toContain('data-marker-symbol="star"')
     expect(html).toContain('>★</text>')
   })
 })

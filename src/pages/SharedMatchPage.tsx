@@ -114,7 +114,7 @@ export function SharedMatchPage() {
           />
           {!placement && (
             <div className="stats-map-winners">
-              {summary.winners > 0 && <span aria-label={`${summary.winners} opponent winners`}><span className="stats-map-winner-mark" aria-hidden="true">×</span> Opponent winners <strong>{summary.winners}</strong></span>}
+              {summary.winners > 0 && <span aria-label={`${summary.winners} opponent winners`}><span className="stats-map-winner-mark" aria-hidden="true">★</span> Opponent winners <strong>{summary.winners}</strong></span>}
               {summary.winningServes > 0 && <span aria-label={`${summary.winningServes} winning serves`}><span className="stats-map-winning-serve-mark" aria-hidden="true">S</span> Winning serves <strong>{summary.winningServes}</strong></span>}
               {summary.playerWinners > 0 && <span aria-label={`${summary.playerWinners} player winners`}><span className="stats-map-player-winner-mark" aria-hidden="true">★</span> Player winners <strong>{summary.playerWinners}</strong></span>}
               {summary.doubleFaults > 0 && <span aria-label={`${summary.doubleFaults} double faults`}><span className="stats-map-double-fault-mark" aria-hidden="true">DF</span> Double faults <strong>{summary.doubleFaults}</strong></span>}

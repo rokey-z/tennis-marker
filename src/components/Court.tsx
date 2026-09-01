@@ -1098,6 +1098,9 @@ function Marker({ p: pt, rotation, compact, selected = false }: { p: Point; rota
   const error = isErrorType(p.error_type) ? p.error_type : 'long'
   const doubleFault = p.outcome === 'error' && p.stroke === 'serve' && p.shot_type === 'double_fault'
   const forcedError = p.outcome === 'error' && p.forced && !doubleFault
+  const opponentWinner = p.outcome === 'winner'
+  const markerKind = opponentWinner ? 'opponent-winner' : forcedError ? 'forced-error' : undefined
+  const markerSymbol = opponentWinner ? 'star' : forcedError ? 'cross' : undefined
   const color = `var(--${stroke})`
   const ink = `var(--${stroke}-ink)`
   // placements only: a ball past the singles lines was called out
@@ -1113,7 +1116,7 @@ function Marker({ p: pt, rotation, compact, selected = false }: { p: Point; rota
     const compactRadius = overview ? 0.46 : 0.36
     const compactOpacity = overview ? 0.76 : 0.62
     return (
-      <g transform={uprightAt(p.x, p.y, false, rotation)} data-marker-kind={forcedError ? 'forced-error' : undefined}>
+      <g transform={uprightAt(p.x, p.y, false, rotation)} data-marker-kind={markerKind} data-marker-symbol={markerSymbol}>
         <title>{label}</title>
         {selected && (
           <circle
@@ -1125,12 +1128,12 @@ function Marker({ p: pt, rotation, compact, selected = false }: { p: Point; rota
             strokeWidth={0.2}
           />
         )}
-        {forcedError ? (
+        {opponentWinner ? (
           <text
             x={p.x}
             y={p.y + compactRadius * 0.42}
             textAnchor="middle"
-            fill={color}
+            fill="var(--win)"
             stroke="#ffffff"
             strokeWidth={0.1}
             paintOrder="stroke"
@@ -1153,7 +1156,7 @@ function Marker({ p: pt, rotation, compact, selected = false }: { p: Point; rota
   const r = 1.4
   const a = r * 0.9
   return (
-    <g transform={uprightAt(p.x, p.y, false, rotation)} data-marker-kind={forcedError ? 'forced-error' : undefined}>
+      <g transform={uprightAt(p.x, p.y, false, rotation)} data-marker-kind={markerKind} data-marker-symbol={markerSymbol}>
       <title>{label}</title>
       {selected && (
         <g aria-hidden="true">
@@ -1163,21 +1166,19 @@ function Marker({ p: pt, rotation, compact, selected = false }: { p: Point; rota
           <circle cx={p.x} cy={p.y} r={2.8} fill="none" stroke="var(--mark-outline)" strokeWidth={0.22} />
         </g>
       )}
-      {/* Colour carries her stroke; a star marks a forced error. Opponent winners use the
+      {/* Colour carries her stroke; a cross marks a forced error. Opponent winners use the
           neutral green diamond, while winners hit by the player keep the selected FH/BH colour. */}
       {forcedError ? (
-        <text
-          x={p.x}
-          y={p.y + 0.82}
-          textAnchor="middle"
-          fill={color}
-          stroke="#ffffff"
-          strokeWidth={0.18}
-          paintOrder="stroke"
-          fontFamily="var(--font)"
-          fontSize={2.75}
-          fontWeight={900}
-        >★</text>
+        <g strokeLinecap="round">
+          <g stroke="#ffffff" strokeWidth={1} opacity={0.85}>
+            <line x1={p.x - a} y1={p.y - a} x2={p.x + a} y2={p.y + a} />
+            <line x1={p.x - a} y1={p.y + a} x2={p.x + a} y2={p.y - a} />
+          </g>
+          <g stroke={color} strokeWidth={0.55}>
+            <line x1={p.x - a} y1={p.y - a} x2={p.x + a} y2={p.y + a} />
+            <line x1={p.x - a} y1={p.y + a} x2={p.x + a} y2={p.y - a} />
+          </g>
+        </g>
       ) : net ? (
         <g strokeLinecap="round">
           <g stroke="#ffffff" strokeWidth={1} opacity={0.85}>
