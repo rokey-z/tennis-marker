@@ -2,8 +2,9 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import { summarize } from '../domain/stats'
-import type { Point } from '../domain/types'
+import { POINT_SHOT_TYPES, SHOT_TYPE_LABEL, type Point } from '../domain/types'
 import { StatsFilters, StatsPanel } from './StatsPanel'
+import { toggleStatsFilter } from './statsFilters'
 
 vi.mock('../data/app', () => ({
   useSyncStatus: () => ({ phase: 'local', pending: 0, blocked: 0, lastSyncAt: null, error: null }),
@@ -131,7 +132,7 @@ describe('StatsPanel placement summary', () => {
 })
 
 describe('StatsFilters', () => {
-  it('hides filter options whose available count is zero', () => {
+  it('uses one row per category, removes All chips, and shows every ball type', () => {
     const html = renderToStaticMarkup(createElement(StatsFilters, {
       value: { stroke: 'all', error: 'all', shotType: 'all', forced: 'all' },
       points: [point('only', 'long', 'error', 'ground')],
@@ -140,9 +141,20 @@ describe('StatsFilters', () => {
 
     const filterLabel = (text: string) => `>${text}<span class="stats-filter-count"`
     for (const visible of ['Unforced', 'FH', 'Long', 'Neutral']) expect(html).toContain(filterLabel(visible))
-    for (const hidden of ['Forced', 'BH', 'Net', 'Wide', 'Attack', 'Slice', 'Volley', 'Swing volley', 'Overhead', 'Lob', 'Drop shot']) {
-      expect(html).not.toContain(filterLabel(hidden))
-    }
-    expect(html).not.toContain('>0</span>')
+    for (const type of POINT_SHOT_TYPES) expect(html).toContain(filterLabel(SHOT_TYPE_LABEL[type]))
+    expect(html.match(/class="stats-filters-row"/g)).toHaveLength(4)
+    expect(html).not.toContain('>All<')
+    expect(html).not.toContain('>All strokes<')
+    expect(html).not.toContain('>All errors<')
+    expect(html).not.toContain('>All types<')
+    expect(html).toContain('>0</span>')
+  })
+
+  it('turns a selected chip off when it is selected again', () => {
+    const empty = { stroke: 'all', error: 'all', shotType: 'all', forced: 'all' } as const
+    const selected = toggleStatsFilter(empty, 'stroke', 'fh')
+
+    expect(selected.stroke).toBe('fh')
+    expect(toggleStatsFilter(selected, 'stroke', 'fh').stroke).toBe('all')
   })
 })

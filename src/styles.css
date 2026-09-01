@@ -1542,18 +1542,24 @@ textarea.input {
   min-width: 100%;
 }
 .stats-filters-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 54px max-content;
   gap: 4px;
   align-items: center;
   width: 100%;
 }
+.stats-filter-row-label {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
 .stats-filters .chip-group {
   flex-wrap: nowrap;
   gap: 4px;
-}
-.stats-filters-row .chip-group + .chip-group {
-  border-left: 1px solid var(--line);
-  padding-left: 4px;
 }
 .stats-filters .chip {
   min-height: 26px;
@@ -1572,7 +1578,12 @@ textarea.input {
 @media (max-width: 899px) {
   .record.stats .record-court {
     flex: 0 0 auto;
+    height: auto;
+  }
+  .record.stats .court-box {
+    flex: 0 0 auto;
     height: 50dvh;
+    min-height: 50dvh;
   }
 }
 .record-stats {

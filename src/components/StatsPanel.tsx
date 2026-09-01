@@ -4,6 +4,7 @@ import { analyzeErrorPositions, filterPoints, pct, type Filters, type PositionCo
 import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, POINT_SHOT_TYPES, SHOT_TYPES, SHOT_TYPE_LABEL, STROKE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type PlacementStroke, type Point } from '../domain/types'
 import { Chip } from './Bits'
 import { DownloadIcon } from './Icons'
+import { toggleStatsFilter } from './statsFilters'
 
 export interface StatsFilterState {
   stroke: PlacementStroke | 'all'
@@ -14,46 +15,49 @@ export interface StatsFilterState {
 
 /** Stroke / error / forced chip row that scopes the heat court and the panel below it. */
 export function StatsFilters({ value, points, onChange }: { value: StatsFilterState; points: Point[]; onChange: (v: StatsFilterState) => void }) {
-  const set = (patch: Partial<StatsFilterState>) => onChange({ ...value, ...patch })
+  const toggle = <K extends keyof StatsFilterState>(key: K, next: StatsFilterState[K]) => onChange(toggleStatsFilter(value, key, next))
   const count = (patch: Partial<StatsFilterState>) => filterPoints(points, { ...value, ...patch }).length
   const label = (text: string, n: number) => <>{text}<span className="stats-filter-count">{n}</span></>
   const forcedCounts = {
-    all: count({ forced: 'all' }),
     unforced: count({ forced: 'unforced' }),
     forced: count({ forced: 'forced' }),
   }
-  const strokeCounts = Object.fromEntries(['all', ...PLACEMENT_STROKES].map((stroke) => [stroke, count({ stroke: stroke as StatsFilterState['stroke'] })])) as Record<StatsFilterState['stroke'], number>
-  const errorCounts = Object.fromEntries(['all', ...ERROR_TYPES].map((error) => [error, count({ error: error as StatsFilterState['error'] })])) as Record<StatsFilterState['error'], number>
-  const shotTypeCounts = Object.fromEntries(['all', ...POINT_SHOT_TYPES].map((shotType) => [shotType, count({ shotType: shotType as StatsFilterState['shotType'] })])) as Record<StatsFilterState['shotType'], number>
+  const strokeCounts = Object.fromEntries(PLACEMENT_STROKES.map((stroke) => [stroke, count({ stroke })])) as Record<PlacementStroke, number>
+  const errorCounts = Object.fromEntries(ERROR_TYPES.map((error) => [error, count({ error })])) as Record<ErrorType, number>
+  const shotTypeCounts = Object.fromEntries(POINT_SHOT_TYPES.map((shotType) => [shotType, count({ shotType })])) as Record<(typeof POINT_SHOT_TYPES)[number], number>
   return (
     <div className="stats-filters" role="group" aria-label="Filters">
       <div className="stats-filters-track">
         <div className="stats-filters-row">
-          {forcedCounts.all > 0 && <div className="chip-group" role="group" aria-label="Forced">
-            {forcedCounts.all > 0 && <Chip on={value.forced === 'all'} onClick={() => set({ forced: 'all' })}>{label('All', forcedCounts.all)}</Chip>}
-            {forcedCounts.unforced > 0 && <Chip on={value.forced === 'unforced'} onClick={() => set({ forced: 'unforced' })}>{label('Unforced', forcedCounts.unforced)}</Chip>}
-            {forcedCounts.forced > 0 && <Chip on={value.forced === 'forced'} onClick={() => set({ forced: 'forced' })}>{label('Forced', forcedCounts.forced)}</Chip>}
-          </div>}
-          {strokeCounts.all > 0 && <div className="chip-group" role="group" aria-label="Stroke">
-            {strokeCounts.all > 0 && <Chip on={value.stroke === 'all'} onClick={() => set({ stroke: 'all' })}>{label('All strokes', strokeCounts.all)}</Chip>}
-            {PLACEMENT_STROKES.map((s) => (
-              strokeCounts[s] > 0 && <Chip key={s} on={value.stroke === s} cls={s} onClick={() => set({ stroke: s })}>{label(STROKE_SHORT[s], strokeCounts[s])}</Chip>
-            ))}
-          </div>}
-          {errorCounts.all > 0 && <div className="chip-group" role="group" aria-label="Error type">
-            {errorCounts.all > 0 && <Chip on={value.error === 'all'} onClick={() => set({ error: 'all' })}>{label('All errors', errorCounts.all)}</Chip>}
-            {ERROR_TYPES.map((e) => (
-              errorCounts[e] > 0 && <Chip key={e} on={value.error === e} onClick={() => set({ error: e })}>{label(ERROR_LABEL[e], errorCounts[e])}</Chip>
-            ))}
-          </div>}
+          <span className="stats-filter-row-label">Force</span>
+          <div className="chip-group" role="group" aria-label="Force">
+            {forcedCounts.unforced > 0 && <Chip on={value.forced === 'unforced'} onClick={() => toggle('forced', 'unforced')}>{label('Unforced', forcedCounts.unforced)}</Chip>}
+            {forcedCounts.forced > 0 && <Chip on={value.forced === 'forced'} onClick={() => toggle('forced', 'forced')}>{label('Forced', forcedCounts.forced)}</Chip>}
+          </div>
         </div>
         <div className="stats-filters-row">
-          {shotTypeCounts.all > 0 && <div className="chip-group" role="group" aria-label="Ball type">
-            {shotTypeCounts.all > 0 && <Chip on={value.shotType === 'all'} onClick={() => set({ shotType: 'all' })}>{label('All types', shotTypeCounts.all)}</Chip>}
-            {POINT_SHOT_TYPES.map((type) => (
-              shotTypeCounts[type] > 0 && <Chip key={type} on={value.shotType === type} onClick={() => set({ shotType: type })}>{label(SHOT_TYPE_LABEL[type], shotTypeCounts[type])}</Chip>
+          <span className="stats-filter-row-label">Stroke</span>
+          <div className="chip-group" role="group" aria-label="Stroke">
+            {PLACEMENT_STROKES.map((s) => (
+              strokeCounts[s] > 0 && <Chip key={s} on={value.stroke === s} cls={s} onClick={() => toggle('stroke', s)}>{label(STROKE_SHORT[s], strokeCounts[s])}</Chip>
             ))}
-          </div>}
+          </div>
+        </div>
+        <div className="stats-filters-row">
+          <span className="stats-filter-row-label">Error</span>
+          <div className="chip-group" role="group" aria-label="Error type">
+            {ERROR_TYPES.map((e) => (
+              errorCounts[e] > 0 && <Chip key={e} on={value.error === e} onClick={() => toggle('error', e)}>{label(ERROR_LABEL[e], errorCounts[e])}</Chip>
+            ))}
+          </div>
+        </div>
+        <div className="stats-filters-row">
+          <span className="stats-filter-row-label">Ball type</span>
+          <div className="chip-group" role="group" aria-label="Ball type">
+            {POINT_SHOT_TYPES.map((type) => (
+              <Chip key={type} on={value.shotType === type} onClick={() => toggle('shotType', type)}>{label(SHOT_TYPE_LABEL[type], shotTypeCounts[type])}</Chip>
+            ))}
+          </div>
         </div>
       </div>
     </div>
