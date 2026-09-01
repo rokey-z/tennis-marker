@@ -1536,17 +1536,22 @@ textarea.input {
   display: none;
 }
 .stats-filters-track {
-  display: grid;
-  gap: 3px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   width: max-content;
   min-width: 100%;
 }
 .stats-filters-row {
-  display: grid;
-  grid-template-columns: 54px max-content;
+  display: flex;
+  flex-direction: column;
   gap: 4px;
   align-items: center;
-  width: 100%;
+  width: 294px;
+  padding: 4px 6px 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
 }
 .stats-filter-row-label {
   color: var(--muted);
@@ -1555,6 +1560,7 @@ textarea.input {
   letter-spacing: 0.04em;
   line-height: 1;
   text-transform: uppercase;
+  text-align: center;
   white-space: nowrap;
 }
 .stats-filter-combined {
@@ -1565,14 +1571,14 @@ textarea.input {
 }
 .stats-filter-pie-layout {
   display: grid;
-  grid-template-columns: 82px 72px 82px;
+  grid-template-columns: 86px 96px 86px;
   align-items: center;
   gap: 4px;
 }
 .stats-filter-combined-pie {
   display: block;
-  width: 72px;
-  height: 72px;
+  width: 96px;
+  height: 96px;
   overflow: visible;
 }
 .stats-filter-pie-sector {

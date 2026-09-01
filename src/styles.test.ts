@@ -43,13 +43,15 @@ describe('mobile stats court', () => {
     expect(recordPage).not.toContain('setStatsMapCompact')
   })
 
-  it('lays out the clickable labels around each pie', () => {
-    expect(styles).toMatch(/\.stats-filter-pie-layout\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*82px 72px 82px;/s)
+  it('lays out the category pies horizontally with each title above its chart', () => {
+    expect(styles).toMatch(/\.stats-filters-track\s*\{[^}]*display:\s*flex;/s)
+    expect(styles).toMatch(/\.stats-filters-row\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;[^}]*align-items:\s*center;/s)
+    expect(styles).toMatch(/\.stats-filter-pie-layout\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*86px 96px 86px;/s)
     expect(styles).toMatch(/\.stats-filter-zero-items\s*\{[^}]*grid-template-columns:\s*repeat\(3, 76px\);/s)
   })
 
   it('renders one interactive combined pie per category with compact labels beside it', () => {
-    expect(styles).toMatch(/\.stats-filter-combined-pie\s*\{[^}]*width:\s*72px;[^}]*height:\s*72px;/s)
+    expect(styles).toMatch(/\.stats-filter-combined-pie\s*\{[^}]*width:\s*96px;[^}]*height:\s*96px;/s)
     expect(styles).toMatch(/\.stats-filter-pie-sector\s*\{[^}]*cursor:\s*pointer;/s)
     expect(styles).toMatch(/\.stats-filter-pie-name\s*\{[^}]*font-size:\s*8px;/s)
   })
