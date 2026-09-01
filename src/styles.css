@@ -1568,6 +1568,13 @@ textarea.input {
 }
 .stats-filter-ball-types .chip {
   justify-content: space-between;
+  justify-self: start;
+}
+.stats-filters .chip.stats-filter-bar-chip {
+  width: calc(58px + var(--filter-share) * 0.62px);
+  min-width: max-content;
+  border-radius: 6px;
+  justify-content: space-between;
 }
 .stats-filters .chip {
   min-height: 26px;

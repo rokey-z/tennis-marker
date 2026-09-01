@@ -144,12 +144,15 @@ describe('StatsFilters', () => {
     for (const visible of ['Unforced', 'FH', 'Serve', 'Long', 'Neutral']) expect(html).toContain(filterLabel(visible))
     for (const type of POINT_SHOT_TYPES) expect(html).toContain(filterLabel(SHOT_TYPE_LABEL[type]))
     expect(html).toContain('class="chip-group stats-filter-ball-types"')
+    expect(html).toContain('class="chip stats-filter-bar-chip"')
+    expect(html).toContain('class="stats-filter-count">1 · 50%</span>')
+    expect(html).toContain('style="--filter-share:50"')
     expect(html.match(/class="stats-filters-row"/g)).toHaveLength(4)
     expect(html).not.toContain('>All<')
     expect(html).not.toContain('>All strokes<')
     expect(html).not.toContain('>All errors<')
     expect(html).not.toContain('>All types<')
-    expect(html).toContain('>0</span>')
+    expect(html).toContain('>0 · 0%</span>')
   })
 
   it('turns a selected chip off when it is selected again', () => {

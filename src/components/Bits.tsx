@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, type CSSProperties, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { useSyncStatus } from '../data/app'
 import { describeMark, isOut } from '../domain/court'
@@ -9,9 +9,9 @@ import { ErrorLetter, MarkChip, StrokeTag } from './marks'
 import { formatTime } from '../lib/format'
 
 // ---------- chip (filter toggle) ----------
-export function Chip({ on, cls, onClick, children }: { on: boolean; cls?: string; onClick: () => void; children: ReactNode }) {
+export function Chip({ on, cls, style, onClick, children }: { on: boolean; cls?: string; style?: CSSProperties; onClick: () => void; children: ReactNode }) {
   return (
-    <button type="button" className={`chip${cls ? ` ${cls}` : ''}${on ? ' on' : ''}`} aria-pressed={on} onClick={onClick}>
+    <button type="button" className={`chip${cls ? ` ${cls}` : ''}${on ? ' on' : ''}`} style={style} aria-pressed={on} onClick={onClick}>
       {children}
     </button>
   )

@@ -46,4 +46,8 @@ describe('mobile stats court', () => {
   it('lays out every ball type across multiple compact rows', () => {
     expect(styles).toMatch(/\.stats-filter-ball-types\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(3, max-content\);/s)
   })
+
+  it('sizes each filter bar from its percentage with a readable zero-value floor', () => {
+    expect(styles).toMatch(/\.stats-filters \.chip\.stats-filter-bar-chip\s*\{[^}]*width:\s*calc\(58px \+ var\(--filter-share\) \* 0\.62px\);[^}]*min-width:\s*max-content;/s)
+  })
 })
