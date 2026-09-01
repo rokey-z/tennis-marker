@@ -43,12 +43,12 @@ describe('mobile stats court', () => {
     expect(recordPage).not.toContain('setStatsMapCompact')
   })
 
-  it('lays out every ball type across multiple compact rows', () => {
-    expect(styles).toMatch(/\.stats-filter-ball-types\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(3, max-content\);/s)
+  it('lays out every pie legend across multiple compact rows', () => {
+    expect(styles).toMatch(/\.stats-filter-combined-legend\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(3, 76px\);/s)
   })
 
-  it('renders each filter percentage as a pie chart with compact text below', () => {
-    expect(styles).toMatch(/\.stats-filter-pie-visual\s*\{[^}]*border-radius:\s*50%;[^}]*conic-gradient\([^}]*var\(--filter-share\)/s)
+  it('renders one combined pie per category with compact labels beside it', () => {
+    expect(styles).toMatch(/\.stats-filter-combined-pie\s*\{[^}]*width:\s*54px;[^}]*height:\s*54px;[^}]*border-radius:\s*50%;/s)
     expect(styles).toMatch(/\.stats-filter-pie-name\s*\{[^}]*font-size:\s*8px;/s)
   })
 })

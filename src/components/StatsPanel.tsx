@@ -2,7 +2,6 @@ import { useState, type CSSProperties } from 'react'
 import { describeZone, ZONE_COL_LABEL, ZONE_COLS, ZONE_ROW_LABEL, ZONE_ROWS, zoneFromId, type ZoneCol, type ZoneRow } from '../domain/court'
 import { analyzeErrorPositions, filterPoints, pct, type Filters, type PositionCounts, type Summary } from '../domain/stats'
 import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, POINT_SHOT_TYPES, SHOT_TYPES, SHOT_TYPE_LABEL, STROKE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type PlacementStroke, type Point } from '../domain/types'
-import { Chip } from './Bits'
 import { DownloadIcon } from './Icons'
 import { toggleStatsFilter } from './statsFilters'
 
@@ -13,20 +12,68 @@ export interface StatsFilterState {
   forced: NonNullable<Filters['forced']>
 }
 
+interface FilterPieItem {
+  key: string
+  label: string
+  count: number
+  color: string
+  selected: boolean
+  onClick: () => void
+}
+
+const SHOT_TYPE_PIE_COLORS = [
+  '#2878d8', '#17a673', '#8b5cf6', '#e2843d', '#d94a4a', '#d6a316',
+  '#16803c', '#1e40af', '#a855f7', '#0f9d58', '#64748b', '#db2777',
+]
+
+function pieBackground(items: FilterPieItem[]) {
+  const total = items.reduce((sum, item) => sum + item.count, 0)
+  if (total === 0) return 'var(--surface-2)'
+  let start = 0
+  return `conic-gradient(${items.filter((item) => item.count > 0).map((item) => {
+    const end = start + (item.count / total) * 100
+    const stop = `${item.color} ${start}% ${end}%`
+    start = end
+    return stop
+  }).join(', ')})`
+}
+
+function FilterPie({ label, items, keepZero = false }: { label: string; items: FilterPieItem[]; keepZero?: boolean }) {
+  const total = items.reduce((sum, item) => sum + item.count, 0)
+  const visibleItems = items.filter((item) => keepZero || item.count > 0)
+  const summary = visibleItems.map((item) => `${item.label} ${pct(item.count, total)}%`).join(', ')
+  return (
+    <div className="stats-filter-combined">
+      <span
+        className="stats-filter-combined-pie"
+        role="img"
+        aria-label={`${label}: ${summary || 'no data'}`}
+        style={{ background: pieBackground(items) }}
+      />
+      <div className={`stats-filter-combined-legend${keepZero ? ' all-types' : ''}`} role="group" aria-label={label}>
+        {visibleItems.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            className={`stats-filter-legend-item${item.selected ? ' on' : ''}`}
+            style={{ '--filter-color': item.color } as CSSProperties}
+            aria-pressed={item.selected}
+            onClick={item.onClick}
+          >
+            <span className="stats-filter-legend-swatch" aria-hidden="true" />
+            <span className="stats-filter-pie-name">{item.label}</span>
+            <span className="stats-filter-count">{item.count} · {pct(item.count, total)}%</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 /** Stroke / error / forced chip row that scopes the heat court and the panel below it. */
 export function StatsFilters({ value, points, onChange }: { value: StatsFilterState; points: Point[]; onChange: (v: StatsFilterState) => void }) {
   const toggle = <K extends keyof StatsFilterState>(key: K, next: StatsFilterState[K]) => onChange(toggleStatsFilter(value, key, next))
   const count = (patch: Partial<StatsFilterState>) => filterPoints(points, { ...value, ...patch }).length
-  const label = (text: string, n: number, total: number) => (
-    <>
-      <span className="stats-filter-pie-visual" aria-hidden="true" />
-      <span className="stats-filter-pie-meta">
-        <span className="stats-filter-pie-name">{text}</span>
-        <span className="stats-filter-count">{n} · {pct(n, total)}%</span>
-      </span>
-    </>
-  )
-  const pieStyle = (n: number, total: number) => ({ '--filter-share': pct(n, total) } as CSSProperties)
   const forcedCounts = {
     unforced: count({ forced: 'unforced' }),
     forced: count({ forced: 'forced' }),
@@ -34,43 +81,48 @@ export function StatsFilters({ value, points, onChange }: { value: StatsFilterSt
   const strokeCounts = Object.fromEntries(PLACEMENT_STROKES.map((stroke) => [stroke, count({ stroke })])) as Record<PlacementStroke, number>
   const errorCounts = Object.fromEntries(ERROR_TYPES.map((error) => [error, count({ error })])) as Record<ErrorType, number>
   const shotTypeCounts = Object.fromEntries(POINT_SHOT_TYPES.map((shotType) => [shotType, count({ shotType })])) as Record<(typeof POINT_SHOT_TYPES)[number], number>
-  const forcedTotal = forcedCounts.unforced + forcedCounts.forced
-  const strokeTotal = PLACEMENT_STROKES.reduce((total, stroke) => total + strokeCounts[stroke], 0)
-  const errorTotal = ERROR_TYPES.reduce((total, error) => total + errorCounts[error], 0)
-  const shotTypeTotal = POINT_SHOT_TYPES.reduce((total, shotType) => total + shotTypeCounts[shotType], 0)
   return (
     <div className="stats-filters" role="group" aria-label="Filters">
       <div className="stats-filters-track">
         <div className="stats-filters-row">
           <span className="stats-filter-row-label">Force</span>
-          <div className="chip-group" role="group" aria-label="Force">
-            {forcedCounts.unforced > 0 && <Chip on={value.forced === 'unforced'} cls="stats-filter-pie-chip" style={pieStyle(forcedCounts.unforced, forcedTotal)} onClick={() => toggle('forced', 'unforced')}>{label('Unforced', forcedCounts.unforced, forcedTotal)}</Chip>}
-            {forcedCounts.forced > 0 && <Chip on={value.forced === 'forced'} cls="stats-filter-pie-chip" style={pieStyle(forcedCounts.forced, forcedTotal)} onClick={() => toggle('forced', 'forced')}>{label('Forced', forcedCounts.forced, forcedTotal)}</Chip>}
-          </div>
+          <FilterPie label="Force" items={[
+            { key: 'unforced', label: 'Unforced', count: forcedCounts.unforced, color: 'var(--chart-unforced)', selected: value.forced === 'unforced', onClick: () => toggle('forced', 'unforced') },
+            { key: 'forced', label: 'Forced', count: forcedCounts.forced, color: 'var(--err-forced)', selected: value.forced === 'forced', onClick: () => toggle('forced', 'forced') },
+          ]} />
         </div>
         <div className="stats-filters-row">
           <span className="stats-filter-row-label">Stroke</span>
-          <div className="chip-group" role="group" aria-label="Stroke">
-            {PLACEMENT_STROKES.map((s) => (
-              strokeCounts[s] > 0 && <Chip key={s} on={value.stroke === s} cls={`${s} stats-filter-pie-chip`} style={pieStyle(strokeCounts[s], strokeTotal)} onClick={() => toggle('stroke', s)}>{label(STROKE_SHORT[s], strokeCounts[s], strokeTotal)}</Chip>
-            ))}
-          </div>
+          <FilterPie label="Stroke" items={PLACEMENT_STROKES.map((s, index) => ({
+            key: s,
+            label: STROKE_SHORT[s],
+            count: strokeCounts[s],
+            color: ['var(--fh)', 'var(--bh)', 'var(--serve)'][index],
+            selected: value.stroke === s,
+            onClick: () => toggle('stroke', s),
+          }))} />
         </div>
         <div className="stats-filters-row">
           <span className="stats-filter-row-label">Error</span>
-          <div className="chip-group" role="group" aria-label="Error type">
-            {ERROR_TYPES.map((e) => (
-              errorCounts[e] > 0 && <Chip key={e} on={value.error === e} cls="stats-filter-pie-chip" style={pieStyle(errorCounts[e], errorTotal)} onClick={() => toggle('error', e)}>{label(ERROR_LABEL[e], errorCounts[e], errorTotal)}</Chip>
-            ))}
-          </div>
+          <FilterPie label="Error type" items={ERROR_TYPES.map((e, index) => ({
+            key: e,
+            label: ERROR_LABEL[e],
+            count: errorCounts[e],
+            color: ['var(--err-long)', 'var(--err-net)', 'var(--err-wide)'][index],
+            selected: value.error === e,
+            onClick: () => toggle('error', e),
+          }))} />
         </div>
         <div className="stats-filters-row">
           <span className="stats-filter-row-label">Ball type</span>
-          <div className="chip-group stats-filter-ball-types" role="group" aria-label="Ball type">
-            {POINT_SHOT_TYPES.map((type) => (
-              <Chip key={type} on={value.shotType === type} cls="stats-filter-pie-chip" style={pieStyle(shotTypeCounts[type], shotTypeTotal)} onClick={() => toggle('shotType', type)}>{label(SHOT_TYPE_LABEL[type], shotTypeCounts[type], shotTypeTotal)}</Chip>
-            ))}
-          </div>
+          <FilterPie label="Ball type" keepZero items={POINT_SHOT_TYPES.map((type, index) => ({
+            key: type,
+            label: SHOT_TYPE_LABEL[type],
+            count: shotTypeCounts[type],
+            color: SHOT_TYPE_PIE_COLORS[index],
+            selected: value.shotType === type,
+            onClick: () => toggle('shotType', type),
+          }))} />
         </div>
       </div>
     </div>
