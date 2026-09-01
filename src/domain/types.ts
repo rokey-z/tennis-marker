@@ -36,7 +36,7 @@ export const POINT_SHOT_TYPES: PointShotType[] = [...SHOT_TYPES, ...WINNER_SERVE
 export const OUTCOMES: Outcome[] = ['error', 'winner', 'player_winner', 'winning_serve', 'placement']
 
 export const STROKE_LABEL: Record<PlacementStroke, string> = { fh: 'Forehand', bh: 'Backhand', serve: 'Serve' }
-export const STROKE_SHORT: Record<PlacementStroke, string> = { fh: 'FH', bh: 'BH', serve: 'S' }
+export const STROKE_SHORT: Record<PlacementStroke, string> = { fh: 'FH', bh: 'BH', serve: 'Serve' }
 export const ERROR_LABEL: Record<ErrorType, string> = { long: 'Long', net: 'Net', wide: 'Wide' }
 export const SHOT_TYPE_LABEL: Record<PointShotType, string> = {
   ground: 'Neutral',

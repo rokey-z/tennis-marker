@@ -166,7 +166,7 @@ export function Tally({ s, mode = 'errors' }: { s: Summary; mode?: 'errors' | 'p
         <>
           <span className="sep" />
           <span className="t-item" title={`Winning serves: ${s.winningServes}`}>
-            <span className="tag serve" aria-hidden="true">S</span>
+            <span className="tag serve" aria-hidden="true">Serve</span>
             {s.winningServes}
           </span>
         </>

@@ -133,14 +133,15 @@ describe('StatsPanel placement summary', () => {
 
 describe('StatsFilters', () => {
   it('uses one row per category, removes All chips, and shows every ball type', () => {
+    const serve = { ...point('serve', '', 'error', 'double_fault'), stroke: 'serve' as const }
     const html = renderToStaticMarkup(createElement(StatsFilters, {
       value: { stroke: 'all', error: 'all', shotType: 'all', forced: 'all' },
-      points: [point('only', 'long', 'error', 'ground')],
+      points: [point('only', 'long', 'error', 'ground'), serve],
       onChange: vi.fn(),
     }))
 
     const filterLabel = (text: string) => `>${text}<span class="stats-filter-count"`
-    for (const visible of ['Unforced', 'FH', 'Long', 'Neutral']) expect(html).toContain(filterLabel(visible))
+    for (const visible of ['Unforced', 'FH', 'Serve', 'Long', 'Neutral']) expect(html).toContain(filterLabel(visible))
     for (const type of POINT_SHOT_TYPES) expect(html).toContain(filterLabel(SHOT_TYPE_LABEL[type]))
     expect(html.match(/class="stats-filters-row"/g)).toHaveLength(4)
     expect(html).not.toContain('>All<')
