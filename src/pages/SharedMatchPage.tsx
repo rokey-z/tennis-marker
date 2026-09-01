@@ -69,7 +69,6 @@ export function SharedMatchPage() {
   )
   const summary = useMemo(() => summarize(shownPoints), [shownPoints])
   const placementSummary = useMemo(() => summarize(visiblePoints), [visiblePoints])
-  const mapPoints = placement ? shownPoints : shownPoints.filter((point) => point.outcome !== 'winner')
 
   if (loading) {
     return (
@@ -104,7 +103,7 @@ export function SharedMatchPage() {
         {!placement && <StatsFilters value={filters} points={visiblePoints} onChange={setFilters} />}
         <div className="shared-court">
           <Court
-            points={mapPoints}
+            points={shownPoints}
             compactMarks="analysis"
             half={placement ? 'opposite' : 'own'}
             sideLabel={placement ? 'Opponent’s side' : 'Player’s side'}
