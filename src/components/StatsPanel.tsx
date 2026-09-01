@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react'
+import { useState, type CSSProperties, type KeyboardEvent } from 'react'
 import { describeZone, ZONE_COL_LABEL, ZONE_COLS, ZONE_ROW_LABEL, ZONE_ROWS, zoneFromId, type ZoneCol, type ZoneRow } from '../domain/court'
 import { analyzeErrorPositions, filterPoints, pct, type Filters, type PositionCounts, type Summary } from '../domain/stats'
 import { ERROR_LABEL, ERROR_TYPES, PLACEMENT_STROKES, POINT_SHOT_TYPES, SHOT_TYPES, SHOT_TYPE_LABEL, STROKE_LABEL, STROKE_SHORT, STROKES, type ErrorType, type PlacementStroke, type Point } from '../domain/types'
@@ -26,46 +26,85 @@ const SHOT_TYPE_PIE_COLORS = [
   '#16803c', '#1e40af', '#a855f7', '#0f9d58', '#64748b', '#db2777',
 ]
 
-function pieBackground(items: FilterPieItem[]) {
-  const total = items.reduce((sum, item) => sum + item.count, 0)
-  if (total === 0) return 'var(--surface-2)'
-  let start = 0
-  return `conic-gradient(${items.filter((item) => item.count > 0).map((item) => {
-    const end = start + (item.count / total) * 100
-    const stop = `${item.color} ${start}% ${end}%`
-    start = end
-    return stop
-  }).join(', ')})`
+interface FilterPieSegment {
+  item: FilterPieItem
+  start: number
+  end: number
+  side: 'left' | 'right'
+}
+
+function piePoint(angle: number, radius = 44) {
+  const radians = (angle * Math.PI) / 180
+  return { x: 50 + radius * Math.cos(radians), y: 50 + radius * Math.sin(radians) }
+}
+
+function pieSectorPath(start: number, end: number) {
+  const startAngle = -90 + start * 3.6
+  const endAngle = -90 + end * 3.6
+  const first = piePoint(startAngle)
+  const last = piePoint(endAngle)
+  return `M 50 50 L ${first.x} ${first.y} A 44 44 0 ${end - start > 50 ? 1 : 0} 1 ${last.x} ${last.y} Z`
 }
 
 function FilterPie({ label, items, keepZero = false }: { label: string; items: FilterPieItem[]; keepZero?: boolean }) {
   const total = items.reduce((sum, item) => sum + item.count, 0)
-  const visibleItems = items.filter((item) => keepZero || item.count > 0)
-  const summary = visibleItems.map((item) => `${item.label} ${pct(item.count, total)}%`).join(', ')
+  let cursor = 0
+  const segments = items.filter((item) => item.count > 0).map<FilterPieSegment>((item) => {
+    const start = cursor
+    const end = cursor + (item.count / total) * 100
+    const middleAngle = -90 + ((start + end) / 2) * 3.6
+    cursor = end
+    return { item, start, end, side: Math.cos((middleAngle * Math.PI) / 180) < 0 ? 'left' : 'right' }
+  })
+  const zeroItems = keepZero ? items.filter((item) => item.count === 0) : []
+  const labelButton = (item: FilterPieItem, side?: 'left' | 'right') => (
+    <button
+      key={item.key}
+      type="button"
+      className={`stats-filter-orbit-label${item.selected ? ' on' : ''}${side ? ` ${side}` : ''}`}
+      style={{ '--filter-color': item.color } as CSSProperties}
+      aria-pressed={item.selected}
+      onClick={item.onClick}
+    >
+      <span className="stats-filter-pie-name">{item.label}</span>
+      <span className="stats-filter-count">{item.count} · {pct(item.count, total)}%</span>
+    </button>
+  )
   return (
     <div className="stats-filter-combined">
-      <span
-        className="stats-filter-combined-pie"
-        role="img"
-        aria-label={`${label}: ${summary || 'no data'}`}
-        style={{ background: pieBackground(items) }}
-      />
-      <div className={`stats-filter-combined-legend${keepZero ? ' all-types' : ''}`} role="group" aria-label={label}>
-        {visibleItems.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            className={`stats-filter-legend-item${item.selected ? ' on' : ''}`}
-            style={{ '--filter-color': item.color } as CSSProperties}
-            aria-pressed={item.selected}
-            onClick={item.onClick}
-          >
-            <span className="stats-filter-legend-swatch" aria-hidden="true" />
-            <span className="stats-filter-pie-name">{item.label}</span>
-            <span className="stats-filter-count">{item.count} · {pct(item.count, total)}%</span>
-          </button>
-        ))}
+      <div className="stats-filter-pie-layout" role="group" aria-label={label}>
+        <div className="stats-filter-orbit left">
+          {segments.filter((segment) => segment.side === 'left').reverse().map((segment) => labelButton(segment.item, 'left'))}
+        </div>
+        <svg className="stats-filter-combined-pie" viewBox="0 0 100 100" aria-label={`${label} pie chart`}>
+          {segments.length === 0 && <circle className="stats-filter-empty-pie" cx="50" cy="50" r="44" />}
+          {segments.map((segment) => {
+            const percentage = pct(segment.item.count, total)
+            const sharedProps = {
+              className: `stats-filter-pie-sector${segment.item.selected ? ' on' : ''}`,
+              fill: segment.item.color,
+              role: 'button',
+              tabIndex: 0,
+              'aria-label': `${segment.item.label}, ${segment.item.count}, ${percentage}%`,
+              'aria-pressed': segment.item.selected,
+              onClick: segment.item.onClick,
+              onKeyDown: (event: KeyboardEvent<SVGElement>) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  segment.item.onClick()
+                }
+              },
+            }
+            return segment.end - segment.start >= 99.999
+              ? <circle key={segment.item.key} {...sharedProps} cx="50" cy="50" r="44" />
+              : <path key={segment.item.key} {...sharedProps} d={pieSectorPath(segment.start, segment.end)} />
+          })}
+        </svg>
+        <div className="stats-filter-orbit right">
+          {segments.filter((segment) => segment.side === 'right').map((segment) => labelButton(segment.item, 'right'))}
+        </div>
       </div>
+      {zeroItems.length > 0 && <div className="stats-filter-zero-items">{zeroItems.map((item) => labelButton(item))}</div>}
     </div>
   )
 }

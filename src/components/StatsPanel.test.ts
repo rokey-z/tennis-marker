@@ -144,9 +144,10 @@ describe('StatsFilters', () => {
     for (const visible of ['Unforced', 'FH', 'Serve', 'Long', 'Neutral']) expect(html).toContain(filterLabel(visible))
     for (const type of POINT_SHOT_TYPES) expect(html).toContain(filterLabel(SHOT_TYPE_LABEL[type]))
     expect(html.match(/class="stats-filter-combined-pie"/g)).toHaveLength(4)
-    expect(html).toContain('class="stats-filter-combined-legend all-types"')
-    expect(html).toContain('class="stats-filter-legend-item"')
-    expect(html).toContain('conic-gradient(')
+    expect(html).toContain('class="stats-filter-pie-sector"')
+    expect(html).toContain('role="button" tabindex="0"')
+    expect(html).toContain('class="stats-filter-orbit-label')
+    expect(html).toContain('class="stats-filter-zero-items"')
     expect(html).toContain('class="stats-filter-count">1 · 50%</span>')
     expect(html).toContain('style="--filter-color:')
     expect(html.match(/class="stats-filters-row"/g)).toHaveLength(4)
@@ -157,7 +158,7 @@ describe('StatsFilters', () => {
     expect(html).toContain('>0 · 0%</span>')
   })
 
-  it('turns a selected pie legend item off when it is selected again', () => {
+  it('turns a selected pie label or sector off when it is selected again', () => {
     const empty = { stroke: 'all', error: 'all', shotType: 'all', forced: 'all' } as const
     const selected = toggleStatsFilter(empty, 'stroke', 'fh')
 
