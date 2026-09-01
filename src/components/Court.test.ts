@@ -1,8 +1,26 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { PlacementSplit, clampTooltipPosition, placementHoverGroupId, placementStrokeForDrag } from './Court'
+import { Court, PlacementSplit, clampTooltipPosition, placementHoverGroupId, placementStrokeForDrag } from './Court'
 import { ERROR_WHEEL_TARGETS, errorDragChoice, errorWheelSelection } from '../domain/errorWheel'
+import type { Point } from '../domain/types'
+
+const forcedError: Point = {
+  id: 'forced-error',
+  user_id: null,
+  session_id: 'session',
+  x: 8,
+  y: 38,
+  stroke: 'fh',
+  error_type: 'wide',
+  forced: true,
+  outcome: 'error',
+  placement_result: null,
+  shot_type: 'ground',
+  created_at: '2026-09-01T12:00:00.000Z',
+  updated_at: '2026-09-01T12:00:00.000Z',
+  deleted_at: null,
+}
 
 describe('error drag wheel', () => {
   it.each([
@@ -91,5 +109,17 @@ describe('placement split summary', () => {
     expect(html).toContain('<span>OUT</span><strong>20%</strong>')
     expect(html).toContain('<span>SERVE</span><strong>3</strong>')
     expect(html).toContain('2 landed · 1 net miss')
+  })
+})
+
+describe('court forced-error marker', () => {
+  it.each([
+    ['marker mode', undefined],
+    ['stats mode', 'analysis' as const],
+  ])('uses a star in %s', (_name, compactMarks) => {
+    const html = renderToStaticMarkup(createElement(Court, { points: [forcedError], compactMarks }))
+
+    expect(html).toContain('data-marker-kind="forced-error"')
+    expect(html).toContain('>★</text>')
   })
 })
