@@ -17,7 +17,15 @@ export interface StatsFilterState {
 export function StatsFilters({ value, points, onChange }: { value: StatsFilterState; points: Point[]; onChange: (v: StatsFilterState) => void }) {
   const toggle = <K extends keyof StatsFilterState>(key: K, next: StatsFilterState[K]) => onChange(toggleStatsFilter(value, key, next))
   const count = (patch: Partial<StatsFilterState>) => filterPoints(points, { ...value, ...patch }).length
-  const label = (text: string, n: number, total: number) => <>{text}<span className="stats-filter-count">{n} · {pct(n, total)}%</span></>
+  const label = (text: string, n: number, total: number) => (
+    <>
+      <span className="stats-filter-bar-visual" aria-hidden="true" />
+      <span className="stats-filter-bar-meta">
+        <span className="stats-filter-bar-name">{text}</span>
+        <span className="stats-filter-count">{n} · {pct(n, total)}%</span>
+      </span>
+    </>
+  )
   const barStyle = (n: number, total: number) => ({ '--filter-share': pct(n, total) } as CSSProperties)
   const forcedCounts = {
     unforced: count({ forced: 'unforced' }),

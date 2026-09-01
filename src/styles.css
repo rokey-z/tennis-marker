@@ -1564,17 +1564,70 @@ textarea.input {
 .stats-filter-ball-types {
   display: grid;
   grid-template-columns: repeat(3, max-content);
-  align-items: center;
+  align-items: end;
 }
 .stats-filter-ball-types .chip {
-  justify-content: space-between;
   justify-self: start;
 }
 .stats-filters .chip.stats-filter-bar-chip {
-  width: calc(58px + var(--filter-share) * 0.62px);
-  min-width: max-content;
+  display: grid;
+  grid-template-rows: 28px auto;
+  justify-items: center;
+  align-items: end;
+  width: 68px;
+  min-width: 68px;
+  height: 50px;
+  min-height: 50px;
+  padding: 2px 3px 3px;
   border-radius: 6px;
-  justify-content: space-between;
+  gap: 2px;
+  overflow: hidden;
+  color: var(--text);
+}
+.stats-filter-bar-visual {
+  align-self: end;
+  width: calc(100% - 8px);
+  min-width: 42px;
+  height: calc(3px + var(--filter-share) * 0.23px);
+  max-height: 26px;
+  border-radius: 4px 4px 2px 2px;
+  background: color-mix(in srgb, var(--accent) 76%, white);
+}
+.stats-filter-bar-chip.fh .stats-filter-bar-visual {
+  background: var(--fh);
+}
+.stats-filter-bar-chip.bh .stats-filter-bar-visual {
+  background: var(--bh);
+}
+.stats-filter-bar-chip.serve .stats-filter-bar-visual {
+  background: var(--serve);
+}
+.stats-filters .chip.stats-filter-bar-chip.on {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--text);
+}
+.stats-filter-bar-chip.on .stats-filter-bar-visual {
+  filter: brightness(0.78);
+}
+.stats-filter-bar-meta {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1;
+}
+.stats-filter-bar-name {
+  max-width: 100%;
+  overflow: hidden;
+  color: currentColor;
+  font-size: 8px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .stats-filters .chip {
   min-height: 26px;
@@ -1589,6 +1642,9 @@ textarea.input {
   font-variant-numeric: tabular-nums;
   font-weight: 800;
   opacity: 0.62;
+}
+.stats-filter-bar-chip .stats-filter-count {
+  font-size: 7px;
 }
 @media (max-width: 899px) {
   .record.stats .record-court {
