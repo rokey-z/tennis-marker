@@ -61,6 +61,7 @@ describe('mobile stats court', () => {
     expect(styles).toMatch(/\.stats-filter-orbit-label\.on\s*\{[^}]*background:\s*var\(--filter-color\);[^}]*color:\s*#fff;/s)
     expect(styles).toMatch(/\.coaching-insights\s*\{[^}]*display:\s*block;/s)
     expect(styles).toMatch(/\.coaching-insights article\s*\{[^}]*grid-template-columns:\s*minmax\(118px, \.72fr\) minmax\(0, 1\.28fr\);[^}]*border-top:\s*1px solid var\(--line\);/s)
+    expect(styles).toMatch(/\.ball-type-bubble\s*\{[^}]*background:\s*conic-gradient\(from -90deg, var\(--fh-pie-color\) 0 var\(--fh-share\), var\(--bh-pie-color\) var\(--fh-share\) 100%\);/s)
     expect(styles).toMatch(/\.stats-filter-pie-name\s*\{[^}]*font-size:\s*12px;/s)
     expect(styles).toMatch(/\.stats-filter-orbit-label \.stats-filter-count\s*\{[^}]*font-size:\s*11px;/s)
     expect(styles).toMatch(/\.stats-filters-row\s*\{[^}]*border:\s*0;/s)

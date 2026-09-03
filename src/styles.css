@@ -2650,6 +2650,8 @@ textarea.input {
   justify-content: center;
 }
 .ball-type-bubble {
+  --fh-pie-color: var(--fh);
+  --bh-pie-color: var(--bh);
   width: var(--bubble-size);
   height: var(--bubble-size);
   flex: 0 0 var(--bubble-size);
@@ -2658,7 +2660,7 @@ textarea.input {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: var(--accent);
+  background: conic-gradient(from -90deg, var(--fh-pie-color) 0 var(--fh-share), var(--bh-pie-color) var(--fh-share) 100%);
   color: var(--accent-ink);
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.2);
   font-variant-numeric: tabular-nums;
@@ -2682,8 +2684,9 @@ textarea.input {
   white-space: nowrap;
 }
 .ball-type-bubble.untyped {
-  background: var(--surface-2);
-  color: var(--muted);
+  --fh-pie-color: #9aa8b5;
+  --bh-pie-color: #687684;
+  color: #fff;
   box-shadow: inset 0 0 0 1px var(--line);
 }
 .ball-type-item > span {

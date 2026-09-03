@@ -517,6 +517,7 @@ export function StatsPanel({ summary, points = [], count, mode = 'errors', onExp
           {ballTypeItems.map((item) => {
             // Double faults are serve outcomes and do not belong in the attempted-ball-type mix.
             const percentage = pct(item.count, regularErrors)
+            const fhPercentage = pct(item.fh, item.count)
             // The visible area above a 40px legibility floor tracks the value, up to 112px at 100%.
             const size = Math.round(Math.sqrt(40 ** 2 + (112 ** 2 - 40 ** 2) * percentage / 100))
             return (
@@ -524,9 +525,9 @@ export function StatsPanel({ summary, points = [], count, mode = 'errors', onExp
                 <div className="ball-type-stage">
                   <div
                     className={`ball-type-bubble${item.muted ? ' untyped' : ''}`}
-                    style={{ '--bubble-size': `${size}px` } as CSSProperties}
+                    style={{ '--bubble-size': `${size}px`, '--fh-share': `${fhPercentage}%` } as CSSProperties}
                     role="img"
-                    aria-label={`${item.label}: ${item.count} ${item.count === 1 ? 'error' : 'errors'}, ${percentage}%`}
+                    aria-label={`${item.label}: ${item.count} ${item.count === 1 ? 'error' : 'errors'}, ${percentage}%; FH ${item.fh}, BH ${item.bh}`}
                   >
                     <strong>{percentage}%</strong>
                     <small className="ball-type-count">{item.count}</small>
