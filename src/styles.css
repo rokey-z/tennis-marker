@@ -1657,7 +1657,7 @@ textarea.input {
   transform: scale(1.025);
 }
 .stats-filter-pie-sector.on {
-  filter: brightness(0.76);
+  filter: brightness(0.82) drop-shadow(0 3px 2px rgba(20, 24, 29, 0.28));
   transform: translate(var(--pie-offset-x), var(--pie-offset-y)) scale(1.015);
 }
 .stats-filter-empty-pie {
@@ -1688,10 +1688,14 @@ textarea.input {
   border-left: 3px solid var(--filter-color);
 }
 .stats-filter-orbit-label.on {
+  border-radius: 4px;
+  background: var(--filter-color);
+  color: #fff;
   font-weight: 900;
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 2px;
+  text-decoration: none;
+}
+.stats-filter-orbit-label.on .stats-filter-count {
+  opacity: 0.82;
 }
 .stats-filter-zero-items {
   display: grid;
