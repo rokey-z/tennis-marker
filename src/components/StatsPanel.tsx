@@ -120,16 +120,25 @@ export function StatsFilters({ value, points, onChange }: { value: StatsFilterSt
   const strokeCounts = Object.fromEntries(PLACEMENT_STROKES.map((stroke) => [stroke, count({ stroke })])) as Record<PlacementStroke, number>
   const errorCounts = Object.fromEntries(ERROR_TYPES.map((error) => [error, count({ error })])) as Record<ErrorType, number>
   const shotTypeCounts = Object.fromEntries(POINT_SHOT_TYPES.map((shotType) => [shotType, count({ shotType })])) as Record<(typeof POINT_SHOT_TYPES)[number], number>
-  const selectedLabels = [
-    value.forced === 'forced' ? 'Forced' : value.forced === 'unforced' ? 'Unforced' : null,
-    value.stroke !== 'all' ? STROKE_SHORT[value.stroke] : null,
-    value.error !== 'all' ? ERROR_LABEL[value.error] : null,
-    value.shotType !== 'all' ? SHOT_TYPE_LABEL[value.shotType] : null,
-  ].filter((label): label is string => label !== null)
+  const selectedTags = [
+    value.forced !== 'all' ? { key: 'forced', label: value.forced === 'forced' ? 'Forced' : 'Unforced', onClick: () => toggle('forced', value.forced) } : null,
+    value.stroke !== 'all' ? { key: 'stroke', label: STROKE_SHORT[value.stroke], onClick: () => toggle('stroke', value.stroke) } : null,
+    value.error !== 'all' ? { key: 'error', label: ERROR_LABEL[value.error], onClick: () => toggle('error', value.error) } : null,
+    value.shotType !== 'all' ? { key: 'shotType', label: SHOT_TYPE_LABEL[value.shotType], onClick: () => toggle('shotType', value.shotType) } : null,
+  ].filter((tag): tag is NonNullable<typeof tag> => tag !== null)
   return (
     <div className="stats-filters" role="group" aria-label="Filters">
       <div className="stats-filter-selection" aria-live="polite">
-        <span>Selected</span><strong>{selectedLabels.length ? selectedLabels.join(' · ') : 'All data'}</strong>
+        <span>Selected</span>
+        {selectedTags.length ? (
+          <div className="stats-filter-selected-tags">
+            {selectedTags.map((tag) => (
+              <button key={tag.key} type="button" className="stats-filter-selected-tag" onClick={tag.onClick} aria-label={`Remove ${tag.label} filter`}>
+                {tag.label}<span aria-hidden="true">×</span>
+              </button>
+            ))}
+          </div>
+        ) : <strong>All data</strong>}
       </div>
       <div className="stats-filters-track">
         <div className="stats-filters-row">

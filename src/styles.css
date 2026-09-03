@@ -1537,7 +1537,7 @@ textarea.input {
 }
 .stats-filter-selection {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 6px;
   min-height: 25px;
   margin-bottom: 4px;
@@ -1545,9 +1545,8 @@ textarea.input {
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--surface);
-  white-space: nowrap;
 }
-.stats-filter-selection span {
+.stats-filter-selection > span {
   color: var(--muted);
   font-size: 9px;
   font-weight: 850;
@@ -1561,6 +1560,30 @@ textarea.input {
   font-size: 11px;
   line-height: 1.1;
   text-overflow: ellipsis;
+}
+.stats-filter-selected-tags {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.stats-filter-selected-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 22px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--text);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+.stats-filter-selected-tag span {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  line-height: 1;
 }
 .stats-filters-track {
   display: grid;

@@ -167,7 +167,11 @@ describe('StatsFilters', () => {
       onChange: vi.fn(),
     }))
 
-    expect(html).toContain('<span>Selected</span><strong>Forced · FH · Long · Neutral</strong>')
+    expect(html).toContain('class="stats-filter-selected-tags"')
+    for (const label of ['Forced', 'FH', 'Long', 'Neutral']) {
+      expect(html).toContain(`aria-label="Remove ${label} filter"`)
+    }
+    expect(html.match(/class="stats-filter-selected-tag"/g)).toHaveLength(4)
   })
 
   it('turns a selected pie label or sector off when it is selected again', () => {
