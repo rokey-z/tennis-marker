@@ -56,6 +56,7 @@ describe('mobile stats court', () => {
     expect(styles).toMatch(/\.stats-filter-combined-pie\s*\{[^}]*width:\s*112px;[^}]*height:\s*112px;/s)
     expect(styles).toMatch(/\.stats-filters-row:nth-child\(4\) \.stats-filter-combined-pie\s*\{[^}]*width:\s*168px;[^}]*height:\s*168px;/s)
     expect(styles).toMatch(/\.stats-filter-pie-sector\s*\{[^}]*cursor:\s*pointer;[^}]*stroke:\s*none;/s)
+    expect(styles).toMatch(/\.stats-filter-pie-sector\.on\s*\{[^}]*transform:\s*translate\(var\(--pie-offset-x\), var\(--pie-offset-y\)\) scale\(1\.015\);/s)
     expect(styles).toMatch(/\.stats-filter-pie-name\s*\{[^}]*font-size:\s*12px;/s)
     expect(styles).toMatch(/\.stats-filter-orbit-label \.stats-filter-count\s*\{[^}]*font-size:\s*11px;/s)
     expect(styles).toMatch(/\.stats-filters-row\s*\{[^}]*border:\s*0;/s)

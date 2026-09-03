@@ -1658,7 +1658,7 @@ textarea.input {
 }
 .stats-filter-pie-sector.on {
   filter: brightness(0.76);
-  transform: scale(1.025);
+  transform: translate(var(--pie-offset-x), var(--pie-offset-y)) scale(1.015);
 }
 .stats-filter-empty-pie {
   fill: var(--surface-2);

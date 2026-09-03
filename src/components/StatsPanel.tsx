@@ -31,6 +31,8 @@ interface FilterPieSegment {
   start: number
   end: number
   side: 'left' | 'right'
+  offsetX: number
+  offsetY: number
 }
 
 function piePoint(angle: number, radius = 44) {
@@ -53,8 +55,16 @@ function FilterPie({ label, items, keepZero = false, labelsBelow = false }: { la
     const start = cursor
     const end = cursor + (item.count / total) * 100
     const middleAngle = -90 + ((start + end) / 2) * 3.6
+    const middleRadians = (middleAngle * Math.PI) / 180
     cursor = end
-    return { item, start, end, side: Math.cos((middleAngle * Math.PI) / 180) < 0 ? 'left' : 'right' }
+    return {
+      item,
+      start,
+      end,
+      side: Math.cos(middleRadians) < 0 ? 'left' : 'right',
+      offsetX: Math.cos(middleRadians) * 5,
+      offsetY: Math.sin(middleRadians) * 5,
+    }
   })
   const zeroItems = keepZero ? items.filter((item) => item.count === 0) : []
   const labelButton = (item: FilterPieItem, side?: 'left' | 'right') => (
@@ -87,6 +97,10 @@ function FilterPie({ label, items, keepZero = false, labelsBelow = false }: { la
               tabIndex: 0,
               'aria-label': `${segment.item.label}, ${segment.item.count}, ${percentage}%`,
               'aria-pressed': segment.item.selected,
+              style: {
+                '--pie-offset-x': `${segment.offsetX}px`,
+                '--pie-offset-y': `${segment.offsetY}px`,
+              } as CSSProperties,
               onClick: segment.item.onClick,
               onKeyDown: (event: KeyboardEvent<SVGElement>) => {
                 if (event.key === 'Enter' || event.key === ' ') {

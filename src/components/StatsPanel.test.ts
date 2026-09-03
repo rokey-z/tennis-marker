@@ -164,7 +164,7 @@ describe('StatsFilters', () => {
   it('summarizes the active choices above the four filter groups', () => {
     const html = renderToStaticMarkup(createElement(StatsFilters, {
       value: { stroke: 'fh', error: 'long', shotType: 'ground', forced: 'forced' },
-      points: [point('only', 'long', 'error', 'ground')],
+      points: [{ ...point('only', 'long', 'error', 'ground'), forced: true }],
       onChange: vi.fn(),
     }))
 
@@ -173,6 +173,8 @@ describe('StatsFilters', () => {
       expect(html).toContain(`aria-label="Remove ${label} filter"`)
     }
     expect(html.match(/class="stats-filter-selected-tag"/g)).toHaveLength(4)
+    expect(html).toContain('class="stats-filter-pie-sector on"')
+    expect(html).toContain('--pie-offset-x:')
   })
 
   it('turns a selected pie label or sector off when it is selected again', () => {
