@@ -1535,6 +1535,33 @@ textarea.input {
 .stats-filters::-webkit-scrollbar {
   display: none;
 }
+.stats-filter-selection {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-height: 25px;
+  margin-bottom: 4px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  white-space: nowrap;
+}
+.stats-filter-selection span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.stats-filter-selection strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+}
 .stats-filters-track {
   display: grid;
   grid-template-columns: repeat(3, minmax(194px, 1fr));

@@ -120,8 +120,17 @@ export function StatsFilters({ value, points, onChange }: { value: StatsFilterSt
   const strokeCounts = Object.fromEntries(PLACEMENT_STROKES.map((stroke) => [stroke, count({ stroke })])) as Record<PlacementStroke, number>
   const errorCounts = Object.fromEntries(ERROR_TYPES.map((error) => [error, count({ error })])) as Record<ErrorType, number>
   const shotTypeCounts = Object.fromEntries(POINT_SHOT_TYPES.map((shotType) => [shotType, count({ shotType })])) as Record<(typeof POINT_SHOT_TYPES)[number], number>
+  const selectedLabels = [
+    value.forced === 'forced' ? 'Forced' : value.forced === 'unforced' ? 'Unforced' : null,
+    value.stroke !== 'all' ? STROKE_SHORT[value.stroke] : null,
+    value.error !== 'all' ? ERROR_LABEL[value.error] : null,
+    value.shotType !== 'all' ? SHOT_TYPE_LABEL[value.shotType] : null,
+  ].filter((label): label is string => label !== null)
   return (
     <div className="stats-filters" role="group" aria-label="Filters">
+      <div className="stats-filter-selection" aria-live="polite">
+        <span>Selected</span><strong>{selectedLabels.length ? selectedLabels.join(' · ') : 'All data'}</strong>
+      </div>
       <div className="stats-filters-track">
         <div className="stats-filters-row">
           <span className="stats-filter-row-label">Force</span>

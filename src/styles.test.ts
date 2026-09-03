@@ -68,4 +68,8 @@ describe('desktop stats layout', () => {
     expect(styles).toMatch(/\.record-stats-filters\s*\{[^}]*grid-area:\s*filters;[^}]*overflow:\s*auto;/s)
     expect(styles).toMatch(/\.record-stats-filters \.stats-filters-track\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);/s)
   })
+
+  it('shows a compact active-filter summary above the four groups', () => {
+    expect(styles).toMatch(/\.stats-filter-selection\s*\{[^}]*display:\s*flex;[^}]*border-radius:/s)
+  })
 })

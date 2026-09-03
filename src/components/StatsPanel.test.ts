@@ -151,11 +151,23 @@ describe('StatsFilters', () => {
     expect(html).toContain('class="stats-filter-count">1 · 50%</span>')
     expect(html).toContain('style="--filter-color:')
     expect(html.match(/class="stats-filters-row"/g)).toHaveLength(4)
+    expect(html).toContain('class="stats-filter-selection"')
+    expect(html).toContain('<strong>All data</strong>')
     expect(html).not.toContain('>All<')
     expect(html).not.toContain('>All strokes<')
     expect(html).not.toContain('>All errors<')
     expect(html).not.toContain('>All types<')
     expect(html).toContain('>0 · 0%</span>')
+  })
+
+  it('summarizes the active choices above the four filter groups', () => {
+    const html = renderToStaticMarkup(createElement(StatsFilters, {
+      value: { stroke: 'fh', error: 'long', shotType: 'ground', forced: 'forced' },
+      points: [point('only', 'long', 'error', 'ground')],
+      onChange: vi.fn(),
+    }))
+
+    expect(html).toContain('<span>Selected</span><strong>Forced · FH · Long · Neutral</strong>')
   })
 
   it('turns a selected pie label or sector off when it is selected again', () => {
