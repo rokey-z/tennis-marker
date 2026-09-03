@@ -44,19 +44,20 @@ describe('mobile stats court', () => {
   })
 
   it('puts force, stroke, and error on top with ball type alone on the second row', () => {
-    expect(styles).toMatch(/\.stats-filters-track\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(3, minmax\(194px, 1fr\)\);/s)
+    expect(styles).toMatch(/\.stats-filters-track\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(3, minmax\(210px, 1fr\)\);/s)
     expect(styles).toMatch(/\.stats-filters-row\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;[^}]*align-items:\s*center;/s)
     expect(styles).toMatch(/\.stats-filters-row:nth-child\(4\)\s*\{[^}]*grid-column:\s*1 \/ -1;/s)
-    expect(styles).toMatch(/\.stats-filter-pie-layout\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*44px 96px 44px;/s)
+    expect(styles).toMatch(/\.stats-filter-pie-layout\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*45px 112px 45px;/s)
     expect(styles).toMatch(/\.stats-filter-zero-items\s*\{[^}]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\);/s)
   })
 
   it('renders one interactive combined pie per category with compact labels beside it', () => {
-    expect(styles).toMatch(/\.stats-filter-combined-pie\s*\{[^}]*width:\s*96px;[^}]*height:\s*96px;/s)
-    expect(styles).toMatch(/\.stats-filters-row:nth-child\(4\) \.stats-filter-combined-pie\s*\{[^}]*width:\s*144px;[^}]*height:\s*144px;/s)
-    expect(styles).toMatch(/\.stats-filter-pie-sector\s*\{[^}]*cursor:\s*pointer;/s)
-    expect(styles).toMatch(/\.stats-filter-pie-name\s*\{[^}]*font-size:\s*10px;/s)
-    expect(styles).toMatch(/\.stats-filter-orbit-label \.stats-filter-count\s*\{[^}]*font-size:\s*9px;/s)
+    expect(styles).toMatch(/\.stats-filter-combined-pie\s*\{[^}]*width:\s*112px;[^}]*height:\s*112px;/s)
+    expect(styles).toMatch(/\.stats-filters-row:nth-child\(4\) \.stats-filter-combined-pie\s*\{[^}]*width:\s*168px;[^}]*height:\s*168px;/s)
+    expect(styles).toMatch(/\.stats-filter-pie-sector\s*\{[^}]*cursor:\s*pointer;[^}]*stroke:\s*none;/s)
+    expect(styles).toMatch(/\.stats-filter-pie-name\s*\{[^}]*font-size:\s*12px;/s)
+    expect(styles).toMatch(/\.stats-filter-orbit-label \.stats-filter-count\s*\{[^}]*font-size:\s*11px;/s)
+    expect(styles).toMatch(/\.stats-filters-row\s*\{[^}]*border:\s*0;/s)
   })
 })
 
