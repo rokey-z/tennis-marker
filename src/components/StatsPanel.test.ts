@@ -29,7 +29,7 @@ const point = (id: string, error_type: Point['error_type'], outcome: Point['outc
 })
 
 describe('StatsPanel error type summary', () => {
-  it('separates tracked point endings in one bar', () => {
+  it('shows error ball types without a tracked point endings section', () => {
     const summary = summarize([
       point('long', 'long'),
       point('net', 'net'),
@@ -38,11 +38,9 @@ describe('StatsPanel error type summary', () => {
     ])
     const html = renderToStaticMarkup(createElement(StatsPanel, { summary, count: 4, showExports: false }))
 
-    expect(html).toContain('Tracked point endings')
+    expect(html).not.toContain('Tracked point endings')
     expect(html).not.toContain('Where the ball went')
-    expect(html.match(/class="error-types-track"/g)).toHaveLength(1)
-    expect(html).toContain('<span>Unforced errors</span><strong>3 · 75%</strong>')
-    expect(html).toContain('<span>Opponent winners</span><strong>1 · 25%</strong>')
+    expect(html).not.toContain('class="error-types-track"')
     expect(html.match(/class="ball-type-bubble(?: |")/g)).toHaveLength(1)
     expect(html).toContain('--bubble-size:112px')
     expect(html).toContain('Error ball types')
@@ -98,9 +96,9 @@ describe('StatsPanel error type summary', () => {
     ])
     const html = renderToStaticMarkup(createElement(StatsPanel, { summary, count: 7, showExports: false }))
 
-    for (const label of ['Unforced errors', 'Forced errors', 'Opponent winners', 'Double faults', 'Player winners', 'Aces', 'Winning serves']) {
-      expect(html).toContain(`<span>${label}</span><strong>1 · 14%</strong>`)
-    }
+    expect(html).not.toContain('Tracked point endings')
+    expect(html).toContain('<strong>1 DF · 0 return errors</strong>')
+    expect(html).toContain('<small>1 ace · 1 winning serve</small>')
     expect(html).toContain('aria-label="Neutral: 1 error, 50%"')
     expect(html).toContain('aria-label="Slice: 1 error, 50%"')
   })

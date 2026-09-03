@@ -361,20 +361,7 @@ export function StatsPanel({ summary, points = [], count, mode = 'errors', onExp
   const shotLabel = (type: typeof position.patterns[number]['shotType']) => type === 'untyped' ? 'Not selected' : SHOT_TYPE_LABEL[type]
   const counted = (value: number, singular: string, plural = `${singular}s`) => `${value} ${value === 1 ? singular : plural}`
   const regularErrors = summary.byStroke.fh + summary.byStroke.bh
-  const forcedErrors = summary.byStrokeForced.fh + summary.byStrokeForced.bh
-  const unforcedErrors = regularErrors - forcedErrors
   const aces = summary.playerWinnersByShotType.ace
-  const nonServePlayerWinners = Math.max(0, summary.playerWinners - aces)
-  const trackedParts = [
-    { key: 'unforced', label: 'Unforced errors', count: unforcedErrors, color: 'var(--err-long)' },
-    { key: 'forced', label: 'Forced errors', count: forcedErrors, color: 'var(--err-wide)' },
-    { key: 'opponent-winner', label: 'Opponent winners', count: summary.winners, color: 'var(--danger)' },
-    { key: 'double-fault', label: 'Double faults', count: summary.doubleFaults, color: 'var(--err-double-fault)' },
-    { key: 'player-winner', label: 'Player winners', count: nonServePlayerWinners, color: 'var(--win)' },
-    { key: 'ace', label: 'Aces', count: aces, color: 'var(--fh)' },
-    { key: 'winning-serve', label: 'Winning serves', count: summary.winningServes, color: 'var(--accent)' },
-  ].filter((part) => part.count > 0)
-  const trackedTotal = trackedParts.reduce((total, part) => total + part.count, 0)
   const ballTypeItems: Array<{ key: string; label: string; count: number; fh: number; bh: number; muted?: boolean }> = SHOT_TYPES
     .map((type) => ({ key: type, label: SHOT_TYPE_LABEL[type], count: summary.byShotType[type], ...summary.byShotTypeStroke[type] }))
     .filter((item) => item.count > 0)
@@ -446,33 +433,6 @@ export function StatsPanel({ summary, points = [], count, mode = 'errors', onExp
           </article>
         </div>
       </div>
-
-      {trackedTotal > 0 && <div className="card">
-        <div className="section-title">Tracked point endings</div>
-        <div className="error-types-summary">
-          <div
-            className="error-types-track"
-            role="img"
-            aria-label={trackedParts.map((part) => `${part.label} ${part.count}, ${pct(part.count, trackedTotal)}%`).join('; ')}
-          >
-            {trackedParts.map((part) => (
-              <span
-                key={part.key}
-                className={`error-types-segment ${part.key}`}
-                style={{ flexGrow: part.count, background: part.color }}
-              />
-            ))}
-          </div>
-          <div className="error-types-values">
-            {trackedParts.map((part) => (
-              <div key={part.key} className="error-types-value" style={{ '--part-color': part.color, flexGrow: part.count } as CSSProperties}>
-                <span>{part.label}</span>
-                <strong>{part.count} · {pct(part.count, trackedTotal)}%</strong>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>}
 
       {position.errors + position.pressurePoints > 0 && <div className="card position-analysis">
         <div className="stats-section-heading">
