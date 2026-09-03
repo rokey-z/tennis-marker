@@ -59,6 +59,8 @@ describe('mobile stats court', () => {
     expect(styles).toMatch(/\.stats-filter-pie-sector\.on\s*\{[^}]*transform:\s*translate\(var\(--pie-offset-x\), var\(--pie-offset-y\)\) scale\(1\.015\);/s)
     expect(styles).toMatch(/\.stats-filter-pie-sector\.on\s*\{[^}]*drop-shadow\(0 3px 2px rgba\(20, 24, 29, 0\.28\)\);/s)
     expect(styles).toMatch(/\.stats-filter-orbit-label\.on\s*\{[^}]*background:\s*var\(--filter-color\);[^}]*color:\s*#fff;/s)
+    expect(styles).toMatch(/\.coaching-insights\s*\{[^}]*display:\s*block;/s)
+    expect(styles).toMatch(/\.coaching-insights article\s*\{[^}]*grid-template-columns:\s*minmax\(118px, \.72fr\) minmax\(0, 1\.28fr\);[^}]*border-top:\s*1px solid var\(--line\);/s)
     expect(styles).toMatch(/\.stats-filter-pie-name\s*\{[^}]*font-size:\s*12px;/s)
     expect(styles).toMatch(/\.stats-filter-orbit-label \.stats-filter-count\s*\{[^}]*font-size:\s*11px;/s)
     expect(styles).toMatch(/\.stats-filters-row\s*\{[^}]*border:\s*0;/s)
