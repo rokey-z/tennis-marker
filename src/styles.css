@@ -1699,6 +1699,22 @@ textarea.input {
   gap: 3px;
   width: 100%;
 }
+.stats-filter-pie-layout.labels-below {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.stats-filter-below-labels {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  width: 100%;
+}
+.stats-filter-below-labels .stats-filter-orbit-label {
+  align-items: center;
+  border-bottom: 2px solid var(--filter-color);
+  text-align: center;
+}
 .stats-filter-zero-items .stats-filter-orbit-label {
   border-bottom: 2px solid var(--filter-color);
   opacity: 0.65;
@@ -2930,6 +2946,9 @@ textarea.input {
   }
   .record-stats-filters .stats-filters-row:nth-child(4) .stats-filter-pie-layout {
     grid-template-columns: minmax(32px, 1fr) minmax(112px, 168px) minmax(32px, 1fr);
+  }
+  .record-stats-filters .stats-filter-below-labels {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .record-side {
     grid-area: side;

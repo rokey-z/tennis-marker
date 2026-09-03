@@ -48,7 +48,8 @@ describe('mobile stats court', () => {
     expect(styles).toMatch(/\.stats-filters-row\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;[^}]*align-items:\s*center;/s)
     expect(styles).toMatch(/\.stats-filters-row:nth-child\(4\)\s*\{[^}]*grid-column:\s*1 \/ -1;/s)
     expect(styles).toMatch(/\.stats-filter-pie-layout\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*45px 112px 45px;/s)
-    expect(styles).toMatch(/\.stats-filter-zero-items\s*\{[^}]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\);/s)
+    expect(styles).toMatch(/\.stats-filter-pie-layout\.labels-below\s*\{[^}]*display:\s*flex;[^}]*justify-content:\s*center;/s)
+    expect(styles).toMatch(/\.stats-filter-below-labels\s*\{[^}]*grid-template-columns:\s*repeat\(4, minmax\(0, 1fr\)\);/s)
   })
 
   it('renders one interactive combined pie per category with compact labels beside it', () => {

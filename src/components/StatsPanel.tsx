@@ -46,7 +46,7 @@ function pieSectorPath(start: number, end: number) {
   return `M 50 50 L ${first.x} ${first.y} A 44 44 0 ${end - start > 50 ? 1 : 0} 1 ${last.x} ${last.y} Z`
 }
 
-function FilterPie({ label, items, keepZero = false }: { label: string; items: FilterPieItem[]; keepZero?: boolean }) {
+function FilterPie({ label, items, keepZero = false, labelsBelow = false }: { label: string; items: FilterPieItem[]; keepZero?: boolean; labelsBelow?: boolean }) {
   const total = items.reduce((sum, item) => sum + item.count, 0)
   let cursor = 0
   const segments = items.filter((item) => item.count > 0).map<FilterPieSegment>((item) => {
@@ -72,10 +72,10 @@ function FilterPie({ label, items, keepZero = false }: { label: string; items: F
   )
   return (
     <div className="stats-filter-combined">
-      <div className="stats-filter-pie-layout" role="group" aria-label={label}>
-        <div className="stats-filter-orbit left">
+      <div className={`stats-filter-pie-layout${labelsBelow ? ' labels-below' : ''}`} role="group" aria-label={label}>
+        {!labelsBelow && <div className="stats-filter-orbit left">
           {segments.filter((segment) => segment.side === 'left').reverse().map((segment) => labelButton(segment.item, 'left'))}
-        </div>
+        </div>}
         <svg className="stats-filter-combined-pie" viewBox="0 0 100 100" aria-label={`${label} pie chart`}>
           {segments.length === 0 && <circle className="stats-filter-empty-pie" cx="50" cy="50" r="44" />}
           {segments.map((segment) => {
@@ -100,11 +100,13 @@ function FilterPie({ label, items, keepZero = false }: { label: string; items: F
               : <path key={segment.item.key} {...sharedProps} d={pieSectorPath(segment.start, segment.end)} />
           })}
         </svg>
-        <div className="stats-filter-orbit right">
+        {!labelsBelow && <div className="stats-filter-orbit right">
           {segments.filter((segment) => segment.side === 'right').map((segment) => labelButton(segment.item, 'right'))}
-        </div>
+        </div>}
       </div>
-      {zeroItems.length > 0 && <div className="stats-filter-zero-items">{zeroItems.map((item) => labelButton(item))}</div>}
+      {labelsBelow
+        ? <div className="stats-filter-below-labels">{items.map((item) => labelButton(item))}</div>
+        : zeroItems.length > 0 && <div className="stats-filter-zero-items">{zeroItems.map((item) => labelButton(item))}</div>}
     </div>
   )
 }
@@ -172,7 +174,7 @@ export function StatsFilters({ value, points, onChange }: { value: StatsFilterSt
         </div>
         <div className="stats-filters-row">
           <span className="stats-filter-row-label">Ball type</span>
-          <FilterPie label="Ball type" keepZero items={POINT_SHOT_TYPES.map((type, index) => ({
+          <FilterPie label="Ball type" keepZero labelsBelow items={POINT_SHOT_TYPES.map((type, index) => ({
             key: type,
             label: SHOT_TYPE_LABEL[type],
             count: shotTypeCounts[type],
