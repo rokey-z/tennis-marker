@@ -384,7 +384,7 @@ export function RecordPage() {
   )
 
   return (
-    <div key={id} className={`record page-in${statsMode ? ' stats' : ''}${courtFullscreen ? ' court-fullscreen' : ''}`}>
+    <div key={id} className={`record page-in${statsMode ? ' stats' : ''}${statsMode && !placementMode ? ' stats-with-filters' : ''}${courtFullscreen ? ' court-fullscreen' : ''}`}>
       <header className="record-head">
         <Link to="/" className="icon-btn" aria-label="Back to sessions">
           <BackIcon />
@@ -422,8 +422,14 @@ export function RecordPage() {
         </div>
       </header>
 
+      {isDesktop && statsMode && !placementMode && (
+        <aside className="record-stats-filters" aria-label="Stats filters">
+          <StatsFilters value={filters} points={points} onChange={setFilters} />
+        </aside>
+      )}
+
       <div className="record-court">
-        {statsMode && !placementMode && <StatsFilters value={filters} points={points} onChange={setFilters} />}
+        {!isDesktop && statsMode && !placementMode && <StatsFilters value={filters} points={points} onChange={setFilters} />}
         <div className="court-box" ref={courtRef}>
           {courtFullscreen && (
             <>

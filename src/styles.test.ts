@@ -59,3 +59,13 @@ describe('mobile stats court', () => {
     expect(styles).toMatch(/\.stats-filter-orbit-label \.stats-filter-count\s*\{[^}]*font-size:\s*9px;/s)
   })
 })
+
+describe('desktop stats layout', () => {
+  it('uses court, filters, and analysis as three distinct columns', () => {
+    expect(recordPage).toContain("statsMode && !placementMode ? ' stats-with-filters' : ''")
+    expect(recordPage).toContain('className="record-stats-filters"')
+    expect(styles).toMatch(/\.record\.stats-with-filters\s*\{[^}]*grid-template-columns:\s*minmax\(280px, 1fr\) minmax\(240px, 320px\) minmax\(300px, 400px\);[^}]*'court filters side';/s)
+    expect(styles).toMatch(/\.record-stats-filters\s*\{[^}]*grid-area:\s*filters;[^}]*overflow:\s*auto;/s)
+    expect(styles).toMatch(/\.record-stats-filters \.stats-filters-track\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);/s)
+  })
+})

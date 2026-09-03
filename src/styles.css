@@ -2844,12 +2844,44 @@ textarea.input {
     column-gap: 16px;
     padding: 12px 16px;
   }
+  .record.stats-with-filters {
+    grid-template-columns: minmax(280px, 1fr) minmax(240px, 320px) minmax(300px, 400px);
+    grid-template-areas:
+      'head head side'
+      'court filters side';
+  }
   .record-head {
     grid-area: head;
   }
   .record-court {
     grid-area: court;
     padding: 4px 0 8px;
+  }
+  .record-stats-filters {
+    grid-area: filters;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    padding: 4px 0 8px;
+  }
+  .record-stats-filters .stats-filters {
+    overflow: visible;
+    padding: 0;
+  }
+  .record-stats-filters .stats-filters-track {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    min-width: 0;
+  }
+  .record-stats-filters .stats-filters-row:nth-child(4) {
+    grid-column: auto;
+  }
+  .record-stats-filters .stats-filter-pie-layout {
+    grid-template-columns: minmax(42px, 1fr) 96px minmax(42px, 1fr);
+    width: 100%;
+  }
+  .record-stats-filters .stats-filters-row:nth-child(4) .stats-filter-pie-layout {
+    grid-template-columns: minmax(42px, 1fr) minmax(96px, 144px) minmax(42px, 1fr);
   }
   .record-side {
     grid-area: side;
